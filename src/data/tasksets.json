@@ -1,0 +1,114 @@
+[
+  {
+    "id": 1,
+    "question": "Oblicz wartość wyrażenia $2x + 5$ dla $x = 3$.",
+    "answer": "$11$",
+    "level": "podstawowy",
+    "source": "autorskie",
+    "topic": "algebra",
+    "type": "open"
+  },
+  {
+    "id": 2,
+    "question": "Rozwiąż równanie kwadratowe $x^2 - 5x + 6 = 0$.",
+    "answer": "$x = 2$ lub $x = 3$",
+    "level": "podstawowy",
+    "source": "cke",
+    "topic": "algebra",
+    "type": "open"
+  },
+  {
+    "id": 3,
+    "question": "Oblicz granicę $\\lim_{x \\to 0} \\frac{\\sin x}{x}$.",
+    "answer": "$1$",
+    "level": "rozszerzony",
+    "source": "operon",
+    "topic": "analiza",
+    "type": "open"
+  },
+  {
+    "id": 4,
+    "question": "Wyznacz pochodną funkcji $f(x) = x^3 - 4x$.",
+    "answer": "$f'(x) = 3x^2 - 4$",
+    "level": "rozszerzony",
+    "source": "nowa era",
+    "topic": "analiza",
+    "type": "open"
+  },
+  {
+    "id": 5,
+    "question": "Oblicz pole koła o promieniu $5$ cm.",
+    "answer": "$25\\pi$ cm$^2$",
+    "level": "ósmoklasisty",
+    "source": "cke",
+    "topic": "geometria",
+    "type": "open"
+  },
+  {
+    "id": 6,
+    "question": "Uzasadnij, że liczba $\\sqrt{2}$ jest niewymierna.",
+    "answer": "Dowód nie wprost: zakładając, że $\\sqrt{2} = \\frac{p}{q}$ prowadzi do sprzeczności, więc $\\sqrt{2}$ jest niewymierna.",
+    "level": "rozszerzony",
+    "source": "społeczność",
+    "topic": "teoria liczb",
+    "type": "open"
+  },
+  {
+    "id": 7,
+    "question": "Oblicz wartość wyrażenia $\\frac{3}{4} : \\frac{2}{5}$.",
+    "answer": "$\\frac{15}{8}$",
+    "level": "podstawowy",
+    "source": "autorskie",
+    "topic": "arytmetyka",
+    "type": "open"
+  },
+  {
+    "id": 8,
+    "question": "Podaj równanie prostej przechodzącej przez punkty $(1,2)$ i $(3,6)$.",
+    "answer": "$y = 2x$",
+    "level": "podstawowy",
+    "source": "autorskie",
+    "topic": "geometria analityczna",
+    "type": "open"
+  },
+  {
+    "id": 9,
+    "question": "Wartość wyrażenia $2^5$ wynosi:",
+    "options": ["$10$", "$25$", "$32$"],
+    "answer": "$32$",
+    "level": "podstawowy",
+    "source": "autorskie",
+    "topic": "potęgi",
+    "type": "closed"
+  },
+  {
+    "id": 10,
+    "question": "Pochodna funkcji $f(x) = x^2$ w punkcie $x = 3$ wynosi:",
+    "options": ["$6$", "$9$", "$3$", "$1$"],
+    "answer": "$6$",
+    "level": "rozszerzony",
+    "source": "cke",
+    "topic": "analiza",
+    "type": "closed"
+  },
+  {
+    "id": 11,
+    "question": "Ile wynosi suma kątów wewnętrznych trójkąta?",
+    "options": ["$90°$", "$180°$", "$270°$", "$360°$", "$540°$"],
+    "answer": "$180°$",
+    "level": "ósmoklasisty",
+    "source": "operon",
+    "topic": "geometria",
+    "type": "closed"
+  },
+  {
+    "id": 12,
+    "question": "Liczba pierwsza większa od $10$ i mniejsza od $15$ to:",
+    "options": ["$11$", "$12$"],
+    "answer": "$11$",
+    "level": "podstawowy",
+    "source": "społeczność",
+    "topic": "teoria liczb",
+    "type": "closed"
+  }
+]

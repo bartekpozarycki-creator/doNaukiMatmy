@@ -1,0 +1,55 @@
+[
+  {
+    "id": "liczby-rzeczywiste-rozszerzenie",
+    "title": "Liczby rzeczywiste (rozszerzenie)",
+    "topic": "liczby_rzeczywiste",
+    "level": "rozszerzony",
+    "description": "Zaawansowane własności potęg, logarytmy i dowody na liczbach.",
+    "duration_minutes": 75,
+    "lessons_count": 5,
+    "lessons": [
+      { "id": "lrr-1", "order": 1, "title": "Potęgi o wykładnikach wymiernych", "duration_minutes": 15 },
+      { "id": "lrr-2", "order": 2, "title": "Logarytmy - własności", "duration_minutes": 15 },
+      { "id": "lrr-3", "order": 3, "title": "Równania wykładnicze", "duration_minutes": 15 },
+      { "id": "lrr-4", "order": 4, "title": "Nierówności logarytmiczne", "duration_minutes": 15 },
+      { "id": "lrr-5", "order": 5, "title": "Zastosowania w zadaniach olimpijskich", "duration_minutes": 15 }
+    ],
+    "__isSample": true
+  },
+  {
+    "id": "trygonometria-rozszerzenie",
+    "title": "Trygonometria",
+    "topic": "trygonometria",
+    "level": "rozszerzony",
+    "description": "Funkcje trygonometryczne, tożsamości, równania.",
+    "duration_minutes": 80,
+    "lessons_count": 6,
+    "lessons": [
+      { "id": "tr-1", "order": 1, "title": "Funkcje trygonometryczne", "duration_minutes": 15 },
+      { "id": "tr-2", "order": 2, "title": "Jednostki miary kątów", "duration_minutes": 10 },
+      { "id": "tr-3", "order": 3, "title": "Tożsamości trygonometryczne", "duration_minutes": 15 },
+      { "id": "tr-4", "order": 4, "title": "Równania trygonometryczne", "duration_minutes": 15 },
+      { "id": "tr-5", "order": 5, "title": "Wzory redukcyjne", "duration_minutes": 10 },
+      { "id": "tr-6", "order": 6, "title": "Zastosowania w geometrii", "duration_minutes": 15 }
+    ],
+    "__isSample": true
+  },
+  {
+    "id": "calculus-rozszerzenie",
+    "title": "Rachunek różniczkowy",
+    "topic": "optymalizacja_i_rozniczkowy",
+    "level": "rozszerzony",
+    "description": "Pochodne, ekstrema, zastosowania w optymalizacji.",
+    "duration_minutes": 90,
+    "lessons_count": 6,
+    "lessons": [
+      { "id": "cr-1", "order": 1, "title": "Granica funkcji", "duration_minutes": 15 },
+      { "id": "cr-2", "order": 2, "title": "Pochodna - definicja", "duration_minutes": 15 },
+      { "id": "cr-3", "order": 3, "title": "Zasady różniczkowania", "duration_minutes": 15 },
+      { "id": "cr-4", "order": 4, "title": "Ekstrema funkcji", "duration_minutes": 15 },
+      { "id": "cr-5", "order": 5, "title": "Zastosowania w optymalizacji", "duration_minutes": 15 },
+      { "id": "cr-6", "order": 6, "title": "Całki nieoznaczone - wstęp", "duration_minutes": 15 }
+    ],
+    "__isSample": true
+  }
+]

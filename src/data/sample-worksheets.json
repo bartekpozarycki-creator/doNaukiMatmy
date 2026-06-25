@@ -1,0 +1,193 @@
+[
+  {
+    "match": {
+      "year": "2025",
+      "month": "maj",
+      "formula": "2023",
+      "level": "podstawowy"
+    },
+    "title": "Matura Matematyka Podstawowa",
+    "level": "podstawowy",
+    "year": 2025,
+    "month": "maj",
+    "formula": "2023",
+    "duration_minutes": 180,
+    "sections": [
+      {
+        "name": "Zadania zamknięte",
+        "tasks": [
+          {
+            "id": 1,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Liczba \\[\\frac{3^4 \\cdot 3^2}{3^5}\\] jest równa:",
+            "answers": [
+              { "id": "A", "text": "\\(3\\)" },
+              { "id": "B", "text": "\\(9\\)" },
+              { "id": "C", "text": "\\(27\\)" },
+              { "id": "D", "text": "\\(81\\)" }
+            ],
+            "correct_answer": "A"
+          },
+          {
+            "id": 2,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Rozwiązaniem nierówności \\[2x-5>7\\] jest przedział:",
+            "answers": [
+              { "id": "A", "text": "\\((-\\infty,1)\\)" },
+              { "id": "B", "text": "\\((1,\\infty)\\)" },
+              { "id": "C", "text": "\\((6,\\infty)\\)" },
+              { "id": "D", "text": "\\((-\\infty,6)\\)" }
+            ],
+            "correct_answer": "C"
+          },
+          {
+            "id": 3,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Wartość wyrażenia \\[\\sqrt{50}-\\sqrt{8}\\] jest równa:",
+            "answers": [
+              { "id": "A", "text": "\\(\\sqrt{42}\\)" },
+              { "id": "B", "text": "\\(3\\sqrt{2}\\)" },
+              { "id": "C", "text": "\\(5\\sqrt{2}\\)" },
+              { "id": "D", "text": "\\(7\\sqrt{2}\\)" }
+            ],
+            "correct_answer": "B"
+          },
+          {
+            "id": 4,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Funkcja liniowa \\(f(x)=2x-3\\) przyjmuje wartość równą \\(7\\) dla:",
+            "answers": [
+              { "id": "A", "text": "\\(x=2\\)" },
+              { "id": "B", "text": "\\(x=3\\)" },
+              { "id": "C", "text": "\\(x=4\\)" },
+              { "id": "D", "text": "\\(x=5\\)" }
+            ],
+            "correct_answer": "D"
+          },
+          {
+            "id": 5,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Liczba \\(5\\) stanowi:",
+            "answers": [
+              { "id": "A", "text": "5% liczby 20" },
+              { "id": "B", "text": "10% liczby 20" },
+              { "id": "C", "text": "20% liczby 20" },
+              { "id": "D", "text": "25% liczby 20" }
+            ],
+            "correct_answer": "D"
+          },
+          {
+            "id": 6,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Średnia arytmetyczna liczb \\(4,6,8,12\\) jest równa:",
+            "answers": [
+              { "id": "A", "text": "6" },
+              { "id": "B", "text": "7" },
+              { "id": "C", "text": "7,5" },
+              { "id": "D", "text": "8" }
+            ],
+            "correct_answer": "C"
+          },
+          {
+            "id": 7,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Miejscem zerowym funkcji \\[f(x)=x^2-9\\] jest:",
+            "answers": [
+              { "id": "A", "text": "tylko \\(x=3\\)" },
+              { "id": "B", "text": "tylko \\(x=-3\\)" },
+              { "id": "C", "text": "\\(x=-3\\) lub \\(x=3\\)" },
+              { "id": "D", "text": "\\(x=9\\)" }
+            ],
+            "correct_answer": "C"
+          },
+          {
+            "id": 8,
+            "points": 1,
+            "type": "single_choice",
+            "question": "W ciągu arytmetycznym \\((a_n)\\) dane są: \\[a_1=4,\\quad r=3\\] Wówczas:",
+            "answers": [
+              { "id": "A", "text": "\\(a_5=13\\)" },
+              { "id": "B", "text": "\\(a_5=15\\)" },
+              { "id": "C", "text": "\\(a_5=16\\)" },
+              { "id": "D", "text": "\\(a_5=19\\)" }
+            ],
+            "correct_answer": "C"
+          },
+          {
+            "id": 9,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Równanie \\[(x-2)(x+5)=0\\] ma rozwiązania:",
+            "answers": [
+              { "id": "A", "text": "\\(x=2\\) i \\(x=5\\)" },
+              { "id": "B", "text": "\\(x=-2\\) i \\(x=5\\)" },
+              { "id": "C", "text": "\\(x=2\\) i \\(x=-5\\)" },
+              { "id": "D", "text": "\\(x=-2\\) i \\(x=-5\\)" }
+            ],
+            "correct_answer": "C"
+          },
+          {
+            "id": 10,
+            "points": 1,
+            "type": "single_choice",
+            "question": "Pole kwadratu o boku długości \\(6\\) jest równe:",
+            "answers": [
+              { "id": "A", "text": "12" },
+              { "id": "B", "text": "24" },
+              { "id": "C", "text": "36" },
+              { "id": "D", "text": "48" }
+            ],
+            "correct_answer": "C"
+          }
+        ]
+      },
+      {
+        "name": "Zadania otwarte",
+        "tasks": [
+          {
+            "id": 21,
+            "points": 2,
+            "type": "open",
+            "question": "Rozwiąż równanie: \\[3x+7=19\\]",
+            "correct_answer": "\\(x=4\\)"
+          },
+          {
+            "id": 22,
+            "points": 2,
+            "type": "open",
+            "question": "Oblicz pole koła o promieniu długości \\(5\\). Wynik podaj w postaci z \\(\\pi\\).",
+            "correct_answer": "\\(25\\pi\\)"
+          },
+          {
+            "id": 23,
+            "points": 2,
+            "type": "open",
+            "question": "Dany jest ciąg geometryczny \\((a_n)\\), w którym: \\[a_1=2,\\quad q=3\\] Oblicz \\(a_4\\).",
+            "correct_answer": "\\(54\\)"
+          },
+          {
+            "id": 24,
+            "points": 2,
+            "type": "open",
+            "question": "Oblicz długość przekątnej prostokąta o bokach długości \\(6\\) i \\(8\\).",
+            "correct_answer": "\\(10\\)"
+          },
+          {
+            "id": 25,
+            "points": 2,
+            "type": "open",
+            "question": "Rozwiąż równanie kwadratowe: \\[x^2-5x+6=0\\]",
+            "correct_answer": "\\(x=2\\) lub \\(x=3\\)"
+          }
+        ]
+      }
+    ]
+  }
+]

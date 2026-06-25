@@ -1,0 +1,103 @@
+[
+  {
+    "id": "f-001",
+    "front": "Rozwiąż równanie x^2 - 5x + 6 = 0",
+    "back": "Pierwiastki: x = 2 oraz x = 3",
+    "topic": "algebra",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2024-05-07"
+  },
+  {
+    "id": "f-002",
+    "front": "Oblicz granicę ciągu a_n = (2n+1)/(n-3)",
+    "back": "Granica wynosi 2",
+    "topic": "analiza",
+    "level": "rozszerzenie",
+    "difficulty": "średnie",
+    "source": "podreczniki",
+    "date": "2023-09-12"
+  },
+  {
+    "id": "f-003",
+    "front": "Dodaj ułamki 3/5 i 2/15",
+    "back": "Wynik: 11/15",
+    "topic": "algebra",
+    "level": "podstawówka",
+    "difficulty": "łatwe",
+    "source": "egzamin ósmoklasisty",
+    "date": "2024-04-15"
+  },
+  {
+    "id": "f-004",
+    "front": "Wyznacz całkę ∫ (3x^2 - 4x + 1) dx",
+    "back": "x^3 - 2x^2 + x + C",
+    "topic": "analiza",
+    "level": "studia",
+    "difficulty": "średnie",
+    "source": "podreczniki",
+    "date": "2022-11-03"
+  },
+  {
+    "id": "f-005",
+    "front": "Równanie prostej prostopadłej do 2x - 3y + 4 = 0 przez (1, -2)",
+    "back": "y + 2 = -\\frac{3}{2}(x - 1)",
+    "topic": "geometria",
+    "level": "rozszerzenie",
+    "difficulty": "trudne",
+    "source": "konkursy",
+    "date": "2021-12-18"
+  },
+  {
+    "id": "f-006",
+    "front": "Kapitał 4000 zł na 5% rocznie, kapitalizacja roczna, 4 lata",
+    "back": "K ≈ 4862,03 zł",
+    "topic": "algebra",
+    "level": "podstawa",
+    "difficulty": "średnie",
+    "source": "matura",
+    "date": "2020-06-05"
+  },
+  {
+    "id": "f-007",
+    "front": "Trójkąt prostokątny: przyprostokątne 7 i 24. Przeciwprostokątna?",
+    "back": "25",
+    "topic": "geometria",
+    "level": "podstawówka",
+    "difficulty": "średnie",
+    "source": "egzamin ósmoklasisty",
+    "date": "2024-02-10"
+  },
+  {
+    "id": "f-008",
+    "front": "Oblicz log_2 32 + log_2 8",
+    "back": "5 + 3 = 8",
+    "topic": "algebra",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2023-05-09"
+  },
+  {
+    "id": "f-009",
+    "front": "Pole rombu o przekątnych 10 cm i 24 cm",
+    "back": "120 cm²",
+    "topic": "geometria",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2019-05-06"
+  },
+  {
+    "id": "f-010",
+    "front": "Iloczyn macierzy [[1,2],[3,4]] i [[2,0],[1,2]]",
+    "back": "[[4, 4],[10, 8]]",
+    "topic": "algebra",
+    "level": "studia",
+    "difficulty": "trudne",
+    "source": "podreczniki",
+    "date": "2021-03-21"
+  }
+]
+

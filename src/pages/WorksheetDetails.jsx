@@ -1,0 +1,1737 @@
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  ArrowLeft, ArrowRight, CheckCircle, Clock, Award, Eye, FileText,
+  Calendar, List, Layers, Timer, BookOpen,
+  KeyRound,
+} from "lucide-react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import PdfFloatingPanel from "@/components/PdfFloatingPanel";
+import {
+  useWorksheetProgress,
+  WORKSHEET_STATUS,
+  isWorksheetCompleted,
+  isWorksheetStarted,
+  snapshotCompletedAttempt,
+} from "@/hooks/use-worksheet-progress";
+import { Switch } from "@/components/ui/switch";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import MathText from "@/components/MathText";
+import WorksheetOpenParts from "@/components/WorksheetOpenParts";
+import { useWorksheetScores } from "@/hooks/use-worksheet-scores";
+import { publicSupabase } from "@/supabase-config.js";
+import {
+  mapDbTaskRow,
+  mapDbTaskToWorksheetQuestion,
+  sortTasksByNr,
+} from "@/utils/map-db-task";
+import {
+  areAllOpenPartsFilled,
+  countWorksheetAnswered,
+  getOpenPartValue,
+  getOpenPartsList,
+  hasOpenParts,
+  openPartAnswerKey,
+} from "@/utils/open-parts";
+import {
+  buildWorksheetQuestionScores,
+  getQuestionMaxPoints,
+  getStoredAnswerValue,
+  getWorksheetScoreSummary,
+  getWorksheetTotalPoints,
+  isSimpleOpenQuestion,
+} from "@/utils/worksheet-scores";
+import { usePageActions } from "@/contexts/PageActionsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  resolveWorksheetAnswerKeyUrl,
+  answerKeyPdfUrlWithPage,
+  resolveAnswerKeyPage,
+} from "@/utils/worksheet-answer-key";
+import { recordContinueLearning } from "@/utils/continue-learning";
+
+const sampleWorksheet = {
+  id: "w-001",
+  title: "Matura 2024 maj - poziom podstawowy",
+  level: "podstawowy",
+  year: 2024,
+  duration_minutes: 45,
+  total_points: 50,
+};
+
+const worksheetLevelTheme = {
+  podstawowy: {
+    label: "Matura podstawowa",
+    paperBand: "bg-gradient-to-r from-blue-500 to-blue-600",
+    paperBandDark: "dark:from-blue-600 dark:to-blue-700",
+    headerText: "text-white",
+    accentText: "text-blue-700 dark:text-blue-300",
+    accentBorder: "border-blue-500",
+    selectedChoice: "border-blue-600 bg-blue-50 ring-blue-200 dark:border-blue-400 dark:bg-blue-950/40 dark:ring-blue-900/60",
+    hoverChoice: "hover:border-blue-400 hover:bg-blue-50/60 dark:hover:border-blue-500 dark:hover:bg-blue-950/30",
+    button: "bg-blue-600 hover:bg-blue-700",
+    switch: "data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
+    dialogStrip: "bg-gradient-to-r from-blue-500 to-blue-600",
+    gradient: "from-blue-600 to-blue-500",
+  },
+  rozszerzony: {
+    label: "Matura rozszerzona",
+    paperBand: "bg-gradient-to-r from-purple-500 to-purple-600",
+    paperBandDark: "dark:from-purple-600 dark:to-purple-700",
+    headerText: "text-white",
+    accentText: "text-purple-700 dark:text-purple-300",
+    accentBorder: "border-purple-500",
+    selectedChoice: "border-purple-600 bg-purple-50 ring-purple-200 dark:border-purple-400 dark:bg-purple-950/40 dark:ring-purple-900/60",
+    hoverChoice: "hover:border-purple-400 hover:bg-purple-50/60 dark:hover:border-purple-500 dark:hover:bg-purple-950/30",
+    button: "bg-purple-600 hover:bg-purple-700",
+    switch: "data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
+    dialogStrip: "bg-gradient-to-r from-purple-500 to-purple-600",
+    gradient: "from-purple-600 to-purple-500",
+  },
+  ósmoklasisty: {
+    label: "Egzamin ósmoklasisty",
+    paperBand: "bg-gradient-to-r from-emerald-500 to-green-600",
+    paperBandDark: "dark:from-emerald-600 dark:to-green-700",
+    headerText: "text-white",
+    accentText: "text-green-700 dark:text-green-300",
+    accentBorder: "border-green-500",
+    selectedChoice: "border-green-600 bg-green-50 ring-green-200 dark:border-green-400 dark:bg-green-950/40 dark:ring-green-900/60",
+    hoverChoice: "hover:border-green-400 hover:bg-green-50/60 dark:hover:border-green-500 dark:hover:bg-green-950/30",
+    button: "bg-green-600 hover:bg-green-700",
+    switch: "data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
+    dialogStrip: "bg-gradient-to-r from-emerald-500 to-green-600",
+    gradient: "from-green-600 to-green-500",
+  },
+};
+
+const confirmDialogContentClass =
+  "max-w-md gap-0 overflow-hidden border-slate-200 bg-white p-0 shadow-2xl dark:border-slate-700 dark:bg-slate-900 sm:rounded-2xl";
+
+const confirmDialogCancelClass =
+  "mt-0 flex-1 border-slate-200 bg-slate-50 text-slate-800 hover:bg-slate-100 hover:text-slate-900 focus-visible:ring-slate-400 focus-visible:ring-offset-white dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700 dark:focus-visible:ring-offset-slate-900";
+
+const answerLetters = ["A", "B", "C", "D", "E", "F"];
+
+const skeletonClass = "bg-slate-200 dark:bg-slate-700";
+const skeletonOnBandClass = "bg-white/25 dark:bg-white/20";
+const propType = () => null;
+
+function WorksheetDetailsSkeleton({ examTheme }) {
+  return (
+    <>
+      <Skeleton className={`mb-4 h-9 w-44 rounded-md ${skeletonClass}`} />
+
+      <Card className="mb-6 overflow-hidden border-0 bg-white shadow-lg dark:bg-slate-800">
+        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-6 py-5`}>
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="min-w-0 flex-1 space-y-3">
+              <Skeleton className={`h-6 w-36 rounded-full ${skeletonOnBandClass}`} />
+              <Skeleton className={`h-8 w-full max-w-sm rounded-md ${skeletonOnBandClass}`} />
+              <Skeleton className={`h-4 w-48 rounded-md ${skeletonOnBandClass}`} />
+            </div>
+            <Skeleton
+              className={`h-[4.25rem] w-28 shrink-0 rounded-xl ${skeletonOnBandClass}`}
+            />
+          </div>
+        </div>
+        <CardContent className="space-y-5 p-6">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton
+                key={`meta-skel-${i}`}
+                className={`h-[3.25rem] rounded-lg ${skeletonClass}`}
+              />
+            ))}
+          </div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <Skeleton className={`h-12 w-full max-w-sm rounded-xl ${skeletonClass}`} />
+            <Skeleton className={`h-11 w-full max-w-xs rounded-xl sm:w-56 ${skeletonClass}`} />
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="mb-6 overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-3`}>
+          <Skeleton className={`h-6 w-56 rounded-md ${skeletonOnBandClass}`} />
+        </div>
+        <CardContent className="space-y-7 p-6 sm:p-8">
+          <Skeleton className={`h-6 w-full max-w-lg ${skeletonClass}`} />
+          <div className="space-y-3">
+            <Skeleton className={`h-5 w-full ${skeletonClass}`} />
+            <Skeleton className={`h-5 w-[94%] ${skeletonClass}`} />
+            <Skeleton className={`h-5 w-[80%] ${skeletonClass}`} />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {Array.from({ length: 4 }, (_, i) => (
+              <Skeleton
+                key={`choice-skel-${i}`}
+                className={`h-14 rounded-sm ${skeletonClass}`}
+              />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <Skeleton className={`h-10 w-36 rounded-md ${skeletonClass}`} />
+        <Skeleton className={`h-10 w-36 rounded-md ${skeletonClass}`} />
+      </div>
+    </>
+  );
+}
+
+WorksheetDetailsSkeleton.propTypes = {
+  examTheme: propType,
+};
+
+const getQuestionInstruction = (question) => {
+  if (question?.question_type === "single_choice") {
+    return "Dokończ zdanie. Wybierz właściwą odpowiedź spośród podanych.";
+  }
+  if (question?.question_type === "true_false") {
+    return "Oceń prawdziwość zdania. Wybierz Prawda albo Fałsz.";
+  }
+  if (hasOpenParts(question)) {
+    return "Uzupełnij zdania. Wpisz odpowiednie przedziały w polach poniżej.";
+  }
+  if (isSimpleOpenQuestion(question)) {
+    return "Rozwiąż zadanie samodzielnie, a następnie oceń swoją pracę według klucza CKE.";
+  }
+  return "Rozwiąż zadanie.";
+};
+
+const formatDisplayPart = (value) => {
+  if (!value) return "";
+  const cleaned = String(value).trim();
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const splitOptionLabel = (option, index) => {
+  const match = String(option).match(/^([A-Z])\.\s*(.*)$/);
+  return {
+    letter: match?.[1] || answerLetters[index] || `${index + 1}`,
+    text: match?.[2] || option,
+  };
+};
+
+const cleanWorksheetPart = (value) => {
+  if (!value) return "";
+  return value
+    .replace(/\.[^/.]+$/, "")
+    .replace(/[_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+};
+
+const normalizeWorksheetLevel = (value) => {
+  const cleaned = cleanWorksheetPart(value);
+  if (["pp", "podstawa", "podstawowy", "matura podstawowa"].includes(cleaned)) return "podstawowy";
+  if (["pr", "rozszerzenie", "rozszerzony", "matura rozszerzona"].includes(cleaned)) return "rozszerzony";
+  if (["null", "brak", "osma klasa", "ósma klasa", "osmaklasa", "ósmoklasisty", "egzamin ósmoklasisty"].includes(cleaned)) return "ósmoklasisty";
+  return cleaned;
+};
+
+const parseWorksheetId = (id) => {
+  const [year = "", month = "", formula = "", level = ""] = (id || "").split("-");
+  return {
+    year: cleanWorksheetPart(year),
+    month: cleanWorksheetPart(month),
+    formula: cleanWorksheetPart(formula),
+    level: normalizeWorksheetLevel(level),
+  };
+};
+
+function isWorksheetDetailsPath(pathname) {
+  return /\/(egzamin|arkusz|worksheetdetails)$/i.test(pathname.replace(/\/$/, ""));
+}
+
+export default function WorksheetDetailsPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [showResults, setShowResults] = useState(false);
+  const [reviewMode, setReviewMode] = useState(false);
+  const [reviewAnswers, setReviewAnswers] = useState(null);
+  const completedSnapshotRef = useRef(null);
+  const [answerKeyUrl, setAnswerKeyUrl] = useState(null);
+  const [answerKeyLoading, setAnswerKeyLoading] = useState(false);
+  const [answerKeyDialogOpen, setAnswerKeyDialogOpen] = useState(false);
+  const [answerKeyPdfPage, setAnswerKeyPdfPage] = useState(1);
+  const [questionScores, setQuestionScores] = useState({});
+  const [checkedQuestionIds, setCheckedQuestionIds] = useState({});
+  const [selfAwardedPoints, setSelfAwardedPoints] = useState({});
+  const { user } = useAuth();
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [timerEnabled, setTimerEnabled] = useState(false);
+  const timerRef = useRef(null);
+  const startTimeRef = useRef(Date.now());
+  const [viewMode, setViewMode] = useState("single");
+  const [saveAttemptDialogOpen, setSaveAttemptDialogOpen] = useState(false);
+  const [questions, setQuestions] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState(null);
+
+  const worksheetId = searchParams.get("id");
+
+  useEffect(() => {
+    if (!timerEnabled || reviewMode || showResults) return undefined;
+
+    const tick = () => {
+      setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+    };
+    tick();
+    timerRef.current = setInterval(tick, 1000);
+
+    return () => clearInterval(timerRef.current);
+  }, [timerEnabled, reviewMode, showResults]);
+
+  useEffect(() => {
+    if (!worksheetId) {
+      setQuestions([]);
+      setTasksLoading(false);
+      setTasksError(null);
+      return undefined;
+    }
+
+    let cancelled = false;
+    let rawRowCount = 0;
+    setTasksLoading(true);
+    setTasksError(null);
+    setQuestions([]);
+    setCurrentQuestionIndex(0);
+    setAnswers({});
+    setShowResults(false);
+    setReviewMode(false);
+    setReviewAnswers(null);
+    setAnswerKeyUrl(null);
+    setAnswerKeyDialogOpen(false);
+    setAnswerKeyPdfPage(1);
+    setQuestionScores({});
+    setCheckedQuestionIds({});
+    setSelfAwardedPoints({});
+    setElapsedTime(0);
+    setTimerEnabled(false);
+    startTimeRef.current = Date.now();
+    completedSnapshotRef.current = null;
+
+    (async () => {
+      const { data, error } = await publicSupabase
+        .from("tasks")
+        .select("*")
+        .eq("arkusz", worksheetId)
+        .order("nr", { ascending: true, nullsFirst: false });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[WorksheetDetails]", error);
+        setTasksError(error.message);
+        setQuestions([]);
+        setTasksLoading(false);
+        return;
+      }
+
+      rawRowCount = data?.length ?? 0;
+      const sorted = sortTasksByNr(
+        (data ?? []).map(mapDbTaskRow).filter((t) => t && t.question),
+      );
+      const mapped = sorted
+        .map((task, index) =>
+          mapDbTaskToWorksheetQuestion(task, worksheetId, index + 1),
+        )
+        .filter(Boolean);
+
+      if (rawRowCount === 0) {
+        console.warn(
+          `[WorksheetDetails] 0 wierszy dla arkusz="${worksheetId}" — import SQL lub polityki RLS (SELECT dla anon).`,
+        );
+      } else if (mapped.length === 0) {
+        console.warn(
+          `[WorksheetDetails] ${rawRowCount} wierszy w bazie, 0 po mapowaniu — sprawdź question_text.`,
+        );
+      }
+
+      setQuestions(mapped);
+      setTasksLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [worksheetId]);
+
+  const activeWorksheetId = worksheetId || sampleWorksheet.id;
+  const parsedMeta = parseWorksheetId(activeWorksheetId);
+  const worksheet = {
+    ...sampleWorksheet,
+    id: activeWorksheetId,
+    title: worksheetId || sampleWorksheet.title,
+    month: parsedMeta.month,
+    formula: parsedMeta.formula,
+    year: parsedMeta.year || sampleWorksheet.year,
+    level: parsedMeta.level || sampleWorksheet.level,
+    total_points: getWorksheetTotalPoints(questions),
+    duration_minutes: 0,
+  };
+  const { saveProgress, getAttempt, restorePreviousCompleted } =
+    useWorksheetProgress();
+  const currentQuestion = questions[currentQuestionIndex] || questions[0];
+  const displayMonth = formatDisplayPart(worksheet.month);
+  const displayYear = worksheet.year || parsedMeta.year;
+  const displayFormula = formatDisplayPart(worksheet.formula);
+  const sheetTitle = displayMonth && displayYear
+    ? `Arkusz ${displayMonth} ${displayYear}`
+    : worksheet.title;
+
+  const sessionStateRef = useRef({});
+  const restoredRef = useRef(false);
+
+  useEffect(() => {
+    if (!activeWorksheetId) return;
+    recordContinueLearning(user?.id, {
+      type: "worksheet",
+      id: activeWorksheetId,
+      title: sheetTitle || worksheet.title,
+      subtitle: [worksheet.level, worksheet.year].filter(Boolean).join(" · "),
+      href: `${createPageUrl("WorksheetDetails")}?id=${activeWorksheetId}`,
+      actionLabel: "Kontynuuj arkusz",
+    });
+  }, [
+    activeWorksheetId,
+    sheetTitle,
+    user?.id,
+    worksheet.level,
+    worksheet.title,
+    worksheet.year,
+  ]);
+
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const syncElapsedTime = useCallback(() => {
+    if (!timerEnabled) return elapsedTime;
+    const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+    setElapsedTime(elapsed);
+    return elapsed;
+  }, [timerEnabled, elapsedTime]);
+
+  const answeredQuestionCount = useMemo(() => {
+    if (!questions.length) return 0;
+    return questions.filter((q) => {
+      if (hasOpenParts(q)) {
+        return getOpenPartsList(q).some(
+          (part) => String(getOpenPartValue(answers, q.id, part.id)).trim() !== "",
+        );
+      }
+      const value = answers[q.id];
+      return value != null && String(value).trim() !== "";
+    }).length;
+  }, [questions, answers]);
+
+  const canPauseOrFinish = answeredQuestionCount > 1;
+
+  sessionStateRef.current = {
+    answers,
+    currentQuestionIndex,
+    viewMode,
+    elapsedTime,
+    timerEnabled,
+    checkedQuestionIds,
+    selfAwardedPoints,
+    questions,
+    showResults,
+    reviewMode,
+    sheetTitle,
+    worksheetTitle: worksheet.title,
+  };
+
+  const persistInProgressSession = useCallback(
+    (patch = {}) => {
+      if (!worksheetId) return;
+      const state = sessionStateRef.current;
+      if (!state.questions?.length || state.showResults || state.reviewMode) return;
+
+      const existing = getAttempt(worksheetId);
+      if (isWorksheetCompleted(existing) && !patch.force) return;
+
+      const answeredCount = countWorksheetAnswered(
+        state.questions,
+        state.answers || {},
+      );
+
+      if (answeredCount === 0) {
+        if (existing?.status === WORKSHEET_STATUS.STARTED) {
+          restorePreviousCompleted(worksheetId, { silent: patch.silent });
+        }
+        return;
+      }
+
+      const { beginSession, silent, ...sessionPatch } = patch;
+      delete sessionPatch.force;
+
+      const previousCompleted =
+        patch.previousCompleted ??
+        existing?.previousCompleted ??
+        (beginSession ? snapshotCompletedAttempt(existing) : null);
+
+      saveProgress({
+        id: worksheetId,
+        title: state.sheetTitle || state.worksheetTitle,
+        status: WORKSHEET_STATUS.STARTED,
+        answers: state.answers,
+        currentQuestionIndex: state.currentQuestionIndex,
+        viewMode: state.viewMode,
+        elapsedTime: state.elapsedTime,
+        timerEnabled: state.timerEnabled,
+        checkedQuestionIds: state.checkedQuestionIds,
+        selfAwardedPoints: state.selfAwardedPoints,
+        questionCount: state.questions.length,
+        answeredCount,
+        score: getWorksheetScoreSummary({
+          questions: state.questions,
+          questionScores: buildWorksheetQuestionScores({
+            questions: state.questions,
+            answersMap: state.answers,
+            checkedIds: state.checkedQuestionIds,
+            selfPoints: state.selfAwardedPoints,
+          }),
+          totalMax: getWorksheetTotalPoints(state.questions),
+          onlyGraded: true,
+        }).earned,
+        total: getWorksheetTotalPoints(state.questions),
+        ...(previousCompleted ? { previousCompleted } : {}),
+        startedAt: existing?.startedAt || new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        ...sessionPatch,
+      }, { silent });
+    },
+    [worksheetId, getAttempt, saveProgress, restorePreviousCompleted],
+  );
+
+  const flushSessionOnLeave = useCallback(({ silent = false } = {}) => {
+    if (!worksheetId) return;
+    const state = sessionStateRef.current;
+    if (!state.questions?.length || state.showResults || state.reviewMode) return;
+
+    if (state.timerEnabled) {
+      const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
+      sessionStateRef.current = { ...state, elapsedTime: elapsed };
+    }
+
+    persistInProgressSession({ force: true, silent });
+  }, [worksheetId, persistInProgressSession]);
+
+  useLayoutEffect(() => {
+    if (worksheetId || !isWorksheetDetailsPath(location.pathname)) return;
+    navigate(createPageUrl("Worksheets"));
+  }, [worksheetId, location.pathname, navigate]);
+
+  const goToWorksheets = useCallback(({ skipFlush = false } = {}) => {
+    if (!skipFlush) flushSessionOnLeave();
+    navigate(createPageUrl("Worksheets"));
+  }, [flushSessionOnLeave, navigate]);
+
+  useEffect(() => {
+    restoredRef.current = false;
+  }, [worksheetId]);
+
+  useEffect(() => {
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+
+    const session = getAttempt(worksheetId);
+    if (session?.status === WORKSHEET_STATUS.STARTED && !isWorksheetStarted(session)) {
+      restorePreviousCompleted(worksheetId);
+      return;
+    }
+    if (!isWorksheetStarted(session) || restoredRef.current) return;
+
+    restoredRef.current = true;
+    setAnswers(session.answers || {});
+    const maxIndex = questions.length - 1;
+    const idx = Math.min(Math.max(0, session.currentQuestionIndex ?? 0), maxIndex);
+    setCurrentQuestionIndex(idx);
+    if (session.viewMode === "single" || session.viewMode === "list") {
+      setViewMode(session.viewMode);
+    }
+    const elapsed = session.elapsedTime ?? 0;
+    setElapsedTime(elapsed);
+    startTimeRef.current = Date.now() - elapsed * 1000;
+    if (typeof session.timerEnabled === "boolean") {
+      setTimerEnabled(session.timerEnabled);
+    }
+    if (session.checkedQuestionIds && typeof session.checkedQuestionIds === "object") {
+      setCheckedQuestionIds(session.checkedQuestionIds);
+    }
+    if (session.selfAwardedPoints && typeof session.selfAwardedPoints === "object") {
+      setSelfAwardedPoints(session.selfAwardedPoints);
+    }
+  }, [tasksLoading, questions.length, worksheetId, getAttempt, showResults, reviewMode, restorePreviousCompleted]);
+
+  useEffect(() => {
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+    const timeoutId = setTimeout(() => persistInProgressSession(), 500);
+    return () => clearTimeout(timeoutId);
+  }, [
+    answers,
+    currentQuestionIndex,
+    viewMode,
+    elapsedTime,
+    timerEnabled,
+    checkedQuestionIds,
+    selfAwardedPoints,
+    tasksLoading,
+    questions.length,
+    showResults,
+    reviewMode,
+    persistInProgressSession,
+  ]);
+
+  useEffect(() => {
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+    if (Object.keys(answers).length === 0) return;
+    const existing = getAttempt(worksheetId);
+    if (!isWorksheetCompleted(existing)) return;
+    persistInProgressSession({
+      force: true,
+      beginSession: true,
+      previousCompleted: snapshotCompletedAttempt(existing),
+    });
+  }, [
+    answers,
+    tasksLoading,
+    questions.length,
+    showResults,
+    worksheetId,
+    getAttempt,
+    persistInProgressSession,
+  ]);
+
+  useEffect(() => {
+    const flush = () => flushSessionOnLeave();
+    window.addEventListener("beforeunload", flush);
+    window.addEventListener("pagehide", flush);
+    return () => {
+      window.removeEventListener("beforeunload", flush);
+      window.removeEventListener("pagehide", flush);
+      flushSessionOnLeave({ silent: true });
+    };
+  }, [flushSessionOnLeave]);
+
+  const handleSelectAnswer = (questionId, answer) => {
+    if (
+      reviewMode ||
+      showResults ||
+      checkedQuestionIds[questionId] ||
+      !answer
+    ) {
+      return;
+    }
+    setAnswers((prev) => ({ ...prev, [questionId]: answer }));
+  };
+
+  const handleOpenPartChange = (questionId, partId, value) => {
+    if (reviewMode || showResults || checkedQuestionIds[questionId]) {
+      return;
+    }
+    const key = openPartAnswerKey(questionId, partId);
+    setAnswers((prev) => {
+      const next = { ...prev };
+      if (value == null || String(value).trim() === "") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+  };
+
+  const handleNext = () => {
+    if (currentQuestionIndex < questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(prev => prev - 1);
+    }
+  };
+
+  const scoring = useWorksheetScores({
+    questions,
+    answers,
+    checkedQuestionIds,
+    selfAwardedPoints,
+    overrideScores:
+      reviewMode && Object.keys(questionScores).length > 0 ? questionScores : null,
+  });
+
+  const canCheckQuestion = (question, answersMap) => {
+    if (hasOpenParts(question)) {
+      return areAllOpenPartsFilled(question, answersMap);
+    }
+    if (isSimpleOpenQuestion(question)) {
+      return Boolean(answerKeyUrl) && !answerKeyLoading;
+    }
+    return Boolean(getStoredAnswerValue(question, answersMap));
+  };
+
+  const handleCheckQuestion = (questionId) => {
+    setCheckedQuestionIds((prev) => ({ ...prev, [questionId]: true }));
+  };
+
+  const handleSetSelfPoints = (questionId, points) => {
+    const question = questions.find((q) => q.id === questionId);
+    if (!question) return;
+    const max = getQuestionMaxPoints(question);
+    const clamped = Math.min(Math.max(0, Math.floor(Number(points) || 0)), max);
+    setSelfAwardedPoints((prev) => ({ ...prev, [questionId]: clamped }));
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  };
+
+  const handleTimerToggle = useCallback((enabled) => {
+    if (enabled) {
+      startTimeRef.current = Date.now() - elapsedTime * 1000;
+      setTimerEnabled(true);
+      return;
+    }
+    setElapsedTime(Math.floor((Date.now() - startTimeRef.current) / 1000));
+    stopTimer();
+    setTimerEnabled(false);
+  }, [elapsedTime, stopTimer]);
+
+  const handleSubmitClick = () => {
+    if (reviewMode) return;
+    syncElapsedTime();
+    setSaveAttemptDialogOpen(true);
+  };
+
+  const finishWorksheet = () => {
+    const finalElapsed = syncElapsedTime();
+    stopTimer();
+    const { questionScores: qScores, score, total } = scoring.buildFinalSnapshot();
+    saveProgress({
+      id: worksheet.id,
+      title: sheetTitle || worksheet.title,
+      status: WORKSHEET_STATUS.COMPLETED,
+      score,
+      total: total || worksheet.total_points,
+      ...(timerEnabled ? { timeSpent: finalElapsed * 1000, elapsedTime: finalElapsed } : {}),
+      answers,
+      selfAwardedPoints,
+      checkedQuestionIds,
+      questionScores: qScores,
+      currentQuestionIndex,
+      viewMode,
+      timerEnabled,
+      date: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+    completedSnapshotRef.current = {
+      answers: { ...answers },
+      questionScores: qScores,
+      selfAwardedPoints: { ...selfAwardedPoints },
+      checkedQuestionIds: { ...checkedQuestionIds },
+      currentQuestionIndex,
+      viewMode,
+      elapsedTime: finalElapsed,
+      timerEnabled,
+    };
+    setQuestionScores(qScores);
+    setSaveAttemptDialogOpen(false);
+    setShowResults(true);
+  };
+
+  const handleViewCompletedWorksheet = () => {
+    const savedAttempt = getAttempt(worksheet.id);
+    const snapshot =
+      completedSnapshotRef.current?.answers ??
+      savedAttempt?.answers ??
+      reviewAnswers ??
+      answers;
+    const frozen = { ...snapshot };
+    const restoredSelf =
+      completedSnapshotRef.current?.selfAwardedPoints ??
+      savedAttempt?.selfAwardedPoints;
+    const restoredChecked =
+      completedSnapshotRef.current?.checkedQuestionIds ??
+      savedAttempt?.checkedQuestionIds;
+    const scores =
+      completedSnapshotRef.current?.questionScores ??
+      savedAttempt?.questionScores ??
+      buildWorksheetQuestionScores({
+        questions,
+        answersMap: frozen,
+        checkedIds: restoredChecked ?? {},
+        selfPoints: restoredSelf ?? {},
+        countUngradedAsZero: true,
+      });
+    setReviewAnswers(frozen);
+    setAnswers(frozen);
+    setQuestionScores(scores);
+    if (completedSnapshotRef.current?.viewMode) {
+      setViewMode(completedSnapshotRef.current.viewMode);
+    }
+    if (completedSnapshotRef.current?.currentQuestionIndex != null) {
+      setCurrentQuestionIndex(completedSnapshotRef.current.currentQuestionIndex);
+    }
+    if (restoredSelf && typeof restoredSelf === "object") {
+      setSelfAwardedPoints(restoredSelf);
+    }
+    if (restoredChecked && typeof restoredChecked === "object") {
+      setCheckedQuestionIds(restoredChecked);
+    }
+    setShowResults(false);
+    setReviewMode(true);
+  };
+
+  const handleExitReviewMode = () => {
+    setReviewMode(false);
+    setReviewAnswers(null);
+    setAnswerKeyUrl(null);
+    setAnswerKeyDialogOpen(false);
+    goToWorksheets();
+  };
+
+  useEffect(() => {
+    if (!worksheetId || showResults) {
+      setAnswerKeyUrl(null);
+      setAnswerKeyLoading(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setAnswerKeyLoading(true);
+
+    (async () => {
+      try {
+        const url = await resolveWorksheetAnswerKeyUrl(
+          worksheetId,
+          worksheet.level,
+        );
+        if (!cancelled) setAnswerKeyUrl(url);
+      } finally {
+        if (!cancelled) setAnswerKeyLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [worksheetId, worksheet.level, showResults]);
+
+  const openAnswerKeyDialog = useCallback((page = 1) => {
+    setAnswerKeyPdfPage(Math.max(1, Math.floor(Number(page) || 1)));
+    setAnswerKeyDialogOpen(true);
+  }, []);
+
+  const openAnswerKeyAtQuestion = useCallback(
+    (question) => {
+      openAnswerKeyDialog(resolveAnswerKeyPage(question));
+    },
+    [openAnswerKeyDialog],
+  );
+
+  const answerKeyIframeSrc = answerKeyPdfUrlWithPage(answerKeyUrl, answerKeyPdfPage);
+
+  const handleLeaveWithSave = (event) => {
+    event?.preventDefault?.();
+    syncElapsedTime();
+    stopTimer();
+    const existing = getAttempt(worksheetId);
+    const patch = { force: true };
+    if (isWorksheetCompleted(existing)) {
+      patch.beginSession = true;
+      patch.previousCompleted = snapshotCompletedAttempt(existing);
+    }
+    persistInProgressSession(patch);
+    goToWorksheets({ skipFlush: true });
+  };
+
+  const handleBackToWorksheets = () => {
+    if (reviewMode) {
+      handleExitReviewMode();
+      return;
+    }
+    if (showResults) {
+      goToWorksheets();
+      return;
+    }
+    if (answeredQuestionCount === 0) {
+      goToWorksheets({ skipFlush: true });
+      return;
+    }
+    handleLeaveWithSave();
+  };
+
+  const handleCloseFinishDialog = () => {
+    setSaveAttemptDialogOpen(false);
+  };
+
+  const calculateScore = () => {
+    const { earned, totalMax, percentage } = scoring.finalSummary;
+    return {
+      correct: earned,
+      total: totalMax,
+      percentage,
+    };
+  };
+
+  const isDark = user?.theme === "dark";
+  const examTheme = worksheetLevelTheme[worksheet.level] || worksheetLevelTheme.podstawowy;
+  const finishButtonClass = `bg-gradient-to-r ${examTheme.gradient} hover:opacity-90`;
+
+  const displayAnswers = reviewMode && reviewAnswers ? reviewAnswers : answers;
+  const practiceMode = !reviewMode && !showResults;
+
+  const worksheetFabActions = useMemo(() => {
+    if (!worksheetId || showResults || tasksLoading || questions.length === 0) {
+      return [];
+    }
+
+    const items = [
+      {
+        id: "answer-key",
+        label: answerKeyLoading
+          ? "Ładowanie klucza…"
+          : answerKeyUrl
+            ? "Karta z odpowiedziami (CKE)"
+            : "Klucz niedostępny",
+        icon: BookOpen,
+        disabled: answerKeyLoading,
+        onClick: () => openAnswerKeyDialog(1),
+      },
+    ];
+
+    if (viewMode === "single" && questions[currentQuestionIndex]) {
+      const question = questions[currentQuestionIndex];
+      items.push({
+        id: "answer-key-page",
+        label: `Klucz — zadanie ${question.question_number}`,
+        icon: KeyRound,
+        disabled: answerKeyLoading,
+        onClick: () => openAnswerKeyAtQuestion(question),
+      });
+    }
+
+    if (!reviewMode) {
+      if (viewMode !== "single") {
+        items.push({
+          id: "view-single",
+          label: "Widok po kolei",
+          icon: FileText,
+          onClick: () => setViewMode("single"),
+        });
+      }
+      if (viewMode !== "list") {
+        items.push({
+          id: "view-list",
+          label: "Widok lista",
+          icon: List,
+          onClick: () => setViewMode("list"),
+        });
+      }
+      items.push({
+        id: "timer-toggle",
+        label: timerEnabled ? "Wyłącz pomiar czasu" : "Włącz pomiar czasu",
+        icon: Timer,
+        onClick: () => handleTimerToggle(!timerEnabled),
+      });
+    }
+
+    return items;
+  }, [
+    worksheetId,
+    showResults,
+    tasksLoading,
+    questions.length,
+    answerKeyLoading,
+    answerKeyUrl,
+    viewMode,
+    reviewMode,
+    timerEnabled,
+    currentQuestionIndex,
+    openAnswerKeyDialog,
+    openAnswerKeyAtQuestion,
+    handleTimerToggle,
+  ]);
+
+  usePageActions(worksheetFabActions, [
+    worksheetId,
+    showResults,
+    tasksLoading,
+    questions.length,
+    answerKeyLoading,
+    answerKeyUrl,
+    viewMode,
+    reviewMode,
+    timerEnabled,
+    currentQuestionIndex,
+  ]);
+
+  const reviewCorrectChoiceClass =
+    "border-green-600 bg-green-50 ring-2 ring-green-200 dark:border-green-400 dark:bg-green-950/50 dark:ring-green-900/60";
+  const reviewWrongPickChoiceClass =
+    "border-slate-400 bg-slate-100 ring-2 ring-slate-200 dark:border-slate-500 dark:bg-slate-800/90 dark:ring-slate-700";
+
+  const renderChoice = (question, option, index, type = "single_choice") => {
+    const value = type === "true_false" ? option : option;
+    const selectedValue = getStoredAnswerValue(question, displayAnswers);
+    const correctValue = getStoredAnswerValue(question, {
+      [question.id]: question.correct_answer,
+    });
+    const isSelected = selectedValue === value;
+    const isCorrectOption = Boolean(correctValue) && value === correctValue;
+    const answerRevealed =
+      reviewMode || (practiceMode && checkedQuestionIds[question.id]);
+    const isUserWrongPick = answerRevealed && isSelected && !isCorrectOption;
+    const optionLabel = splitOptionLabel(option, index);
+
+    let choiceClassName =
+      "border-slate-300 dark:border-slate-600 " + examTheme.hoverChoice;
+    if (answerRevealed) {
+      if (isCorrectOption) choiceClassName = reviewCorrectChoiceClass;
+      else if (isUserWrongPick) choiceClassName = reviewWrongPickChoiceClass;
+    } else if (isSelected) {
+      choiceClassName = `${examTheme.selectedChoice} ring-2`;
+    }
+
+    return (
+      <div
+        key={value}
+        role="radio"
+        aria-checked={isSelected}
+        tabIndex={reviewMode || answerRevealed ? -1 : 0}
+        onClick={() => {
+          if (reviewMode || answerRevealed) return;
+          handleSelectAnswer(question.id, value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          if (reviewMode || answerRevealed) return;
+          handleSelectAnswer(question.id, value);
+        }}
+        className={`flex min-h-14 items-center gap-3 rounded-sm border bg-white px-4 py-3 transition-all dark:bg-slate-900/70 ${
+          reviewMode || answerRevealed ? "cursor-default" : "cursor-pointer"
+        } ${choiceClassName}`}
+      >
+        <span className={`text-lg font-bold ${examTheme.accentText}`}>
+          {type === "true_false" ? option : `${optionLabel.letter}.`}
+        </span>
+        <span className="flex-1 leading-relaxed text-base text-slate-950 dark:text-white">
+          <MathText
+            text={type === "true_false" ? option : optionLabel.text}
+            className="math-text-ui--flow"
+          />
+        </span>
+      </div>
+    );
+  };
+
+  const renderExamQuestion = (question) => {
+    const scoreEntry = scoring.questionScores[question.id];
+    const maxPts = getQuestionMaxPoints(question);
+    const isGraded = scoreEntry?.graded && scoreEntry.earned != null;
+    const pointsLabel = isGraded
+      ? `${scoreEntry.earned}/${maxPts} pkt`
+      : `0–${maxPts} pkt`;
+
+    return (
+      <Card key={question.id} className="mb-6 overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-3 shadow-sm`}>
+          <h2
+            className={`flex flex-wrap items-center gap-2 text-xl font-extrabold ${examTheme.headerText}`}
+          >
+            <span className="tabular-nums">
+              Zadanie {question.question_number}. ({pointsLabel})
+            </span>
+            {answerKeyUrl && !showResults ? (
+              <button
+                type="button"
+                onClick={() => openAnswerKeyAtQuestion(question)}
+                disabled={answerKeyLoading}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50"
+                title={`Klucz CKE — zadanie ${question.question_number}`}
+                aria-label={`Pokaż klucz CKE dla zadania ${question.question_number}`}
+              >
+                <KeyRound className="h-4 w-4" />
+              </button>
+            ) : null}
+          </h2>
+        </div>
+        <CardContent className="space-y-7 p-6 sm:p-8">
+          <p className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            <span className="font-bold">{getQuestionInstruction(question)}</span>
+            {question.question_text?.trim() ? (
+              <>
+                {" "}
+                <MathText
+                  text={question.question_text}
+                  className="math-text-ui--flow font-normal"
+                />
+              </>
+            ) : null}
+          </p>
+
+        {question.image_url ? (
+          <img
+            src={question.image_url}
+            alt="Ilustracja do zadania"
+            className="mx-auto w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700"
+          />
+        ) : null}
+
+        {question.question_text_po_obrazku?.trim() ? (
+          <p className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            <MathText
+              text={question.question_text_po_obrazku}
+              className="math-text-ui--flow"
+            />
+          </p>
+        ) : null}
+
+        {hasOpenParts(question) ? (
+          <WorksheetOpenParts
+            question={question}
+            answersMap={displayAnswers}
+            onPartChange={handleOpenPartChange}
+            disabled={reviewMode || (practiceMode && checkedQuestionIds[question.id])}
+            showFeedback={practiceMode && checkedQuestionIds[question.id]}
+          />
+        ) : null}
+
+        {question.question_type === "single_choice" && (
+          <div
+            role="radiogroup"
+            aria-label={`Odpowiedzi do zadania ${question.question_number}`}
+            className={`grid gap-4 sm:grid-cols-2 ${
+              reviewMode || (practiceMode && checkedQuestionIds[question.id])
+                ? "pointer-events-none"
+                : ""
+            }`}
+          >
+            {question.options?.map((option, index) => renderChoice(question, option, index))}
+          </div>
+        )}
+
+        {question.question_type === "true_false" && (
+          <div
+            role="radiogroup"
+            aria-label={`Odpowiedź prawda lub fałsz — zadanie ${question.question_number}`}
+            className={`grid gap-4 sm:grid-cols-2 ${
+              reviewMode || (practiceMode && checkedQuestionIds[question.id])
+                ? "pointer-events-none"
+                : ""
+            }`}
+          >
+            {["Prawda", "Fałsz"].map((option, index) => renderChoice(question, option, index, "true_false"))}
+          </div>
+        )}
+
+        {practiceMode && (
+          <div className="space-y-4 border-t border-slate-200 pt-6 dark:border-slate-700">
+            {isSimpleOpenQuestion(question) ? (
+              <div className="space-y-4">
+                <Button
+                  type="button"
+                  onClick={() => openAnswerKeyAtQuestion(question)}
+                  disabled={!canCheckQuestion(question, answers)}
+                  className={finishButtonClass}
+                >
+                  Sprawdź odpowiedź
+                </Button>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+                  <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                    Przyznij sobie punkty:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(
+                      { length: getQuestionMaxPoints(question) + 1 },
+                      (_, pts) => (
+                        <Button
+                          key={pts}
+                          type="button"
+                          size="sm"
+                          variant={
+                            (selfAwardedPoints[question.id] ?? 0) === pts
+                              ? "default"
+                              : "outline"
+                          }
+                          onClick={() => handleSetSelfPoints(question.id, pts)}
+                          className={
+                            (selfAwardedPoints[question.id] ?? 0) === pts
+                              ? `${examTheme.button} text-white`
+                              : "border-slate-300 dark:border-slate-600"
+                          }
+                        >
+                          {pts}
+                        </Button>
+                      ),
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : !checkedQuestionIds[question.id] ? (
+              <Button
+                type="button"
+                onClick={() => handleCheckQuestion(question.id)}
+                disabled={!canCheckQuestion(question, answers)}
+                className={finishButtonClass}
+              >
+                Sprawdź odpowiedź
+              </Button>
+            ) : (
+              (() => {
+                const entry = scoring.questionScores[question.id];
+                const maxPts = getQuestionMaxPoints(question);
+                const earnedPts = entry?.graded ? entry.earned : 0;
+                const fullCredit = entry?.graded && entry.correct;
+                const partialOpen =
+                  hasOpenParts(question) &&
+                  entry?.graded &&
+                  earnedPts > 0 &&
+                  earnedPts < maxPts;
+
+                return (
+                  <div
+                    className={`rounded-lg px-4 py-3 text-center text-sm font-semibold text-white ${
+                      fullCredit
+                        ? "bg-emerald-600"
+                        : partialOpen
+                          ? "bg-amber-600"
+                          : "bg-rose-600"
+                    }`}
+                  >
+                    {fullCredit ? (
+                      "Dobrze!"
+                    ) : partialOpen ? (
+                      "Częściowo poprawnie — sprawdź pola powyżej."
+                    ) : hasOpenParts(question) ? (
+                      "Sprawdź poprawki przy polach powyżej."
+                    ) : (
+                      <span>
+                        Błąd. Poprawna odpowiedź:{" "}
+                        <MathText text={question.correct_answer} />
+                      </span>
+                    )}
+                  </div>
+                );
+              })()
+            )}
+
+            {question.video_url ? (
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem
+                  value={`video-${question.id}`}
+                  className="rounded-lg border border-slate-200 dark:border-slate-700"
+                >
+                  <AccordionTrigger className="px-4 text-base font-semibold text-slate-900 hover:no-underline dark:text-white">
+                    Wytłumaczenie wideo
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                      <iframe
+                        src={question.video_url}
+                        title={`Wytłumaczenie zadania ${question.question_number}`}
+                        className="h-full w-full"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : null}
+          </div>
+        )}
+
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const pageIsDark = document.documentElement.classList.contains("dark");
+
+  if (!isWorksheetDetailsPath(location.pathname)) {
+    return null;
+  }
+
+  if (tasksLoading && worksheetId) {
+    const loadingMeta = parseWorksheetId(worksheetId);
+    const loadingTheme =
+      worksheetLevelTheme[loadingMeta.level] || worksheetLevelTheme.podstawowy;
+
+    return (
+      <div
+        className={`py-8`}
+      >
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <WorksheetDetailsSkeleton examTheme={loadingTheme} />
+        </div>
+      </div>
+    );
+  }
+
+  if (
+    !worksheetId &&
+    isWorksheetDetailsPath(location.pathname)
+  ) {
+    const loadingMeta = worksheetLevelTheme.podstawowy;
+    return (
+      <div
+        className={`py-8`}
+      >
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <WorksheetDetailsSkeleton examTheme={loadingMeta} />
+        </div>
+      </div>
+    );
+  }
+
+  if (!worksheetId || tasksError || questions.length === 0) {
+    const emptyTitle = !worksheetId
+      ? "Brak arkusza"
+      : tasksError
+        ? "Błąd ładowania"
+        : "Brak zadań w bazie";
+    const emptyMessage = !worksheetId
+      ? "Nie podano identyfikatora arkusza."
+      : tasksError
+        ? tasksError
+        : `Nie znaleziono zadań z polem arkusz równym "${worksheetId}". W Supabase uruchom kolejno: data/setup-tasks-schema.sql, data/setup-tasks-read-access.sql, data/insert-matura-2025-maj-2023-pp-zadania.sql. Jeśli import był OK, sprawdź RLS (SELECT dla roli anon) w Table Editor → tasks.`;
+    return (
+      <div
+        className={`py-8`}
+      >
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card className="dark:bg-slate-800 bg-white">
+            <CardContent className="p-12 text-center">
+              <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                {emptyTitle}
+              </h3>
+              <p className="text-gray-600 dark:text-slate-400 mb-6">
+                {emptyMessage}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                className="dark:border-slate-600"
+                onClick={goToWorksheets}
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Powrót do arkuszy
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (showResults) {
+    const { correct, total, percentage } = calculateScore();
+    const resultsTimerEnabled =
+      completedSnapshotRef.current?.timerEnabled ?? timerEnabled;
+    const resultsElapsed =
+      completedSnapshotRef.current?.elapsedTime ?? elapsedTime;
+    return (
+      <div className={`py-8`}>
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Card className="dark:bg-slate-800 bg-white border-0 shadow-xl">
+            <CardContent className="p-12 text-center">
+              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center">
+                <Award className="w-12 h-12 text-white" />
+              </div>
+              <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
+                Gratulacje!
+              </h2>
+              <p className="text-xl text-gray-600 dark:text-slate-300 mb-8">
+                Ukończyłeś arkusz: {worksheet.title}
+              </p>
+
+              <div
+                className={`grid gap-6 mb-8 ${
+                  resultsTimerEnabled ? "md:grid-cols-4" : "md:grid-cols-3"
+                }`}
+              >
+                <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
+                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
+                    {percentage}%
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-slate-400">
+                    Wynik końcowy
+                  </div>
+                </div>
+                <div className="p-6 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
+                  <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                    {correct}/{total}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-slate-400">
+                    Punktów
+                  </div>
+                </div>
+                <div className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                  <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+                    {questions.length}
+                  </div>
+                  <div className="text-sm text-gray-600 dark:text-slate-400">
+                    Pytań
+                  </div>
+                </div>
+                {resultsTimerEnabled ? (
+                  <div className="p-6 bg-slate-50 dark:bg-slate-800/80 rounded-xl">
+                    <div className="text-4xl font-bold text-slate-700 dark:text-slate-200 mb-2">
+                      {formatTime(resultsElapsed)}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-slate-400">
+                      Czas
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Button
+                  type="button"
+                  size="lg"
+                  variant="outline"
+                  className="dark:border-slate-600"
+                  onClick={goToWorksheets}
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Powrót do arkuszy
+                </Button>
+                <Button
+                  size="lg"
+                  onClick={handleViewCompletedWorksheet}
+                  className={`${examTheme.button} text-white`}
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  Obejrzyj arkusz
+                </Button>
+                <Button size="lg" onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
+                  Spróbuj ponownie
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            className="mb-4 dark:text-slate-300"
+            onClick={handleBackToWorksheets}
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Powrót do arkuszy
+          </Button>
+          <Card className="overflow-hidden border-0 bg-white shadow-lg dark:bg-slate-800">
+            <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-6 py-5`}>
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <div className="mb-3 flex flex-wrap gap-2">
+                    <Badge className="border-white/30 bg-white/20 font-semibold text-white backdrop-blur-sm">
+                      {examTheme.label}
+                    </Badge>
+                    {reviewMode && (
+                      <Badge className="border-white/30 bg-white/20 font-semibold text-white backdrop-blur-sm">
+                        Podgląd ukończonego arkusza
+                      </Badge>
+                    )}
+                  </div>
+                  <h1 className={`text-2xl font-bold sm:text-3xl ${examTheme.headerText}`}>
+                    {sheetTitle}
+                  </h1>
+                  {worksheet.title && worksheet.title !== sheetTitle && (
+                    <p className="mt-1 text-sm text-white/80">{worksheet.title}</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
+                  <div
+                    className={`min-w-[5.5rem] rounded-xl border border-white/25 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
+                  >
+                    <div className="text-2xl font-bold tabular-nums">
+                      {scoring.summary.earned}
+                      <span className="text-lg font-medium text-white/70">
+                        /{scoring.summary.totalMax}
+                      </span>
+                    </div>
+                    <p className="text-xs font-medium text-white/80">punktów</p>
+                  </div>
+                  <div
+                    className={`min-w-[5.5rem] rounded-xl border border-white/25 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
+                  >
+                    <div className="text-2xl font-bold tabular-nums">
+                      {viewMode === "single" ? currentQuestionIndex + 1 : questions.length}
+                      {viewMode === "single" && (
+                        <span className="text-lg font-medium text-white/70">/{questions.length}</span>
+                      )}
+                    </div>
+                    <p className="text-xs font-medium text-white/80">
+                      {viewMode === "single" ? "aktualne zadanie" : "zadania w arkuszu"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <CardContent className="space-y-5 p-6">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+                {displayYear && (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+                    <Calendar className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Rok</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayYear}</p>
+                    </div>
+                  </div>
+                )}
+                {displayMonth && (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+                    <Calendar className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Termin</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayMonth}</p>
+                    </div>
+                  </div>
+                )}
+                {displayFormula && (
+                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+                    <Layers className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Formuła</p>
+                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayFormula}</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
+                  <FileText className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Zadania</p>
+                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{questions.length}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                {!reviewMode && (
+                  <div className="flex flex-wrap items-center gap-3">
+                  <div className="inline-flex w-full max-w-sm shrink-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/60 sm:w-auto">
+                    {timerEnabled ? (
+                      <div className="flex min-w-[6.5rem] items-center gap-2">
+                        <Clock className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
+                        <span className="w-[4.5rem] tabular-nums text-base font-semibold text-slate-900 dark:text-white">
+                          {formatTime(elapsedTime)}
+                        </span>
+                      </div>
+                    ) : null}
+                    {timerEnabled ? (
+                      <div className="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-600" />
+                    ) : null}
+                    <label className="flex shrink-0 cursor-pointer items-center gap-2.5">
+                      <Switch
+                        checked={timerEnabled}
+                        onCheckedChange={handleTimerToggle}
+                        className={examTheme.switch}
+                      />
+                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Mierz czas
+                      </span>
+                    </label>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleSubmitClick}
+                    className={`${finishButtonClass} shrink-0 text-white`}
+                  >
+                    Zakończ
+                  </Button>
+                  </div>
+                )}
+
+                <div
+                  className={`inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900 ${
+                    reviewMode ? "sm:ml-auto" : ""
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("single")}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                      viewMode === "single"
+                        ? `${examTheme.button} text-white shadow-md`
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <FileText className="h-4 w-4" />
+                    Po kolei
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode("list")}
+                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                      viewMode === "list"
+                        ? `${examTheme.button} text-white shadow-md`
+                        : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                    }`}
+                  >
+                    <List className="h-4 w-4" />
+                    Lista
+                  </button>
+                </div>
+              </div>
+
+            </CardContent>
+          </Card>
+        </div>
+
+        {viewMode === "single" ? (
+          <>
+            {renderExamQuestion(currentQuestion)}
+            <div className="flex justify-between items-center">
+              <Button
+                onClick={handlePrevious}
+                disabled={currentQuestionIndex === 0}
+                className="bg-gray-200 hover:bg-gray-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white disabled:opacity-50"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Poprzednie
+              </Button>
+
+              {!reviewMode && (
+                <div className="flex items-center gap-2">
+                  {canPauseOrFinish &&
+                    currentQuestionIndex < questions.length - 1 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleSubmitClick}
+                        className="border-slate-300 dark:border-slate-600"
+                      >
+                        Zakończ i sprawdź
+                        <CheckCircle className="w-4 h-4 ml-2" />
+                      </Button>
+                    )}
+                  {currentQuestionIndex === questions.length - 1 ? (
+                    <Button
+                      onClick={handleSubmitClick}
+                      className={finishButtonClass}
+                    >
+                      Zakończ i sprawdź
+                      <CheckCircle className="w-4 h-4 ml-2" />
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleNext}
+                      className={examTheme.button}
+                    >
+                      Następne
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        ) : (
+          <>
+            {questions.map((q) => renderExamQuestion(q))}
+            {!reviewMode && canPauseOrFinish && (
+              <div className="flex justify-end">
+                <Button onClick={handleSubmitClick} className={finishButtonClass}>
+                  Zakończ i sprawdź
+                  <CheckCircle className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+
+        <AlertDialog open={saveAttemptDialogOpen} onOpenChange={setSaveAttemptDialogOpen}>
+          <AlertDialogContent className={confirmDialogContentClass}>
+            <div className={`h-1.5 ${examTheme.dialogStrip}`} />
+            <div className="space-y-5 p-6">
+              <AlertDialogHeader className="space-y-2 text-center sm:text-center">
+                <AlertDialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+                  Zakończyć arkusz?
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  Zobaczysz podsumowanie z oceną odpowiedzi. Możesz też wrócić i dokończyć
+                  rozwiązywanie.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="flex flex-col items-center gap-2.5 sm:flex-col sm:justify-center">
+                <AlertDialogCancel
+                  className={`${confirmDialogCancelClass} mt-0 w-full max-w-xs`}
+                  onClick={handleCloseFinishDialog}
+                >
+                  Zostań
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={finishWorksheet}
+                  className={`mt-0 w-full max-w-xs border-0 text-white shadow-sm hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${examTheme.button}`}
+                >
+                  Zakończ
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <PdfFloatingPanel
+          open={answerKeyDialogOpen}
+          onClose={() => setAnswerKeyDialogOpen(false)}
+          title="Klucz CKE"
+          titleSuffix={answerKeyPdfPage > 1 ? ` — str. ${answerKeyPdfPage}` : ""}
+          iframeSrc={answerKeyIframeSrc}
+          iframeKey={`answer-key-page-${answerKeyPdfPage}`}
+          iframeTitle="Klucz odpowiedzi CKE"
+          loading={answerKeyLoading}
+          loadingLabel="Ładowanie klucza…"
+          emptyMessage="Nie znaleziono klucza odpowiedzi dla tego arkusza."
+          emptyHint="Plik powinien być w folderze odpCke w storage (jak przy pobieraniu z listy arkuszy)."
+          headerClassName={examTheme.dialogStrip}
+        />
+      </div>
+    </div>
+  );
+}

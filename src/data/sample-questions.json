@@ -1,0 +1,103 @@
+[
+  {
+    "id": "q-001",
+    "title": "Równanie kwadratowe",
+    "question": "Rozwiąż równanie x^2 - 5x + 6 = 0.",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2024-05-07",
+    "points": 2
+  },
+  {
+    "id": "q-002",
+    "title": "Granica ciągu",
+    "question": "Oblicz granicę ciągu a_n = (2n+1)/(n-3).",
+    "level": "rozszerzenie",
+    "difficulty": "średnie",
+    "source": "podreczniki",
+    "date": "2023-09-12",
+    "points": 3
+  },
+  {
+    "id": "q-003",
+    "title": "Ułamki zwykłe",
+    "question": "Dodaj ułamki 3/5 i 2/15 oraz podaj wynik w najprostszej postaci.",
+    "level": "podstawówka",
+    "difficulty": "łatwe",
+    "source": "egzamin ósmoklasisty",
+    "date": "2024-04-15",
+    "points": 2
+  },
+  {
+    "id": "q-004",
+    "title": "Całka nieoznaczona",
+    "question": "Wyznacz całkę ∫ (3x^2 - 4x + 1) dx.",
+    "level": "studia",
+    "difficulty": "średnie",
+    "source": "podreczniki",
+    "date": "2022-11-03",
+    "points": 3
+  },
+  {
+    "id": "q-005",
+    "title": "Geometria analityczna",
+    "question": "Podaj równanie prostej prostopadłej do 2x - 3y + 4 = 0 i przechodzącej przez punkt (1, -2).",
+    "level": "rozszerzenie",
+    "difficulty": "trudne",
+    "source": "konkursy",
+    "date": "2021-12-18",
+    "points": 4
+  },
+  {
+    "id": "q-006",
+    "title": "Procent składany",
+    "question": "Kapitał 4000 zł oprocentowano rocznie 5% z kapitalizacją roczną. Ile wyniesie kapitał po 4 latach?",
+    "level": "podstawa",
+    "difficulty": "średnie",
+    "source": "matura",
+    "date": "2020-06-05",
+    "points": 3
+  },
+  {
+    "id": "q-007",
+    "title": "Twierdzenie Pitagorasa",
+    "question": "W trójkącie prostokątnym jedna przyprostokątna ma długość 7, a druga 24. Oblicz długość przeciwprostokątnej.",
+    "level": "podstawówka",
+    "difficulty": "średnie",
+    "source": "egzamin ósmoklasisty",
+    "date": "2024-02-10",
+    "points": 3
+  },
+  {
+    "id": "q-008",
+    "title": "Logarytmy",
+    "question": "Oblicz wartość wyrażenia log_2 32 + log_2 8.",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2023-05-09",
+    "points": 2
+  },
+  {
+    "id": "q-009",
+    "title": "Pola figur",
+    "question": "Oblicz pole rombu o przekątnych długości 10 cm i 24 cm.",
+    "level": "podstawa",
+    "difficulty": "łatwe",
+    "source": "matura",
+    "date": "2019-05-06",
+    "points": 2
+  },
+  {
+    "id": "q-010",
+    "title": "Macierze",
+    "question": "Oblicz iloczyn macierzy [[1,2],[3,4]] i [[2,0],[1,2]].",
+    "level": "studia",
+    "difficulty": "trudne",
+    "source": "podreczniki",
+    "date": "2021-03-21",
+    "points": 4
+  }
+]
+
