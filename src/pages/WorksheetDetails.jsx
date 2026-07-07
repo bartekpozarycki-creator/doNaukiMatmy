@@ -56,6 +56,7 @@ import {
   buildWorksheetQuestionScores,
   getQuestionMaxPoints,
   getStoredAnswerValue,
+  getWorksheetScoreRows,
   getWorksheetScoreSummary,
   getWorksheetTotalPoints,
   isSimpleOpenQuestion,
@@ -526,6 +527,7 @@ export default function WorksheetDetailsPage() {
         }).earned,
         total: getWorksheetTotalPoints(state.questions),
         ...(previousCompleted ? { previousCompleted } : {}),
+        ...(existing?.attemptHistory ? { attemptHistory: existing.attemptHistory } : {}),
         startedAt: existing?.startedAt || new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         ...sessionPatch,
@@ -741,7 +743,13 @@ export default function WorksheetDetailsPage() {
     const finalElapsed = syncElapsedTime();
     stopTimer();
     const { questionScores: qScores, score, total } = scoring.buildFinalSnapshot();
-    saveProgress({
+    const existing = getAttempt(worksheet.id);
+    const previousHistory = Array.isArray(existing?.attemptHistory)
+      ? existing.attemptHistory
+      : existing?.previousCompleted
+        ? [existing.previousCompleted]
+        : [];
+    const completedAttempt = {
       id: worksheet.id,
       title: sheetTitle || worksheet.title,
       status: WORKSHEET_STATUS.COMPLETED,
@@ -752,11 +760,17 @@ export default function WorksheetDetailsPage() {
       selfAwardedPoints,
       checkedQuestionIds,
       questionScores: qScores,
+      questionScoreRows: getWorksheetScoreRows(questions, qScores),
       currentQuestionIndex,
       viewMode,
       timerEnabled,
       date: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+    };
+    const completedSnapshot = snapshotCompletedAttempt(completedAttempt);
+    saveProgress({
+      ...completedAttempt,
+      attemptHistory: [...previousHistory, completedSnapshot],
     });
     completedSnapshotRef.current = {
       answers: { ...answers },

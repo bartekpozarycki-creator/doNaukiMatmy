@@ -26,6 +26,10 @@ import {
   uploadCommunityImages,
 } from "@/utils/community-images";
 import {
+  bannedContentMessage,
+  containsBannedContent,
+} from "@/utils/content-moderation/moderate-content";
+import {
   fetchCommunityAnswers,
   fetchCommunityComments,
   createCommunityAnswer,
@@ -172,6 +176,10 @@ export default function QuestionDetailsPage() {
       return;
     }
     if (!newAnswer.trim()) return;
+    if (containsBannedContent(newAnswer)) {
+      toast.error(bannedContentMessage);
+      return;
+    }
 
     let imageUrls = [];
     if (answerImages.length) {
@@ -199,6 +207,10 @@ export default function QuestionDetailsPage() {
       return;
     }
     if (!newComment.trim()) return;
+    if (containsBannedContent(newComment)) {
+      toast.error(bannedContentMessage);
+      return;
+    }
 
     let imageUrls = [];
     if (commentImages.length) {

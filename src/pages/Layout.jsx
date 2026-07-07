@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { 
   FileText, Users, User, Layers,
   Menu, X, BookOpen, Calculator, LogOut,
-  ChevronRight, Heart, Info, Plus, ScrollText,
+  ChevronRight, Heart, Info, Plus, ScrollText, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,6 +15,8 @@ import { PageActionsProvider } from "@/contexts/PageActionsContext";
 import PdfFloatingPanel from "@/components/PdfFloatingPanel";
 import { getLayoutNotebookThemeKey, getNotebookPageStyle, shouldShowNotebookBackground } from "@/utils/notebook-page-style";
 import { getMathReferenceSheetUrl } from "@/utils/math-cards";
+import { supabase } from "@/supabase-config";
+import { isCommunityAdmin } from "@/utils/community-admin";
 
 const topNavigationItems = [
   { title: "Powtórki", url: createPageUrl("Review"), icon: BookOpen },
@@ -43,6 +45,7 @@ export default function Layout({ children, currentPageName }) {
   const [showCalculator, setShowCalculator] = useState(false);
   const [showMathCards, setShowMathCards] = useState(false);
   const [navHidden, setNavHidden] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const scrollAcc = React.useRef(0);
   const lastY = React.useRef(window.scrollY);
 
@@ -80,6 +83,17 @@ export default function Layout({ children, currentPageName }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   const { user, logout } = useAuth();
+
+  useEffect(() => {
+    let cancelled = false;
+    isCommunityAdmin(supabase, user?.id).then((allowed) => {
+      if (!cancelled) setIsAdmin(allowed);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
   const profileDisplayName =
     user?.user_metadata?.full_name ||
     [user?.user_metadata?.first_name, user?.user_metadata?.last_name]
@@ -93,6 +107,16 @@ export default function Layout({ children, currentPageName }) {
   const showFooter = currentPageName === "Home";
   const showFab =
     currentPageName === "WorksheetDetails" || currentPageName === "TaskDetails";
+  const visibleDrawerNavigationItems = isAdmin
+    ? [
+        ...drawerNavigationItems,
+        {
+          title: "Moderacja",
+          url: createPageUrl("CommunityModeration"),
+          icon: ShieldCheck,
+        },
+      ]
+    : drawerNavigationItems;
 
   const handleLogout = () => logout();
 
@@ -286,7 +310,7 @@ export default function Layout({ children, currentPageName }) {
 
           <div className="min-h-0 flex-1 space-y-1 overflow-y-auto hide-scrollbar px-3 py-4">
             <nav className="space-y-1">
-              {drawerNavigationItems.map((item) => {
+              {visibleDrawerNavigationItems.map((item) => {
                 const isActive = location.pathname === item.url;
                 return (
                   <Link
@@ -401,7 +425,7 @@ export default function Layout({ children, currentPageName }) {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: 10, scale: 0.92 }}
                     transition={{ duration: 0.18, delay: index * 0.04 }}
-                    className="flex items-center gap-2"
+                    className="mr-1 flex items-center gap-2"
                   >
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${

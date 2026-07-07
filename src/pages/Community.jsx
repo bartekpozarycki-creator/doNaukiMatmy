@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
-  Plus, Search, HelpCircle
+  Plus, HelpCircle, Clock, CheckCircle, XCircle
 } from "lucide-react";
 import {
   Dialog,
@@ -21,6 +22,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  CycleFilter,
+  FilterBar,
+  FilterSearchField,
+  PrettySelectFilter,
+} from "@/components/ListFilters";
 import QuestionCard from "../components/community/QuestionCard";
 import QuestionCardSkeleton from "../components/community/QuestionCardSkeleton";
 import AttachFavoriteTaskPicker, {
@@ -31,6 +38,7 @@ import CommunityQuestionImagesField, {
   clearCommunityImageItems,
 } from "@/components/community/CommunityQuestionImagesField";
 import MathInsertToolbar from "@/components/MathInsertToolbar";
+import MathText from "@/components/MathText";
 import { toast } from "sonner";
 import { useLocation, Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -47,6 +55,10 @@ import {
 } from "@/utils/community-publish";
 import { uploadCommunityQuestionImages } from "@/utils/community-images";
 import { registerQuestionView } from "@/utils/register-question-view";
+import {
+  bannedContentMessage,
+  containsBannedContent,
+} from "@/utils/content-moderation/moderate-content";
 
 const topicNames = {
   liczby_rzeczywiste: "Liczby rzeczywiste",
@@ -60,6 +72,37 @@ const topicNames = {
   kombinatoryka_i_statystyka: "Kombinatoryka i statystyka",
   optymalizacja_i_rozniczkowy: "Optymalizacja",
   ogólne: "Ogólne"
+};
+
+const questionStatusMeta = {
+  pending: {
+    label: "Czeka na weryfikację",
+    className:
+      "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+    icon: Clock,
+  },
+  approved: {
+    label: "Opublikowane",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+    icon: CheckCircle,
+  },
+  rejected: {
+    label: "Odrzucone",
+    className:
+      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+    icon: XCircle,
+  },
+};
+
+const REJECTED_QUESTION_TTL_HOURS = 24;
+
+const isRejectedQuestionExpired = (question) => {
+  if (question?.status !== "rejected" || !question.reviewed_at) return false;
+  const expiresAt =
+    new Date(question.reviewed_at).getTime() +
+    REJECTED_QUESTION_TTL_HOURS * 60 * 60 * 1000;
+  return Number.isFinite(expiresAt) && expiresAt <= Date.now();
 };
 
 
@@ -111,6 +154,7 @@ export default function CommunityPage() {
       const { data, error } = await publicSupabase
         .from("community_questions")
         .select("*")
+        .eq("status", "approved")
         .order("created_at", { ascending: false });
       if (error) throw error;
       const list = data || [];
@@ -137,10 +181,38 @@ export default function CommunityPage() {
     },
   });
 
+  const { data: myQuestions = [], isLoading: myQuestionsLoading } = useQuery({
+    queryKey: ["myCommunityQuestions", user?.id],
+    enabled: Boolean(user?.id),
+    queryFn: async () => {
+      const cutoff = new Date(
+        Date.now() - REJECTED_QUESTION_TTL_HOURS * 60 * 60 * 1000,
+      ).toISOString();
+      const { error: cleanupError } = await supabase
+        .from("community_questions")
+        .delete()
+        .eq("author_id", user.id)
+        .eq("status", "rejected")
+        .lt("reviewed_at", cutoff);
+      if (cleanupError) {
+        console.warn("[Community] cleanup rejected questions", cleanupError);
+      }
+
+      const { data, error } = await supabase
+        .from("community_questions")
+        .select("*")
+        .eq("author_id", user.id)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data || []).filter((question) => !isRejectedQuestionExpired(question));
+    },
+  });
+
   const createQuestionMutation = useMutation({
     mutationFn: (payload) => publishCommunityQuestion(supabase, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communityQuestions'] });
+      queryClient.invalidateQueries({ queryKey: ["myCommunityQuestions"] });
       setDialogOpen(false);
       setNewQuestion({
         title: "",
@@ -150,7 +222,7 @@ export default function CommunityPage() {
       });
       setQuestionImages([]);
       setAttachedTask(null);
-      toast.success("Pytanie zostało opublikowane!");
+      toast.success("Pytanie trafiło do weryfikacji.");
     },
     onError: (error) => {
       toast.error(formatCommunityPublishError(error));
@@ -260,8 +332,23 @@ export default function CommunityPage() {
       toast.error("Podaj opis problemu");
       return;
     }
+    if (containsBannedContent(`${title} ${description}`)) {
+      toast.error(bannedContentMessage);
+      return;
+    }
 
-    const todayCount = countAuthorQuestionsToday(questions, session.user.id);
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const { data: todayQuestions, error: todayCountError } = await supabase
+      .from("community_questions")
+      .select("created_at, created_date, author_id")
+      .eq("author_id", session.user.id)
+      .gte("created_at", todayStart.toISOString());
+    if (todayCountError) {
+      toast.error("Nie udało się sprawdzić limitu pytań");
+      return;
+    }
+    const todayCount = countAuthorQuestionsToday(todayQuestions, session.user.id);
     if (todayCount >= 3) {
       toast.error("Limit 3 pytań dziennie został osiągnięty");
       return;
@@ -376,7 +463,9 @@ export default function CommunityPage() {
     setDialogOpen(open);
   };
 
-  const list = questions.length ? questions : [];
+  const list = questions.length
+    ? questions.filter((question) => question.author_id !== user?.id)
+    : [];
 
   // filter by search & topic
   const filteredQuestions = list.filter(question => {
@@ -603,43 +692,141 @@ export default function CommunityPage() {
           </DialogContent>
         </Dialog>
 
+        {user && (myQuestionsLoading || myQuestions.length > 0) ? (
+          <section className="mb-8">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+                  Twoje pytania
+                </h2>
+                <p className="text-sm text-slate-600 dark:text-slate-300">
+                  Tutaj widzisz swoje zgłoszenia wraz ze statusem moderacji.
+                </p>
+              </div>
+            </div>
+
+            {myQuestionsLoading ? (
+              <Card className="border-0 bg-white dark:bg-slate-800">
+                <CardContent className="p-6 text-sm text-slate-600 dark:text-slate-300">
+                  Ładowanie Twoich pytań...
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                {myQuestions.map((question) => {
+                  const status = question.status || "approved";
+                  const meta =
+                    questionStatusMeta[status] || questionStatusMeta.approved;
+                  const StatusIcon = meta.icon;
+                  const createdAt = question.created_at || question.created_date;
+                  return (
+                    <Card
+                      key={question.id}
+                      className="border-0 bg-white dark:bg-slate-800"
+                    >
+                      <CardContent className="p-5">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-2 flex flex-wrap items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={`inline-flex items-center gap-1.5 ${meta.className}`}
+                              >
+                                <StatusIcon className="h-3.5 w-3.5" />
+                                {meta.label}
+                              </Badge>
+                              <Badge
+                                variant="outline"
+                                className="dark:border-slate-600 dark:text-slate-300"
+                              >
+                                {topicNames[question.topic] || question.topic}
+                              </Badge>
+                            </div>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                              <MathText text={question.title} />
+                            </h3>
+                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                              {createdAt
+                                ? new Date(createdAt).toLocaleString("pl-PL")
+                                : "Brak daty"}
+                            </p>
+                          </div>
+                          {status === "approved" ? (
+                            <Link
+                              to={`${createPageUrl("QuestionDetails")}?id=${question.id}`}
+                              state={{ question }}
+                            >
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="shrink-0"
+                              >
+                                Otwórz
+                              </Button>
+                            </Link>
+                          ) : null}
+                        </div>
+                        <div className="mt-3 line-clamp-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
+                          <MathText text={question.description} />
+                        </div>
+                        {status === "rejected" && question.rejection_reason ? (
+                          <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                            <span className="font-semibold">
+                              Powód odrzucenia:
+                            </span>{" "}
+                            {question.rejection_reason}
+                          </div>
+                        ) : null}
+                        {status === "rejected" ? (
+                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                            Odrzucone pytanie zostanie automatycznie usunięte po 24 godzinach od weryfikacji.
+                          </p>
+                        ) : null}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        ) : null}
+
         {/* Search and Filter */}
         <Card className="mb-6 dark:bg-slate-800 bg-white border-0 shadow-lg">
           <CardContent className="p-4">
-            <div className="grid md:grid-cols-3 gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
+            <FilterBar
+              columnsClassName="grid-cols-2"
+              search={
+                <FilterSearchField
                   placeholder="Szukaj pytań..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 dark:bg-slate-700 dark:border-slate-600 dark:text-white bg-white"
                 />
-              </div>
-
-              <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                <SelectTrigger className="w-full sm:w-48 dark:bg-slate-700 dark:border-slate-600 dark:text-white bg-white">
-                  <SelectValue placeholder="Wszystkie tematy" />
-                </SelectTrigger>
-                <SelectContent className="dark:bg-slate-800 dark:border-slate-600">
-                  <SelectItem value="all" className="dark:text-slate-300">Wszystkie</SelectItem>
-                  {Object.entries(topicNames).map(([key, label]) => (
-                    <SelectItem key={key} value={key} className="dark:text-slate-300">{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {/* Sort Filter */}
-              <Select value={sortOption} onValueChange={setSortOption}>
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                  <SelectValue placeholder="Sortuj" />
-                </SelectTrigger>
-                <SelectContent side="bottom" align="start">
-                  <SelectItem value="newest">Od najnowszych</SelectItem>
-                  <SelectItem value="oldest">Od najstarszych</SelectItem>
-                  <SelectItem value="boosts">Najwięcej podbić</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              }
+            >
+              <PrettySelectFilter
+                label="Temat"
+                value={selectedTopic}
+                options={[
+                  { value: "all", label: "Wszystkie" },
+                  ...Object.entries(topicNames).map(([key, label]) => ({
+                    value: key,
+                    label,
+                  })),
+                ]}
+                onChange={setSelectedTopic}
+              />
+              <CycleFilter
+                label="Sortuj"
+                value={sortOption}
+                options={[
+                  { value: "newest", label: "Od najnowszych" },
+                  { value: "oldest", label: "Od najstarszych" },
+                  { value: "boosts", label: "Najwięcej podbić" },
+                ]}
+                onChange={setSortOption}
+              />
+            </FilterBar>
           </CardContent>
         </Card>
 

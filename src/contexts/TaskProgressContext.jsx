@@ -12,6 +12,7 @@ import {
 } from "@/utils/cloud-sync";
 import {
   computeScheduleAfterAttempt,
+  computeReviewMetrics,
   resolveTaskSchedule,
   scheduleFromFrequency,
 } from "@/utils/review-schedule";
@@ -27,8 +28,58 @@ function withResolvedSchedule(entry) {
     ...entry,
     correctStreak: schedule.correctStreak,
     intervalDays: schedule.intervalDays,
+    intervalHours: schedule.intervalHours,
     nextReviewAt: schedule.nextReviewAt,
+    difficultyScore: schedule.difficultyScore,
+    masteryStatus: schedule.masteryStatus,
+    reviewReason: schedule.reviewReason,
   };
+}
+
+function getNextFrequency(prevEntry, isCorrect) {
+  if (!prevEntry) return isCorrect ? 10 : 90;
+
+  const currentFreq = prevEntry.frequency;
+  const delta = currentFreq * 0.5;
+  if (isCorrect) {
+    return Math.max(1, Math.round(currentFreq - delta));
+  }
+  return Math.min(100, Math.round(currentFreq + delta));
+}
+
+function buildEntryFromAttempts(attempts) {
+  return attempts.reduce((entry, attempt) => {
+    const isCorrect = Boolean(attempt?.isCorrect);
+    const attemptDate = attempt?.date ? new Date(attempt.date) : new Date();
+    const newFrequency = getNextFrequency(entry, isCorrect);
+    const schedule = computeScheduleAfterAttempt(
+      entry,
+      isCorrect,
+      newFrequency,
+      attemptDate,
+    );
+    const rebuiltAttempt = {
+      ...attempt,
+      date: attempt?.date || attemptDate.toISOString(),
+      isCorrect,
+      frequencyAfter: newFrequency,
+      intervalDaysAfter: schedule.intervalDays,
+      intervalHoursAfter: schedule.intervalHours,
+      nextReviewAtAfter: schedule.nextReviewAt,
+      correctStreakAfter: schedule.correctStreak,
+      difficultyScoreAfter: schedule.difficultyScore,
+    };
+    const entryBase = {
+      frequency: newFrequency,
+      attempts: [...(entry?.attempts || []), rebuiltAttempt],
+      correctStreak: schedule.correctStreak,
+      intervalDays: schedule.intervalDays,
+      intervalHours: schedule.intervalHours,
+      nextReviewAt: schedule.nextReviewAt,
+      difficultyScore: schedule.difficultyScore,
+    };
+    return { ...entryBase, ...computeReviewMetrics(entryBase) };
+  }, null);
 }
 
 export function TaskProgressProvider({ children }) {
@@ -84,47 +135,41 @@ export function TaskProgressProvider({ children }) {
 
   const recordAttempt = (taskId, isCorrect) => {
     const prev = progress[taskId];
-    let newFrequency;
+    const newFrequency = getNextFrequency(prev, isCorrect);
 
-    if (!prev) {
-      newFrequency = isCorrect ? 10 : 90;
-    } else {
-      const currentFreq = prev.frequency;
-      const delta = currentFreq * 0.5;
-      if (isCorrect) {
-        newFrequency = Math.max(1, Math.round(currentFreq - delta));
-      } else {
-        newFrequency = Math.min(100, Math.round(currentFreq + delta));
-      }
-    }
-
-    const schedule = computeScheduleAfterAttempt(prev, isCorrect);
+    const schedule = computeScheduleAfterAttempt(prev, isCorrect, newFrequency);
 
     const attempt = {
       date: new Date().toISOString(),
       isCorrect,
       frequencyAfter: newFrequency,
       intervalDaysAfter: schedule.intervalDays,
+      intervalHoursAfter: schedule.intervalHours,
       nextReviewAtAfter: schedule.nextReviewAt,
       correctStreakAfter: schedule.correctStreak,
+      difficultyScoreAfter: schedule.difficultyScore,
     };
 
-    const entry = {
+    const entryBase = {
       frequency: newFrequency,
       attempts: [...(prev?.attempts || []), attempt],
       correctStreak: schedule.correctStreak,
       intervalDays: schedule.intervalDays,
+      intervalHours: schedule.intervalHours,
       nextReviewAt: schedule.nextReviewAt,
+      difficultyScore: schedule.difficultyScore,
     };
+    const metrics = computeReviewMetrics(entryBase);
+    const entry = { ...entryBase, ...metrics };
 
     save({ ...progress, [taskId]: entry });
   };
 
-  const deleteLastAttempt = (taskId) => {
+  const deleteAttempt = (taskId, attemptIndex) => {
     const prev = progress[taskId];
     if (!prev?.attempts?.length) return;
 
-    const attempts = prev.attempts.slice(0, -1);
+    const attempts = prev.attempts.filter((_, index) => index !== attemptIndex);
     if (!attempts.length) {
       const next = { ...progress };
       delete next[taskId];
@@ -132,19 +177,9 @@ export function TaskProgressProvider({ children }) {
       return;
     }
 
-    const lastAttempt = attempts.at(-1);
-    const lastFrequency = lastAttempt?.frequencyAfter ?? prev.frequency ?? 50;
-
     save({
       ...progress,
-      [taskId]: withResolvedSchedule({
-        ...prev,
-        frequency: lastFrequency,
-        attempts,
-        correctStreak: lastAttempt?.correctStreakAfter,
-        intervalDays: lastAttempt?.intervalDaysAfter,
-        nextReviewAt: lastAttempt?.nextReviewAtAfter,
-      }),
+      [taskId]: buildEntryFromAttempts(attempts),
     });
   };
 
@@ -156,20 +191,26 @@ export function TaskProgressProvider({ children }) {
     const clamped = Math.min(100, Math.max(1, Math.round(Number(frequency) || 1)));
     const prev = progress[taskId];
     const schedule = scheduleFromFrequency(clamped, new Date());
-    const entry = prev
+    const entryBase = prev
       ? {
           ...prev,
           frequency: clamped,
           intervalDays: schedule.intervalDays,
+          intervalHours: null,
           nextReviewAt: schedule.nextReviewAt,
         }
       : {
           frequency: clamped,
           attempts: [],
           intervalDays: schedule.intervalDays,
+          intervalHours: null,
           nextReviewAt: schedule.nextReviewAt,
           correctStreak: 0,
         };
+    const entry = withResolvedSchedule({
+      ...entryBase,
+      ...computeReviewMetrics(entryBase),
+    });
     save({ ...progress, [taskId]: entry });
   };
 
@@ -178,7 +219,7 @@ export function TaskProgressProvider({ children }) {
       value={{
         progress,
         recordAttempt,
-        deleteLastAttempt,
+        deleteAttempt,
         getProgress,
         getAllProgress,
         setFrequency,

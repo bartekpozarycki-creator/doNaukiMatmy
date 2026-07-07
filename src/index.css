@@ -106,6 +106,71 @@
     line-height: inherit;
     padding: 0;
   }
+
+  .math-note-field {
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    --hue: 217;
+    --placeholder-opacity: 0.55;
+  }
+
+  .math-note-field::part(container) {
+    box-sizing: border-box;
+    display: block;
+    min-height: 10rem;
+    max-width: 100%;
+    overflow: hidden;
+    padding: 0.875rem 5.75rem 0.875rem 1rem;
+    position: relative;
+    text-align: left;
+  }
+
+  .math-note-field::part(content) {
+    box-sizing: border-box;
+    display: block;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-top: 0;
+    text-align: left;
+  }
+
+  .math-note-field::part(placeholder) {
+    display: inline-block;
+    margin-top: 0;
+    text-align: left;
+  }
+
+  .math-note-field::part(virtual-keyboard-toggle),
+  .math-note-field::part(menu-toggle) {
+    align-items: center;
+    border: 1px solid rgb(226 232 240);
+    border-radius: 0.75rem;
+    color: rgb(71 85 105);
+    display: inline-flex;
+    height: 2.25rem;
+    justify-content: center;
+    position: absolute;
+    top: 0.75rem;
+    width: 2.25rem;
+  }
+
+  .math-note-field::part(virtual-keyboard-toggle) {
+    right: 0.75rem;
+  }
+
+  .math-note-field::part(menu-toggle) {
+    right: 3.25rem;
+  }
+
+  .dark .math-note-field::part(virtual-keyboard-toggle),
+  .dark .math-note-field::part(menu-toggle) {
+    border-color: rgb(71 85 105);
+    color: rgb(203 213 225);
+  }
 }
 
 @layer base {

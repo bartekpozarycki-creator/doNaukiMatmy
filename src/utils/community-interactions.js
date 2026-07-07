@@ -1,5 +1,6 @@
 import { supabase, publicSupabase } from "@/supabase-config.js";
 import { trimField } from "@/utils/community-publish.js";
+import { assertAllowedContent } from "@/utils/content-moderation/moderate-content";
 
 function mapRowDates(row) {
   if (!row) return row;
@@ -48,6 +49,7 @@ export async function createCommunityAnswer({
 }) {
   const text = trimField(answerText);
   if (!text) throw new Error("Podaj treść odpowiedzi");
+  assertAllowedContent(text);
 
   const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
   const payload = {
@@ -79,6 +81,7 @@ export async function createCommunityComment({
 }) {
   const text = trimField(content);
   if (!text) throw new Error("Podaj treść komentarza");
+  assertAllowedContent(text);
 
   const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
   const payload = {

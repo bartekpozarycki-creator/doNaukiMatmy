@@ -23,47 +23,59 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import CarouselReviews from "@/components/CarouselReviews";
 import {
   loadContinueLearning,
   pickLatestByType,
 } from "@/utils/continue-learning";
+import { cn } from "@/lib/utils";
 
 const features = [
   {
     icon: BookOpen,
     title: "Arkusze egzaminacyjne",
+    description: "Rozwiązuj arkusze maturalne i egzaminacyjne w jednym miejscu.",
     color: "from-blue-500 to-blue-600",
+    bar: "from-blue-500 to-indigo-500",
     link: "Worksheets",
   },
   {
     icon: Layers,
     title: "Zbiory zadań",
+    description: "Przeglądaj zadania według tematu, poziomu i typu.",
     color: "from-sky-500 to-cyan-600",
+    bar: "from-sky-500 to-cyan-500",
     link: "TaskSets",
   },
   {
     icon: Heart,
     title: "Ulubione",
+    description: "Zapisuj zadania i wracaj do nich z własnymi notatkami.",
     color: "from-rose-500 to-pink-600",
+    bar: "from-rose-500 to-pink-500",
     link: "Favorites",
   },
   {
     icon: Users,
     title: "Społeczność",
+    description: "Zadawaj pytania i pomagaj innym uczniom.",
     color: "from-violet-500 to-purple-600",
+    bar: "from-violet-500 to-purple-500",
     link: "Community",
   },
   {
     icon: Target,
     title: "Kursy",
+    description: "Materiały wideo i lekcje krok po kroku.",
     color: "from-purple-400 to-purple-600",
+    bar: "from-purple-500 to-fuchsia-500",
     link: "Course",
   },
   {
     icon: TrendingUp,
     title: "Analiza postępów",
+    description: "Śledź swoje wyniki i postępy w nauce.",
     color: "from-indigo-400 to-indigo-600",
+    bar: "from-indigo-500 to-blue-500",
     link: "Progress",
     visible: false,
   },
@@ -73,29 +85,37 @@ const quickNavItems = [
   {
     icon: FileText,
     title: "Arkusze",
+    description: "Matura i egzaminy",
     link: "Worksheets",
-    accent: "border-blue-200 bg-blue-50/80 dark:border-blue-800 dark:bg-blue-950/40",
+    bar: "from-blue-500 to-indigo-500",
+    iconBg: "bg-blue-100 dark:bg-blue-950/50",
     iconClass: "text-blue-600 dark:text-blue-400",
   },
   {
     icon: Layers,
     title: "Zbiory zadań",
+    description: "Tematy i poziomy",
     link: "TaskSets",
-    accent: "border-sky-200 bg-sky-50/80 dark:border-sky-800 dark:bg-sky-950/40",
+    bar: "from-sky-500 to-cyan-500",
+    iconBg: "bg-sky-100 dark:bg-sky-950/50",
     iconClass: "text-sky-600 dark:text-sky-400",
   },
   {
     icon: Heart,
     title: "Ulubione",
+    description: "Twoja lista",
     link: "Favorites",
-    accent: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40",
+    bar: "from-rose-500 to-pink-500",
+    iconBg: "bg-rose-100 dark:bg-rose-950/50",
     iconClass: "text-rose-600 dark:text-rose-400",
   },
   {
     icon: MessageCircle,
     title: "Społeczność",
+    description: "Pytania i odpowiedzi",
     link: "Community",
-    accent: "border-violet-200 bg-violet-50/80 dark:border-violet-900 dark:bg-violet-950/40",
+    bar: "from-violet-500 to-purple-500",
+    iconBg: "bg-violet-100 dark:bg-violet-950/50",
     iconClass: "text-violet-600 dark:text-violet-400",
   },
 ];
@@ -104,18 +124,22 @@ const howItWorksSteps = [
   {
     icon: Search,
     title: "Znajdź zadanie",
+    description: "Przeszukaj arkusze i zbiory według tematu.",
   },
   {
     icon: BookOpen,
     title: "Ćwicz i sprawdzaj",
+    description: "Rozwiązuj zadania i od razu weryfikuj odpowiedź.",
   },
   {
     icon: Heart,
     title: "Zapisuj ulubione",
+    description: "Dodawaj trudniejsze zadania do własnej listy.",
   },
   {
     icon: Users,
     title: "Pytaj społeczność",
+    description: "Gdy utkniesz — zapytaj innych uczniów.",
   },
 ];
 
@@ -133,28 +157,71 @@ const fadeUp = {
   transition: { duration: 0.45, ease: [0.25, 0.1, 0.25, 1] },
 };
 
+const tileHover = {
+  whileHover: { y: -6 },
+  transition: { type: "spring", stiffness: 400, damping: 28 },
+};
+
 const continueTypeMeta = {
   task: {
     label: "Ostatnie zadanie",
     icon: ClipboardCheck,
-    accent: "border-sky-200 bg-sky-50/80 dark:border-sky-900 dark:bg-sky-950/30",
+    bar: "from-sky-500 to-cyan-500",
+    iconBg: "bg-sky-100 dark:bg-sky-950/50",
     iconClass: "text-sky-600 dark:text-sky-400",
   },
   worksheet: {
     label: "Ostatni arkusz",
     icon: FileText,
-    accent: "border-blue-200 bg-blue-50/80 dark:border-blue-900 dark:bg-blue-950/30",
+    bar: "from-blue-500 to-indigo-500",
+    iconBg: "bg-blue-100 dark:bg-blue-950/50",
     iconClass: "text-blue-600 dark:text-blue-400",
   },
   course: {
     label: "Ostatni kurs",
     icon: BookOpen,
-    accent: "border-violet-200 bg-violet-50/80 dark:border-violet-900 dark:bg-violet-950/30",
+    bar: "from-violet-500 to-purple-500",
+    iconBg: "bg-violet-100 dark:bg-violet-950/50",
     iconClass: "text-violet-600 dark:text-violet-400",
   },
 };
 
 const propType = () => null;
+
+function SectionHeader({ title, subtitle, align = "center" }) {
+  return (
+    <motion.div
+      {...fadeUp}
+      className={cn(
+        "mb-10",
+        align === "center" ? "text-center" : "text-left",
+      )}
+    >
+      <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+        {title}
+      </h2>
+      {subtitle ? (
+        <p
+          className={cn(
+            "mt-2 text-base text-slate-600 dark:text-slate-400 sm:text-lg",
+            align === "center" && "mx-auto max-w-2xl",
+          )}
+        >
+          {subtitle}
+        </p>
+      ) : null}
+    </motion.div>
+  );
+}
+
+function TileAccentBar({ gradient }) {
+  return (
+    <div
+      className={cn("h-1 w-full bg-gradient-to-r", gradient)}
+      aria-hidden
+    />
+  );
+}
 
 function AnimatedCounter({ value, suffix = "" }) {
   const [count, setCount] = useState(0);
@@ -310,7 +377,7 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-slate-600 dark:text-slate-300 sm:text-xl"
             >
-              Arkusze, zbiory zadań, ulubione i społeczność - wszystko w jednym
+              Arkusze, zbiory zadań, ulubione i społeczność — wszystko w jednym
               miejscu, żebyś mógł uczyć się we własnym tempie.
             </motion.p>
 
@@ -370,30 +437,25 @@ export default function HomePage() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.35, duration: 0.5 }}
-              className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-4 md:grid-cols-4"
+              className="mx-auto mt-12 grid max-w-3xl grid-cols-2 gap-3 md:grid-cols-4 md:gap-4"
             >
               {statsData.map((stat, index) => (
-                <div
+                <motion.div
                   key={stat.label}
-                  className="rounded-2xl border border-white/60 bg-white/70 px-3 py-4 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-800/60"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4 + index * 0.05 }}
+                  className="rounded-2xl border border-white/80 bg-white/80 px-4 py-5 shadow-md shadow-slate-200/40 backdrop-blur dark:border-slate-700/80 dark:bg-slate-800/70 dark:shadow-none"
                 >
-                  <motion.div
-                    className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 + index * 0.05 }}
-                  >
+                  <div className="text-2xl font-bold sm:text-3xl">
                     <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-                      <AnimatedCounter
-                        value={stat.value}
-                        suffix={stat.suffix}
-                      />
+                      <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                     </span>
-                  </motion.div>
-                  <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
+                  </div>
+                  <p className="mt-1.5 text-xs leading-snug text-slate-600 dark:text-slate-400 sm:text-sm">
                     {stat.label}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </motion.div>
           </div>
@@ -401,18 +463,13 @@ export default function HomePage() {
       </section>
 
       {visibleContinueItems.length > 0 && (
-        <section className="bg-white py-12 dark:bg-slate-800 sm:py-14">
+        <section className="bg-white py-14 dark:bg-slate-900 sm:py-16">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div {...fadeUp} className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-                  Kontynuuj naukę
-                </h2>
-                <p className="mt-2 text-slate-600 dark:text-slate-400">
-                  Wróć do ostatnio otwartych materiałów.
-                </p>
-              </div>
-            </motion.div>
+            <SectionHeader
+              align="left"
+              title="Kontynuuj naukę"
+              subtitle="Wróć do ostatnio otwartych materiałów."
+            />
 
             <div className="grid gap-4 md:grid-cols-3">
               {visibleContinueItems.map((item, index) => {
@@ -422,33 +479,45 @@ export default function HomePage() {
                   <motion.div
                     key={`${item.type}-${item.id}`}
                     {...fadeUp}
+                    {...tileHover}
                     transition={{ delay: index * 0.06 }}
                   >
                     <Link to={item.href} className="group block h-full">
-                      <Card className={`h-full border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${meta.accent}`}>
-                        <CardContent className="flex h-full flex-col p-5">
+                      <Card className="h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/50 transition-shadow duration-300 group-hover:shadow-xl group-hover:shadow-slate-300/40 dark:border-slate-700/80 dark:bg-slate-800 dark:shadow-none dark:group-hover:shadow-lg dark:group-hover:shadow-black/20">
+                        <TileAccentBar gradient={meta.bar} />
+                        <CardContent className="flex h-full flex-col p-5 sm:p-6">
                           <div className="mb-4 flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3">
-                              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/80 shadow-sm dark:bg-slate-900/70">
-                                <Icon className={`h-6 w-6 ${meta.iconClass}`} />
+                              <span
+                                className={cn(
+                                  "flex h-11 w-11 items-center justify-center rounded-xl",
+                                  meta.iconBg,
+                                )}
+                              >
+                                <Icon className={cn("h-5 w-5", meta.iconClass)} />
                               </span>
-                              <span className="text-sm font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                              <span className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                                 {meta.label}
                               </span>
                             </div>
-                            <PlayCircle className={`h-5 w-5 ${meta.iconClass}`} />
+                            <PlayCircle
+                              className={cn(
+                                "h-5 w-5 opacity-60 transition-opacity group-hover:opacity-100",
+                                meta.iconClass,
+                              )}
+                            />
                           </div>
-                          <h3 className="line-clamp-2 text-lg font-bold text-slate-900 dark:text-white">
+                          <h3 className="line-clamp-2 text-lg font-bold leading-snug text-slate-900 dark:text-white">
                             {item.title}
                           </h3>
-                          {item.subtitle && (
-                            <p className="mt-2 line-clamp-2 flex-1 text-sm text-slate-600 dark:text-slate-400">
+                          {item.subtitle ? (
+                            <p className="mt-2 line-clamp-2 flex-1 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
                               {item.subtitle}
                             </p>
-                          )}
-                          <span className="mt-4 inline-flex items-center text-sm font-semibold text-slate-900 dark:text-slate-100">
+                          ) : null}
+                          <span className="mt-5 inline-flex items-center text-sm font-semibold text-blue-600 dark:text-blue-400">
                             {item.actionLabel || "Kontynuuj"}
-                            <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                            <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
                           </span>
                         </CardContent>
                       </Card>
@@ -461,40 +530,48 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="bg-slate-50 py-14 dark:bg-slate-900/80 sm:py-16">
+      <section className="bg-slate-50 py-14 dark:bg-slate-950/50 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-              Szybka nawigacja
-            </h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Wybierz, od czego chcesz zacząć
-            </p>
-          </motion.div>
+          <SectionHeader
+            title="Szybka nawigacja"
+            subtitle="Wybierz, od czego chcesz zacząć"
+          />
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {quickNavItems.map((item, index) => (
               <motion.div
                 key={item.link}
                 {...fadeUp}
+                {...tileHover}
                 transition={{ delay: index * 0.06 }}
               >
                 <Link to={createPageUrl(item.link)} className="group block h-full">
-                  <Card
-                    className={`h-full border-2 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${item.accent}`}
-                  >
-                    <CardContent className="flex items-center gap-4 p-4 sm:p-5">
-                      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white/90 shadow-sm transition-transform group-hover:scale-105 dark:bg-slate-900/80">
-                        <item.icon
-                          className={`h-6 w-6 ${item.iconClass}`}
-                        />
+                  <Card className="h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/40 transition-shadow duration-300 group-hover:shadow-xl dark:border-slate-700/80 dark:bg-slate-800 dark:shadow-none dark:group-hover:shadow-lg dark:group-hover:shadow-black/20">
+                    <TileAccentBar gradient={item.bar} />
+                    <CardContent className="flex flex-col items-start p-5 sm:p-6">
+                      <span
+                        className={cn(
+                          "mb-4 flex h-12 w-12 items-center justify-center rounded-2xl transition-transform duration-300 group-hover:scale-105",
+                          item.iconBg,
+                        )}
+                      >
+                        <item.icon className={cn("h-6 w-6", item.iconClass)} />
                       </span>
-                      <h3 className="min-w-0 flex-1 text-base font-bold leading-snug text-slate-900 dark:text-white sm:text-lg">
+                      <h3 className="text-lg font-bold text-slate-900 dark:text-white">
                         {item.title}
                       </h3>
-                      <ArrowRight
-                        className={`h-5 w-5 shrink-0 ${item.iconClass} opacity-40 transition-all group-hover:translate-x-0.5 group-hover:opacity-100`}
-                      />
+                      <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                        {item.description}
+                      </p>
+                      <span
+                        className={cn(
+                          "mt-4 inline-flex items-center text-sm font-semibold",
+                          item.iconClass,
+                        )}
+                      >
+                        Otwórz
+                        <ArrowRight className="ml-1.5 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </span>
                     </CardContent>
                   </Card>
                 </Link>
@@ -504,32 +581,42 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-white py-16 dark:bg-slate-800 sm:py-20">
+      <section className="bg-white py-16 dark:bg-slate-900 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">
-              Jak to działa?
-            </h2>
-            <p className="mx-auto mt-3 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-              MathMaster łączy ćwiczenia, arkusze i współpracę z innymi - krok po
-              kroku, bez przełączania między narzędziami.
-            </p>
-          </motion.div>
+          <SectionHeader
+            title="Jak to działa?"
+            subtitle="MathMaster łączy ćwiczenia, arkusze i współpracę z innymi — krok po kroku, bez przełączania między narzędziami."
+          />
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="relative grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div
+              className="pointer-events-none absolute left-[12.5%] right-[12.5%] top-10 hidden h-0.5 bg-gradient-to-r from-blue-200 via-indigo-200 to-violet-200 dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900 lg:block"
+              aria-hidden
+            />
             {howItWorksSteps.map((step, index) => (
-              <motion.div key={step.title} {...fadeUp} transition={{ delay: index * 0.08 }}>
-                <Card className="h-full border border-slate-200/80 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-800/80">
-                  <CardContent className="flex flex-col items-center p-6 text-center">
-                    <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white shadow-md">
-                      {index + 1}
+              <motion.div
+                key={step.title}
+                {...fadeUp}
+                {...tileHover}
+                transition={{ delay: index * 0.08 }}
+                className="relative"
+              >
+                <Card className="relative h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/40 dark:border-slate-700/80 dark:bg-slate-800 dark:shadow-none">
+                  <CardContent className="flex flex-col items-center p-6 text-center sm:p-7">
+                    <div className="relative mb-5">
+                      <span className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white shadow-md">
+                        {index + 1}
+                      </span>
+                      <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/60 dark:to-indigo-950/40">
+                        <step.icon className="h-7 w-7 text-blue-600 dark:text-blue-400" />
+                      </span>
                     </div>
-                    <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 dark:bg-blue-950/50">
-                      <step.icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                    </span>
-                    <h3 className="text-base font-bold leading-snug text-slate-900 dark:text-white">
+                    <h3 className="text-base font-bold text-slate-900 dark:text-white sm:text-lg">
                       {step.title}
                     </h3>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                      {step.description}
+                    </p>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -538,46 +625,51 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-slate-50 py-16 dark:bg-slate-900 sm:py-20">
+      <section className="bg-slate-50 py-16 dark:bg-slate-950/50 sm:py-20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp} className="mb-12 text-center">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">
-              Wszystko, czego potrzebujesz
-            </h2>
-            <p className="mt-3 text-lg text-slate-600 dark:text-slate-300">
-              Główne moduły platformy
-            </p>
-          </motion.div>
+          <SectionHeader
+            title="Wszystko, czego potrzebujesz"
+            subtitle="Główne moduły platformy"
+          />
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {visibleFeatures.map((feature, index) => (
-              <motion.div key={feature.title} {...fadeUp} transition={{ delay: index * 0.06 }}>
+              <motion.div
+                key={feature.title}
+                {...fadeUp}
+                {...tileHover}
+                transition={{ delay: index * 0.06 }}
+              >
                 <Link to={createPageUrl(feature.link)} className="group block h-full">
-                  <Card className="h-full overflow-hidden border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-800/60">
-                    <CardContent className="flex items-center gap-4 p-4 sm:gap-5 sm:p-5">
+                  <Card className="h-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/40 transition-shadow duration-300 group-hover:border-blue-200/80 group-hover:shadow-xl dark:border-slate-700/80 dark:bg-slate-800 dark:shadow-none dark:group-hover:border-blue-800/50 dark:group-hover:shadow-lg dark:group-hover:shadow-black/20">
+                    <TileAccentBar gradient={feature.bar} />
+                    <CardContent className="flex items-start gap-4 p-5 sm:p-6">
                       <div
-                        className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${feature.color} shadow-md transition-transform group-hover:scale-105 sm:h-14 sm:w-14 sm:rounded-2xl`}
+                        className={cn(
+                          "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br shadow-md transition-transform duration-300 group-hover:scale-105 sm:h-14 sm:w-14",
+                          feature.color,
+                        )}
                       >
                         <feature.icon className="h-6 w-6 text-white sm:h-7 sm:w-7" />
                       </div>
-                      <h3 className="min-w-0 flex-1 text-base font-bold leading-snug text-slate-900 dark:text-white sm:text-lg">
-                        {feature.title}
-                      </h3>
-                      <ArrowRight className="h-5 w-5 shrink-0 text-slate-300 transition-all group-hover:translate-x-0.5 group-hover:text-blue-600 dark:text-slate-600 dark:group-hover:text-blue-400" />
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                          {feature.title}
+                        </h3>
+                        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                          {feature.description}
+                        </p>
+                        <span className="mt-3 inline-flex items-center text-sm font-semibold text-blue-600 opacity-0 transition-all group-hover:opacity-100 dark:text-blue-400">
+                          Przejdź
+                          <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </span>
+                      </div>
                     </CardContent>
                   </Card>
                 </Link>
               </motion.div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-slate-200 bg-white py-16 dark:border-slate-800 dark:bg-slate-800">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-          <motion.div {...fadeUp}>
-            <CarouselReviews />
-          </motion.div>
         </div>
       </section>
     </div>

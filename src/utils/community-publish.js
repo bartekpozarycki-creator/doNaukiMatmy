@@ -1,3 +1,5 @@
+import { assertAllowedContent } from "@/utils/content-moderation/moderate-content";
+
 export function trimField(value) {
   return String(value ?? "").trim();
 }
@@ -17,6 +19,8 @@ export function buildCommunityQuestionPayload({
   const title = resolveQuestionTitle(newQuestion.title, attachedTask);
   const description = trimField(newQuestion.description);
   const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
+
+  assertAllowedContent(`${title} ${description}`);
 
   return {
     title,
@@ -42,6 +46,8 @@ export function buildCommunityQuestionPayload({
     answer_count: 0,
     has_accepted_answer: false,
     view_count: 0,
+    status: "pending",
+    rejection_reason: null,
   };
 }
 

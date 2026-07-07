@@ -11,12 +11,9 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from "recharts";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  CycleFilter,
+  FilterBar,
+} from "@/components/ListFilters";
 import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import { pl } from "date-fns/locale";
 
@@ -286,42 +283,35 @@ export default function ProgressPage() {
         {/* Filters */}
         <Card className="mb-8 dark:bg-slate-800 bg-white border-0 shadow-lg">
           <CardContent className="p-6">
-            <div className="flex items-center gap-4 flex-wrap">
-              <Filter className="w-5 h-5 text-gray-600 dark:text-slate-400" />
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                    Zakres czasowy
-                  </label>
-                  <Select value={dateRange} onValueChange={setDateRange}>
-                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="dark:bg-slate-800 dark:border-slate-600">
-                      <SelectItem value="all" className="dark:text-slate-300">Cały czas</SelectItem>
-                      <SelectItem value="week" className="dark:text-slate-300">Ostatni tydzień</SelectItem>
-                      <SelectItem value="month" className="dark:text-slate-300">Ostatni miesiąc</SelectItem>
-                      <SelectItem value="3months" className="dark:text-slate-300">Ostatnie 3 miesiące</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                    Cel nauki
-                  </label>
-                  <Select value={goalFilter} onValueChange={setGoalFilter}>
-                    <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 dark:text-white bg-white">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="dark:bg-slate-800 dark:border-slate-600">
-                      <SelectItem value="all" className="dark:text-slate-300">Wszystkie cele</SelectItem>
-                      <SelectItem value="matura_podstawowa" className="dark:text-slate-300">Matura podstawowa</SelectItem>
-                      <SelectItem value="matura_rozszerzona" className="dark:text-slate-300">Matura rozszerzona</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+            <div className="mb-3 flex items-center gap-2">
+              <Filter className="h-5 w-5 text-gray-600 dark:text-slate-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                Filtry
+              </span>
             </div>
+            <FilterBar columnsClassName="grid-cols-1 sm:grid-cols-2">
+              <CycleFilter
+                label="Zakres czasowy"
+                value={dateRange}
+                options={[
+                  { value: "all", label: "Cały czas" },
+                  { value: "week", label: "Ostatni tydzień" },
+                  { value: "month", label: "Ostatni miesiąc" },
+                  { value: "3months", label: "Ostatnie 3 miesiące" },
+                ]}
+                onChange={setDateRange}
+              />
+              <CycleFilter
+                label="Cel nauki"
+                value={goalFilter}
+                options={[
+                  { value: "all", label: "Wszystkie cele" },
+                  { value: "matura_podstawowa", label: "Matura podstawowa" },
+                  { value: "matura_rozszerzona", label: "Matura rozszerzona" },
+                ]}
+                onChange={setGoalFilter}
+              />
+            </FilterBar>
           </CardContent>
         </Card>
 

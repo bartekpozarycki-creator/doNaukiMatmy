@@ -11,7 +11,6 @@ import {
   ChevronDown,
   ChevronUp,
   History,
-  Trash2,
   TrendingDown,
   CalendarClock,
 } from "lucide-react";
@@ -24,6 +23,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import TaskQuestionBody from "@/components/TaskQuestionBody";
 import TaskAttemptHistory from "@/components/TaskAttemptHistory";
 import MaturaArkuszLink from "@/components/MaturaArkuszLink";
+import {
+  CycleFilter,
+  FilterBar,
+  PrettySelectFilter,
+} from "@/components/ListFilters";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { createPageUrl } from "@/utils";
 import { publicSupabase } from "@/supabase-config.js";
@@ -57,10 +61,10 @@ const REVIEW_SORT_OPTIONS = [
 const cardClass =
   "overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm dark:border-slate-700/80 dark:bg-slate-800";
 const taskCardHeaderClass =
-  "flex flex-col space-y-0 overflow-visible !px-3.5 !pt-3.5 !pb-1.5";
-const taskCardBadgeRowClass = "mb-2.5 flex flex-wrap items-center gap-1.5";
+  "flex flex-col space-y-0 overflow-visible !px-5 !pt-5 !pb-0";
+const taskCardBadgeRowClass = "mb-3 flex flex-wrap items-center gap-2";
 const taskCardTitleBlockClass = "min-w-0 overflow-visible py-1 leading-normal";
-const taskCardFooterClass = "shrink-0 !px-3.5 !pb-3.5 !pt-2.5";
+const taskCardFooterClass = "shrink-0 !px-5 !pb-5 !pt-1";
 const taskBadgeClass = "px-2.5 py-0.5 text-xs font-medium leading-tight";
 const levelTheme = {
   podstawowy: "border-blue-500 text-blue-700 dark:text-blue-400",
@@ -78,6 +82,28 @@ const countBtnIdle =
   "border border-slate-200 bg-white text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-blue-800 dark:hover:bg-blue-950/40 dark:hover:text-blue-300";
 const accentLink =
   "text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300";
+const SESSION_MODE_OPTIONS = [
+  { id: "all", label: "Wszystkie" },
+  { id: "due", label: "Termin w 24h" },
+  { id: "wrong", label: "Ostatnio błędne" },
+  { id: "needsWork", label: "Do poprawy" },
+];
+
+function getMasteryStatusClass(statusId) {
+  switch (statusId) {
+    case "needsWork":
+      return "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
+    case "inProgress":
+      return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300";
+    case "almostMastered":
+      return "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-800 dark:bg-purple-950/40 dark:text-purple-300";
+    case "mastered":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
+    case "new":
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-300";
+  }
+}
 
 function getReviewSortValue(item, criterion) {
   switch (criterion) {
@@ -191,8 +217,11 @@ function ReviewTaskCard({
   lastAttempt,
   nextReviewAt,
   intervalDays,
+  masteryStatus,
+  difficultyScore,
+  reviewReason,
   onFrequencyCommit,
-  onDeleteLastAttempt,
+  onDeleteAttempt,
 }) {
   const lastAttemptInfo = formatLastAttemptInfo(lastAttempt);
   const scheduleInfo = formatReviewScheduleDetail(nextReviewAt, intervalDays);
@@ -222,7 +251,7 @@ function ReviewTaskCard({
   return (
     <Card className={cardClass}>
       <CardContent className="flex flex-col gap-0 p-0">
-        <div className="flex flex-col lg:flex-row lg:items-stretch">
+        <div className="flex flex-col xl:flex-row xl:items-stretch">
           <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
             <div
               className={`h-1.5 w-full shrink-0 rounded-none bg-gradient-to-r ${barGradient}`}
@@ -263,10 +292,24 @@ function ReviewTaskCard({
                   <CalendarClock className="mr-1 h-3 w-3" />
                   {scheduleInfo.label}
                 </Badge>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    taskBadgeClass,
+                    getMasteryStatusClass(masteryStatus?.id),
+                  )}
+                >
+                  {masteryStatus?.label || "W trakcie"}
+                </Badge>
               </div>
 
               <CardTitle className={taskCardTitleBlockClass}>
-                <TaskQuestionBody task={task} compact tile />
+                <TaskQuestionBody
+                  task={task}
+                  compact
+                  tile
+                  className="[&_.math-text-ui]:text-base [&_.math-text-ui]:leading-relaxed sm:[&_.math-text-ui]:text-lg"
+                />
               </CardTitle>
             </CardHeader>
 
@@ -278,9 +321,28 @@ function ReviewTaskCard({
                   • Interwał: {scheduleInfo.intervalLabel}
                 </span>
               </p>
+              <p className="rounded-lg border border-blue-100 bg-blue-50/70 px-3 py-2 text-sm text-blue-800 dark:border-blue-900/60 dark:bg-blue-950/30 dark:text-blue-200">
+                {reviewReason || "W trakcie nauki"}
+              </p>
 
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-slate-100 pt-2.5 dark:border-slate-700">
-                <TaskAttemptHistory attempts={attempts} compact />
+              <div className="grid gap-3 border-t border-slate-100 pt-3 dark:border-slate-700 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className={cn("text-xs font-medium", mutedText)}>
+                      Historia prób
+                    </span>
+                    <span className={cn("text-[11px]", mutedText)}>
+                      Kliknij próbę, aby ją usunąć
+                    </span>
+                  </div>
+                  <TaskAttemptHistory
+                    attempts={attempts}
+                    maxVisible={attempts.length}
+                    onDeleteAttempt={(attemptIndex) =>
+                      onDeleteAttempt(task.id, attemptIndex)
+                    }
+                  />
+                </div>
                 <p className={cn("text-xs", mutedText)}>
                   <span
                     className={
@@ -298,20 +360,12 @@ function ReviewTaskCard({
                   ) : null}
                   <span> · {attempts.length} {attempts.length === 1 ? "próba" : "prób"}</span>
                 </p>
-                <button
-                  type="button"
-                  onClick={() => onDeleteLastAttempt(task.id)}
-                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-rose-600 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-rose-300"
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                  Usuń ostatnią
-                </button>
               </div>
             </CardContent>
           </div>
 
           <div
-            className="flex shrink-0 flex-col justify-center gap-3 border-t border-slate-100 p-4 lg:w-52 lg:self-stretch lg:border-l lg:border-t-0 lg:pl-5 dark:border-slate-700"
+            className="flex shrink-0 flex-col justify-center gap-4 border-t border-slate-100 p-5 xl:w-64 xl:self-stretch xl:border-l xl:border-t-0 xl:pl-6 dark:border-slate-700"
             style={getFrequencySliderStyle(sliderValue)}
           >
             <div className="flex items-center justify-between gap-3">
@@ -322,6 +376,12 @@ function ReviewTaskCard({
               >
                 {sliderValue}
               </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-3 text-xs">
+              <span className={mutedText}>Trudność</span>
+              <span className={cn("font-semibold tabular-nums", headingText)}>
+                {difficultyScore ?? 0}/100
+              </span>
             </div>
 
             <Slider
@@ -359,7 +419,7 @@ function ReviewTaskCard({
 function ReviewTaskSkeleton() {
   return (
     <Card className={cardClass}>
-      <CardContent className="flex flex-col gap-0 p-0 lg:flex-row lg:items-stretch">
+      <CardContent className="flex flex-col gap-0 p-0 xl:flex-row xl:items-stretch">
         <div className="min-w-0 flex-1">
           <Skeleton className="h-1.5 w-full rounded-none bg-slate-200 dark:bg-slate-700" />
           <div className={taskCardHeaderClass}>
@@ -378,7 +438,7 @@ function ReviewTaskSkeleton() {
             <Skeleton className="h-6 w-full bg-slate-200 dark:bg-slate-700" />
           </div>
         </div>
-        <div className="flex shrink-0 flex-col justify-center gap-3 border-t border-slate-100 p-4 lg:w-52 lg:self-stretch lg:border-l lg:border-t-0 lg:pl-5 dark:border-slate-700">
+        <div className="flex shrink-0 flex-col justify-center gap-4 border-t border-slate-100 p-5 xl:w-64 xl:self-stretch xl:border-l xl:border-t-0 xl:pl-6 dark:border-slate-700">
           <Skeleton className="h-5 w-full bg-slate-200 dark:bg-slate-700" />
           <Skeleton className="h-6 w-full bg-slate-200 dark:bg-slate-700" />
           <Skeleton className="h-9 w-full bg-slate-200 dark:bg-slate-700" />
@@ -390,13 +450,16 @@ function ReviewTaskSkeleton() {
 
 export default function ReviewPage() {
   const navigate = useNavigate();
-  const { getAllProgress, setFrequency, deleteLastAttempt } = useTaskProgress();
+  const { getAllProgress, setFrequency, deleteAttempt } = useTaskProgress();
   const progress = getAllProgress();
 
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [onlyDueBySchedule, setOnlyDueBySchedule] = useState(true);
   const [randomCount, setRandomCount] = useState(3);
+  const [sessionTopic, setSessionTopic] = useState("all");
+  const [sessionLevel, setSessionLevel] = useState("all");
+  const [sessionMode, setSessionMode] = useState("all");
   const [filterSteps, setFilterSteps] = useState(DEFAULT_FILTER_STEPS);
   const [sortRuleOrder, setSortRuleOrder] = useState(DEFAULT_SORT_RULE_ORDER);
 
@@ -406,7 +469,9 @@ export default function ReviewPage() {
   );
   const [frequencyInfoOpen, setFrequencyInfoOpen] = useState(false);
   const [layoutTaskId, setLayoutTaskId] = useState(null);
+  const [highlightTaskId, setHighlightTaskId] = useState(null);
   const scrollToTaskIdRef = useRef(null);
+  const highlightTimeoutRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -449,10 +514,67 @@ export default function ReviewPage() {
           nextReviewAt: schedule?.nextReviewAt,
           intervalDays: schedule?.intervalDays,
           correctStreak: schedule?.correctStreak ?? 0,
+          masteryStatus: schedule?.masteryStatus,
+          difficultyScore: schedule?.difficultyScore ?? 0,
+          reviewReason: schedule?.reviewReason,
         };
       })
       .filter(Boolean);
   }, [tasks, progress]);
+
+  const sessionTopics = useMemo(() => {
+    return [
+      "all",
+      ...[...new Set(allPracticedItems.map((item) => item.task.topic).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "pl")),
+    ];
+  }, [allPracticedItems]);
+
+  const sessionLevels = useMemo(() => {
+    return [
+      "all",
+      ...[...new Set(allPracticedItems.map((item) => item.task.level).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, "pl")),
+    ];
+  }, [allPracticedItems]);
+
+  const sessionTopicOptions = useMemo(
+    () =>
+      sessionTopics.map((topic) => ({
+        value: topic,
+        label: topic === "all" ? "Wszystkie tematy" : topic,
+      })),
+    [sessionTopics],
+  );
+
+  const sessionLevelOptions = useMemo(
+    () =>
+      sessionLevels.map((level) => ({
+        value: level,
+        label: level === "all" ? "Wszystkie poziomy" : level,
+      })),
+    [sessionLevels],
+  );
+
+  const sessionModeOptions = useMemo(
+    () =>
+      SESSION_MODE_OPTIONS.map((mode) => ({
+        value: mode.id,
+        label: mode.label,
+      })),
+    [],
+  );
+
+  const sessionItems = useMemo(() => {
+    return allPracticedItems.filter((item) => {
+      if (sessionTopic !== "all" && item.task.topic !== sessionTopic) return false;
+      if (sessionLevel !== "all" && item.task.level !== sessionLevel) return false;
+      if (sessionMode === "due" && !isReviewDue(item.nextReviewAt)) return false;
+      if (sessionMode === "wrong" && item.lastAttempt?.isCorrect) return false;
+      if (sessionMode === "needsWork" && item.masteryStatus?.id !== "needsWork") return false;
+      return true;
+    });
+  }, [allPracticedItems, sessionTopic, sessionLevel, sessionMode]);
 
   const reviewItems = useMemo(() => {
     const filtered = onlyDueBySchedule
@@ -477,16 +599,33 @@ export default function ReviewPage() {
       setFrequency(taskId, value);
       scrollToTaskIdRef.current = taskId;
       setLayoutTaskId(taskId);
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+      setHighlightTaskId(null);
+      requestAnimationFrame(() => setHighlightTaskId(taskId));
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightTaskId(null);
+        highlightTimeoutRef.current = null;
+      }, 1750);
     },
     [setFrequency],
   );
 
-  const handleDeleteLastAttempt = useCallback(
-    (taskId) => {
-      if (!window.confirm("Usunąć ostatnią zapisaną próbę tego zadania?")) return;
-      deleteLastAttempt(taskId);
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  const handleDeleteAttempt = useCallback(
+    (taskId, attemptIndex) => {
+      if (!window.confirm("Usunąć wybraną zapisaną próbę tego zadania?")) return;
+      deleteAttempt(taskId, attemptIndex);
     },
-    [deleteLastAttempt],
+    [deleteAttempt],
   );
 
   const handleSortFilterClick = (id) => {
@@ -556,10 +695,15 @@ export default function ReviewPage() {
   }, [allPracticedItems, progress]);
 
   const handleRandomReviewStart = () => {
-    if (!allPracticedItems.length) return;
+    if (!sessionItems.length) return;
 
-    const ids = pickRandomReviewTaskIds(allPracticedItems, randomCount, {
+    const ids = pickRandomReviewTaskIds(sessionItems, randomCount, {
       reviewThreshold: FREQ_THRESHOLD,
+      filters: {
+        topic: sessionTopic,
+        level: sessionLevel,
+        mode: sessionMode,
+      },
     });
     if (!ids.length) return;
 
@@ -571,7 +715,7 @@ export default function ReviewPage() {
 
   return (
     <div className="py-8">
-      <div className="mx-auto max-w-4xl space-y-6 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-6 px-4 sm:px-6 lg:px-8">
         <div className="space-y-2">
           <h1 className={cn("flex items-center gap-3 text-3xl font-bold sm:text-4xl", headingText)}>
             <BookOpen className="h-8 w-8 text-blue-600 dark:text-blue-400" />
@@ -586,7 +730,7 @@ export default function ReviewPage() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {[
             { label: "Ćwiczone zadania", value: stats.practiced },
-            { label: "Do powtórki dziś", value: stats.dueToday, icon: CalendarClock },
+            { label: "Do powtórki w 24h", value: stats.dueToday, icon: CalendarClock },
             { label: `Wysoka częstość (≥${FREQ_THRESHOLD})`, value: stats.needsReview },
             { label: "Wszystkie próby", value: stats.totalAttempts },
             {
@@ -667,8 +811,8 @@ export default function ReviewPage() {
                       <strong className={headingText}>Harmonogram:</strong> po każdej
                       próbie ustalana jest data następnej powtórki. Poprawna odpowiedź
                       wydłuża odstęp (3 → 7 → 14 → 21 → 30 → 45 → 60 → 90 dni), błędna
-                      skraca go do 1 dnia. Zadania „do powtórki dziś” to te, których
-                      termin już nadszedł.
+                      skraca go do 1 dnia. Zadania „do powtórki w 24h” to te, których
+                      termin już nadszedł albo nadejdzie w ciągu najbliższych 24 godzin.
                       <br />
                       <br />
                       <strong className={headingText}>Częstość (1–100):</strong> im
@@ -684,36 +828,64 @@ export default function ReviewPage() {
         </div>
 
         <Card className={cardClass}>
-          <CardContent className="flex flex-col gap-4 p-4 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
-            <div className="flex min-w-0 items-center gap-3">
-              <Shuffle className={cn("h-5 w-5 shrink-0", mutedText)} />
-              <h2 className={cn("text-sm font-semibold sm:text-base", headingText)}>
-                Losowe zadania do powtórki
-              </h2>
+          <CardContent className="space-y-4 p-4">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex min-w-0 items-center gap-3">
+                <Shuffle className={cn("h-5 w-5 shrink-0", mutedText)} />
+                <div>
+                  <h2 className={cn("text-sm font-semibold sm:text-base", headingText)}>
+                    Sesja powtórek
+                  </h2>
+                  <p className={cn("text-xs", mutedText)}>
+                    Pasuje {sessionItems.length} z {allPracticedItems.length} ćwiczonych zadań
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 lg:justify-center">
+                <span className={cn("text-sm", mutedText)}>Ile zadań:</span>
+                {RANDOM_COUNT_OPTIONS.map((count) => (
+                  <button
+                    key={count}
+                    type="button"
+                    onClick={() => setRandomCount(count)}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-sm font-medium tabular-nums transition",
+                      randomCount === count ? countBtnActive : countBtnIdle,
+                    )}
+                  >
+                    {count}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 lg:justify-center">
-              <span className={cn("text-sm", mutedText)}>Ile zadań:</span>
-              {RANDOM_COUNT_OPTIONS.map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  onClick={() => setRandomCount(count)}
-                  className={cn(
-                    "rounded-md px-2.5 py-1 text-sm font-medium tabular-nums transition",
-                    randomCount === count ? countBtnActive : countBtnIdle,
-                  )}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
+            <FilterBar columnsClassName="grid-cols-1 sm:grid-cols-3">
+              <PrettySelectFilter
+                label="Temat"
+                value={sessionTopic}
+                options={sessionTopicOptions}
+                onChange={setSessionTopic}
+              />
+              <PrettySelectFilter
+                label="Poziom"
+                value={sessionLevel}
+                options={sessionLevelOptions}
+                onChange={setSessionLevel}
+              />
+              <CycleFilter
+                label="Tryb"
+                value={sessionMode}
+                options={sessionModeOptions}
+                onChange={setSessionMode}
+              />
+            </FilterBar>
 
             <Button
               type="button"
               onClick={handleRandomReviewStart}
-              disabled={loading || allPracticedItems.length === 0}
-              className={cn("shrink-0", accentBtn)}
+              disabled={loading || sessionItems.length === 0}
+              className={cn("w-full", accentBtn)}
             >
               <Shuffle className="mr-2 h-4 w-4" />
               Losuj i rozpocznij
@@ -779,7 +951,7 @@ export default function ReviewPage() {
                 className="data-[state=checked]:bg-blue-600 dark:data-[state=checked]:bg-blue-600"
               />
               <span className={cn("text-sm font-medium", bodyText)}>
-                Tylko zadania do powtórki wg harmonogramu (dziś lub wcześniej)
+                Tylko zadania do powtórki wg harmonogramu (zaległe lub w ciągu 24h)
               </span>
             </label>
             <Link
@@ -900,12 +1072,12 @@ export default function ReviewPage() {
               <RotateCw className={cn("mx-auto mb-3 h-12 w-12", mutedText)} />
               <h3 className={cn("mb-2 text-lg font-semibold", headingText)}>
                 {onlyDueBySchedule
-                  ? "Brak zaplanowanych powtórek na dziś"
+                  ? "Brak zaplanowanych powtórek w ciągu 24h"
                   : "Brak rozwiązanych zadań"}
               </h3>
               <p className={cn("mb-5 text-sm", mutedText)}>
                 {onlyDueBySchedule
-                  ? "Żadne zadanie nie ma dziś terminu powtórki. Wyłącz filtr harmonogramu, żeby zobaczyć wszystkie ćwiczone zadania, albo wróć jutro."
+                  ? "Żadne zadanie nie ma terminu powtórki w ciągu najbliższych 24 godzin. Wyłącz filtr harmonogramu, żeby zobaczyć wszystkie ćwiczone zadania."
                   : "Rozwiąż zadania w zbiorach — po sprawdzeniu odpowiedzi pojawią się tutaj z harmonogramem powtórek."}
               </p>
               <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
@@ -931,14 +1103,47 @@ export default function ReviewPage() {
         ) : (
           <div className="space-y-3 [overflow-anchor:none]">
             {reviewItems.map((item) => {
-              const { task, frequency, attempts, lastAttempt, nextReviewAt, intervalDays } = item;
+              const {
+                task,
+                frequency,
+                attempts,
+                lastAttempt,
+                nextReviewAt,
+                intervalDays,
+                masteryStatus,
+                difficultyScore,
+                reviewReason,
+              } = item;
               return (
                 <motion.div
                   key={task.id}
                   layout={layoutTaskId === task.id ? "position" : false}
                   data-review-task-id={task.id}
+                  className="rounded-xl"
+                  animate={
+                    highlightTaskId === task.id
+                      ? {
+                          scale: [1, 1.012, 1, 1.012, 1, 1.012, 1],
+                          boxShadow: [
+                            "0 0 0 0 rgba(37,99,235,0)",
+                            "0 0 0 4px rgba(37,99,235,0.28), 0 18px 35px rgba(37,99,235,0.16)",
+                            "0 0 0 0 rgba(37,99,235,0)",
+                            "0 0 0 4px rgba(37,99,235,0.28), 0 18px 35px rgba(37,99,235,0.16)",
+                            "0 0 0 0 rgba(37,99,235,0)",
+                            "0 0 0 4px rgba(37,99,235,0.28), 0 18px 35px rgba(37,99,235,0.16)",
+                            "0 0 0 0 rgba(37,99,235,0)",
+                          ],
+                        }
+                      : {
+                          scale: 1,
+                          boxShadow: "0 0 0 0 rgba(37,99,235,0)",
+                        }
+                  }
                   transition={{
                     layout: { duration: 0.25, ease: "easeInOut" },
+                    duration: highlightTaskId === task.id ? 1.6 : 0.2,
+                    times: [0, 0.16, 0.32, 0.48, 0.64, 0.8, 1],
+                    ease: "easeInOut",
                   }}
                 >
                   <ReviewTaskCard
@@ -948,8 +1153,11 @@ export default function ReviewPage() {
                     lastAttempt={lastAttempt}
                     nextReviewAt={nextReviewAt}
                     intervalDays={intervalDays}
+                    masteryStatus={masteryStatus}
+                    difficultyScore={difficultyScore}
+                    reviewReason={reviewReason}
                     onFrequencyCommit={handleFrequencyCommit}
-                    onDeleteLastAttempt={handleDeleteLastAttempt}
+                    onDeleteAttempt={handleDeleteAttempt}
                   />
                 </motion.div>
               );

@@ -16,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Download,
-  Search,
   Calendar,
   Play,
   CheckCircle,
@@ -24,15 +23,15 @@ import {
   Clock,
   X,
   ArrowLeft,
+  History,
 } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  CycleFilter,
+  FilterBar,
+  FilterSearchField,
+  PrettySelectFilter,
+} from "@/components/ListFilters";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import {
@@ -47,6 +46,9 @@ import {
   normalizeArkuszWorksheetId,
   parseArkuszWorksheetFilters,
 } from "@/utils/worksheet-arkusz";
+import e8Cover from "@/okladki/e8.png";
+import ppCover from "@/okladki/pp.png";
+import prCover from "@/okladki/pr.png";
 
 // Konfiguracja trzech źródeł arkuszy
 const SOURCES = [
@@ -123,6 +125,12 @@ const levelTheme = {
     soft: "bg-green-50 dark:bg-green-900/20",
     text: "text-green-700 dark:text-green-300",
   },
+};
+
+const worksheetCoverByLevel = {
+  podstawowy: ppCover,
+  rozszerzony: prCover,
+  ósmoklasisty: e8Cover,
 };
 
 const monthOrder = {
@@ -225,6 +233,61 @@ const getResultColor = (percent) => {
   return "text-rose-600 dark:text-rose-400";
 };
 
+const MAX_VISIBLE_HISTORY_ROWS = 12;
+
+const formatPointValue = (value) => {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return "0";
+  return number.toLocaleString("pl-PL", { maximumFractionDigits: 1 });
+};
+
+const getAttemptPercent = (attempt) =>
+  Number.isFinite(Number(attempt?.score)) && Number(attempt?.total) > 0
+    ? Math.round((Number(attempt.score) / Number(attempt.total)) * 100)
+    : 0;
+
+const getAttemptScoreRows = (attempt) => {
+  if (Array.isArray(attempt?.questionScoreRows)) return attempt.questionScoreRows;
+  return Object.entries(attempt?.questionScores ?? {}).map(([questionId, entry]) => ({
+    questionId,
+    number: entry?.number ?? questionId,
+    earned: entry?.graded ? entry.earned : null,
+    max: entry?.max ?? 0,
+    graded: Boolean(entry?.graded),
+    correct: entry?.correct ?? null,
+  }));
+};
+
+const getWorksheetAttemptHistory = (attempt) => {
+  if (!attempt) return [];
+  const history = Array.isArray(attempt.attemptHistory)
+    ? attempt.attemptHistory.filter(Boolean)
+    : [];
+  if (history.length) return history;
+  if (attempt.previousCompleted) return [attempt.previousCompleted];
+  return isWorksheetCompleted(attempt) ? [attempt] : [];
+};
+
+const getWorksheetCoverStyle = (worksheet) => {
+  const key = [
+    worksheet?.id,
+    worksheet?.year,
+    worksheet?.month,
+    worksheet?.formula,
+  ].join("-");
+  let hash = 0;
+  for (let i = 0; i < key.length; i += 1) {
+    hash = (hash * 31 + key.charCodeAt(i)) % 9973;
+  }
+  const x = hash % 101;
+  const y = Math.floor(hash / 101) % 101;
+  const zoom = 115 + (Math.floor(hash / 997) % 46);
+  return {
+    backgroundPosition: `${x}% ${y}%`,
+    backgroundSize: `${zoom}%`,
+  };
+};
+
 const skeletonClass = "bg-slate-200 dark:bg-slate-700";
 
 function WorksheetCardSkeleton() {
@@ -278,7 +341,11 @@ function WorksheetCard({
   onEndStarted,
 }) {
   const [abandonDialogOpen, setAbandonDialogOpen] = useState(false);
+  const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
   const worksheetUrl = `${createPageUrl("WorksheetDetails")}?id=${worksheet.id}`;
+  const coverImage = worksheetCoverByLevel[worksheet.level] || ppCover;
+  const coverStyle = getWorksheetCoverStyle(worksheet);
+  const attemptHistory = getWorksheetAttemptHistory(attempt);
 
   const openWorksheet = () => {
     navigate(worksheetUrl, { state: { from: "worksheets" } });
@@ -343,11 +410,7 @@ function WorksheetCard({
                 {new Date(attempt.date).toLocaleDateString("pl-PL")}
               </span>
             </div>
-          ) : (
-            <p className="text-sm text-gray-500 dark:text-slate-400">
-              Nie rozpoczęto jeszcze tego arkusza
-            </p>
-          )}
+          ) : null}
         </div>
         <div className="flex flex-nowrap items-stretch gap-2">
           {started ? (
@@ -380,6 +443,19 @@ function WorksheetCard({
               Rozpocznij
             </Button>
           )}
+          {attemptHistory.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              title="Pokaż historię arkusza"
+              aria-label="Pokaż historię arkusza"
+              onClick={() => setHistoryDialogOpen(true)}
+              className={`h-10 w-10 shrink-0 bg-white hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 ${theme.outline}`}
+            >
+              <History className="w-4 h-4" />
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"
@@ -447,6 +523,102 @@ function WorksheetCard({
                 Porzuć arkusz
               </AlertDialogAction>
             </AlertDialogFooter>
+          </div>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
+        <AlertDialogContent className="max-w-3xl overflow-hidden border-slate-200 p-0 dark:border-slate-700">
+          <div className={`h-1.5 bg-gradient-to-r ${theme.gradient}`} />
+          <div
+            className="relative overflow-hidden p-6"
+            style={{
+              backgroundImage: `url(${coverImage})`,
+              ...coverStyle,
+            }}
+          >
+            <div className="absolute inset-0 bg-white/86 dark:bg-slate-900/88" />
+            <div className="relative space-y-5">
+              <AlertDialogHeader className="space-y-2 text-left sm:text-left">
+                <AlertDialogTitle className="text-lg font-semibold text-slate-900 dark:text-white">
+                  Historia arkusza
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                  {worksheet.displayTitle || worksheet.title}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+                {[...attemptHistory].reverse().map((historyAttempt, historyIndex) => {
+                  const rows = getAttemptScoreRows(historyAttempt);
+                  const hiddenRows = Math.max(0, rows.length - MAX_VISIBLE_HISTORY_ROWS);
+                  const attemptPercent = getAttemptPercent(historyAttempt);
+                  return (
+                    <div
+                      key={`${historyAttempt.date || historyAttempt.updatedAt || historyIndex}-${historyIndex}`}
+                      className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/95"
+                    >
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                            Podejście {attemptHistory.length - historyIndex}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">
+                            {historyAttempt.date
+                              ? new Date(historyAttempt.date).toLocaleString("pl-PL")
+                              : "Brak daty"}
+                          </p>
+                        </div>
+                        <div className="text-left sm:text-right">
+                          <p className={`text-lg font-bold ${getResultColor(attemptPercent)}`}>
+                            {attemptPercent}%
+                          </p>
+                          <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                            {formatPointValue(historyAttempt.score)}/
+                            {formatPointValue(historyAttempt.total)} pkt
+                          </p>
+                        </div>
+                      </div>
+                      {rows.length > 0 ? (
+                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                          {rows.slice(0, MAX_VISIBLE_HISTORY_ROWS).map((row, rowIndex) => (
+                            <div
+                              key={`${row.questionId || row.number || rowIndex}-${rowIndex}`}
+                              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/95 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/85"
+                            >
+                              <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">
+                                Zadanie {row.number ?? row.questionId ?? rowIndex + 1}
+                              </span>
+                              <span className="shrink-0 font-semibold text-slate-900 dark:text-white">
+                                {row.graded
+                                  ? `${formatPointValue(row.earned)}/${formatPointValue(row.max)} pkt`
+                                  : `0/${formatPointValue(row.max)} pkt`}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                          Brak szczegółowej punktacji zadań dla tego podejścia.
+                        </p>
+                      )}
+                      {hiddenRows > 0 ? (
+                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                          I jeszcze {hiddenRows} zadań w szczegółach tego podejścia.
+                        </p>
+                      ) : null}
+                    </div>
+                  );
+                })}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogAction
+                  onClick={() => setHistoryDialogOpen(false)}
+                  className={`border-0 text-white ${theme.btn}`}
+                >
+                  Zamknij
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </div>
           </div>
         </AlertDialogContent>
       </AlertDialog>
@@ -702,6 +874,23 @@ export default function WorksheetsPage() {
     [worksheets],
   );
 
+  const yearOptions = useMemo(
+    () => [
+      { value: "all", label: "Wszystkie lata" },
+      ...years
+        .filter((year) => year !== "all")
+        .map((year) => ({ value: year.toString(), label: year.toString() })),
+    ],
+    [years],
+  );
+
+  const levelOptions = [
+    { value: "all", label: "Wszystkie poziomy" },
+    { value: "podstawowy", label: "Matura podstawowa" },
+    { value: "rozszerzony", label: "Matura rozszerzona" },
+    { value: "ósmoklasisty", label: "Egzamin ósmoklasisty" },
+  ];
+
   const isDark = document.documentElement.classList.contains("dark");
 
   const handleEndStartedWorksheet = (worksheetId) => {
@@ -749,61 +938,32 @@ export default function WorksheetsPage() {
         {/* Filters */}
         <Card className="mb-8 dark:bg-slate-800 border-0 shadow-lg bg-white">
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
+            <FilterBar
+              columnsClassName="grid-cols-2"
+              search={
+                <FilterSearchField
                   placeholder="Szukaj arkuszy..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   disabled={loading}
-                  className="pl-10 dark:bg-slate-700 dark:border-slate-600 bg-white"
                 />
-              </div>
-
-              {/* Year Filter */}
-              <Select
+              }
+            >
+              <PrettySelectFilter
+                label="Rok"
                 value={selectedYear}
-                onValueChange={setSelectedYear}
+                options={yearOptions}
+                onChange={setSelectedYear}
                 disabled={loading}
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                  <SelectValue placeholder="Rok" />
-                </SelectTrigger>
-                <SelectContent side="bottom" align="start">
-                  <SelectItem value="all">Wszystkie lata</SelectItem>
-                  {years
-                    .filter((y) => y !== "all")
-                    .map((year) => (
-                      <SelectItem key={year} value={year.toString()}>
-                        {year}
-                      </SelectItem>
-                    ))}
-                </SelectContent>
-              </Select>
-
-              {/* Level Filter */}
-              <Select
+              />
+              <CycleFilter
+                label="Poziom"
                 value={selectedLevel}
-                onValueChange={setSelectedLevel}
+                options={levelOptions}
+                onChange={setSelectedLevel}
                 disabled={loading}
-              >
-                <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                  <SelectValue placeholder="Poziom" />
-                </SelectTrigger>
-                <SelectContent side="bottom" align="start">
-                  <SelectItem value="all">Wszystkie poziomy</SelectItem>
-                  <SelectItem value="podstawowy">Matura podstawowa</SelectItem>
-                  <SelectItem value="rozszerzony">
-                    Matura rozszerzona
-                  </SelectItem>
-                  <SelectItem value="ósmoklasisty">
-                    Egzamin ósmoklasisty
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+              />
+            </FilterBar>
           </CardContent>
         </Card>
 
@@ -841,7 +1001,7 @@ export default function WorksheetsPage() {
         </div>
 
         {/* Worksheets Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-2 gap-6">
           {showSkeletons
             ? Array.from({ length: INITIAL_SKELETON_COUNT }).map((_, idx) => (
                 <WorksheetGridTile key={`worksheet-skeleton-${idx}`} />

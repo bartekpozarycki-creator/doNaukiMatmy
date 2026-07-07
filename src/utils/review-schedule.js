@@ -1,6 +1,17 @@
 const CORRECT_INTERVALS_DAYS = [3, 7, 14, 21, 30, 45, 60, 90];
-const WRONG_INTERVAL_DAYS = 1;
+const MS_PER_HOUR = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MASTERY_STATUSES = {
+  new: { id: "new", label: "Nowe" },
+  needsWork: { id: "needsWork", label: "Do poprawy" },
+  inProgress: { id: "inProgress", label: "W trakcie" },
+  almostMastered: { id: "almostMastered", label: "Prawie opanowane" },
+  mastered: { id: "mastered", label: "Opanowane" },
+};
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
 
 export function startOfLocalDay(date = new Date()) {
   const d = new Date(date);
@@ -12,6 +23,10 @@ export function addLocalDays(date, days) {
   const d = startOfLocalDay(date);
   d.setDate(d.getDate() + days);
   return d.toISOString();
+}
+
+export function addHours(date, hours) {
+  return new Date(date.getTime() + hours * MS_PER_HOUR).toISOString();
 }
 
 export function countTrailingCorrectStreak(attempts = []) {
@@ -34,26 +49,197 @@ export function frequencyToIntervalDays(frequency) {
   return 60;
 }
 
-export function computeScheduleAfterAttempt(prevEntry, isCorrect) {
+export function calculateReviewDifficulty(entry = {}) {
+  const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
+  if (!attempts.length) return 0;
+
+  const total = attempts.length;
+  const wrongCount = attempts.filter((attempt) => !attempt?.isCorrect).length;
+  const wrongRate = wrongCount / total;
+  const lastAttempt = attempts.at(-1);
+  const correctStreak =
+    entry.correctStreak ?? countTrailingCorrectStreak(attempts);
+  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
+
+  let score = 0;
+  score += wrongRate * 42;
+  score += Math.min(wrongCount, 5) * 7;
+  score += frequency * 0.28;
+  if (lastAttempt && !lastAttempt.isCorrect) score += 18;
+  score -= Math.min(correctStreak, 5) * 8;
+  if (total === 1 && lastAttempt?.isCorrect) score -= 10;
+  if (total >= 4 && wrongRate <= 0.25) score -= 8;
+
+  return clamp(Math.round(score), 0, 100);
+}
+
+export function getMasteryStatus(entry = {}) {
+  const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
+  if (!attempts.length) return MASTERY_STATUSES.new;
+
+  const difficultyScore =
+    entry.difficultyScore ?? calculateReviewDifficulty(entry);
+  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
+  const correctStreak =
+    entry.correctStreak ?? countTrailingCorrectStreak(attempts);
+  const lastAttempt = attempts.at(-1);
+  const intervalDays = entry.intervalDays ?? frequencyToIntervalDays(frequency);
+  const wrongCount = attempts.filter((attempt) => !attempt?.isCorrect).length;
+
+  if (!lastAttempt?.isCorrect || difficultyScore >= 70 || frequency >= 75) {
+    return MASTERY_STATUSES.needsWork;
+  }
+  if (
+    correctStreak >= 4 &&
+    difficultyScore <= 25 &&
+    frequency <= 20 &&
+    intervalDays >= 30
+  ) {
+    return MASTERY_STATUSES.mastered;
+  }
+  if (
+    correctStreak >= 2 &&
+    difficultyScore <= 45 &&
+    frequency <= 40 &&
+    intervalDays >= 14
+  ) {
+    return MASTERY_STATUSES.almostMastered;
+  }
+  if (wrongCount > 0 || correctStreak > 0 || attempts.length > 0) {
+    return MASTERY_STATUSES.inProgress;
+  }
+
+  return MASTERY_STATUSES.new;
+}
+
+export function getReviewReason(entry = {}, now = new Date()) {
+  const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
+  const lastAttempt = attempts.at(-1);
+  const difficultyScore =
+    entry.difficultyScore ?? calculateReviewDifficulty(entry);
+  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
+  const nextReviewAt = entry.nextReviewAt;
+  const intervalDays = entry.intervalDays;
+
+  if (lastAttempt && !lastAttempt.isCorrect) {
+    return "Do powtórki, bo ostatnio był błąd";
+  }
+  if (difficultyScore >= 70) {
+    return "Trudne zadanie: dużo błędnych prób";
+  }
+  if (frequency >= 70) {
+    return `Wysoki priorytet: ${frequency}/100`;
+  }
+  if (nextReviewAt && isReviewDue(nextReviewAt, now)) {
+    if (new Date(nextReviewAt).getTime() > now.getTime()) {
+      return "Do powtórki w ciągu 24h";
+    }
+    if (intervalDays && intervalDays >= 7) {
+      return `Do powtórki, bo minęło ${intervalDays} dni`;
+    }
+    return "Do powtórki, bo termin już nadszedł";
+  }
+
+  const status = getMasteryStatus(entry);
+  if (status.id === "almostMastered") {
+    return "Prawie opanowane: utrwal jeszcze raz";
+  }
+  if (status.id === "mastered") {
+    return "Opanowane: wróć w zaplanowanym terminie";
+  }
+
+  return "W trakcie nauki";
+}
+
+export function computeReviewMetrics(entry = {}) {
+  const difficultyScore = calculateReviewDifficulty(entry);
+  const masteryStatus = getMasteryStatus({
+    ...entry,
+    difficultyScore,
+  });
+  const reviewReason = getReviewReason({
+    ...entry,
+    difficultyScore,
+    masteryStatus,
+  });
+
+  return {
+    difficultyScore,
+    masteryStatus,
+    reviewReason,
+  };
+}
+
+function getWrongAttemptInterval(difficultyScore, previousWrongCount) {
+  if (difficultyScore >= 85 || previousWrongCount >= 3) {
+    return { intervalHours: 4, intervalDays: 0 };
+  }
+  if (difficultyScore >= 70 || previousWrongCount >= 2) {
+    return { intervalHours: 8, intervalDays: 0 };
+  }
+  if (difficultyScore >= 45 || previousWrongCount >= 1) {
+    return { intervalDays: 1 };
+  }
+  return { intervalDays: 2 };
+}
+
+function getCorrectAttemptInterval(baseIntervalDays, difficultyScore, wrongCount) {
+  if (difficultyScore >= 75) return Math.max(2, Math.round(baseIntervalDays * 0.5));
+  if (difficultyScore >= 55) return Math.max(2, Math.round(baseIntervalDays * 0.7));
+  if (wrongCount >= 2) return Math.max(2, Math.round(baseIntervalDays * 0.85));
+  return baseIntervalDays;
+}
+
+export function computeScheduleAfterAttempt(
+  prevEntry,
+  isCorrect,
+  frequency,
+  baseDate = new Date(),
+) {
   const prevStreak = prevEntry?.correctStreak ?? 0;
+  const previousAttempts = Array.isArray(prevEntry?.attempts)
+    ? prevEntry.attempts
+    : [];
+  const attempts = [...previousAttempts, { isCorrect }];
+  const frequencyAfter = frequency ?? prevEntry?.frequency ?? 50;
+  const previousWrongCount = previousAttempts.filter(
+    (attempt) => !attempt?.isCorrect,
+  ).length;
   let correctStreak;
-  let intervalDays;
+  let intervalDays = 1;
+  let intervalHours = null;
+
+  const difficultyScore = calculateReviewDifficulty({
+    attempts,
+    correctStreak: isCorrect ? prevStreak + 1 : 0,
+    frequency: frequencyAfter,
+  });
 
   if (isCorrect) {
     correctStreak = prevStreak + 1;
     const index = Math.min(correctStreak - 1, CORRECT_INTERVALS_DAYS.length - 1);
-    intervalDays = CORRECT_INTERVALS_DAYS[index];
+    intervalDays = getCorrectAttemptInterval(
+      CORRECT_INTERVALS_DAYS[index],
+      difficultyScore,
+      previousWrongCount,
+    );
   } else {
     correctStreak = 0;
-    intervalDays = WRONG_INTERVAL_DAYS;
+    const interval = getWrongAttemptInterval(difficultyScore, previousWrongCount);
+    intervalDays = interval.intervalDays ?? 0;
+    intervalHours = interval.intervalHours ?? null;
   }
 
-  const nextReviewAt = addLocalDays(new Date(), intervalDays);
+  const nextReviewAt = intervalHours
+    ? addHours(baseDate, intervalHours)
+    : addLocalDays(baseDate, intervalDays);
 
   return {
     correctStreak,
     intervalDays,
+    intervalHours,
     nextReviewAt,
+    difficultyScore,
   };
 }
 
@@ -69,21 +255,41 @@ export function resolveTaskSchedule(entry) {
   if (!entry?.attempts?.length) return null;
 
   if (entry.nextReviewAt) {
-    return {
+    const resolved = {
+      ...entry,
       correctStreak: entry.correctStreak ?? countTrailingCorrectStreak(entry.attempts),
       intervalDays: entry.intervalDays ?? frequencyToIntervalDays(entry.frequency ?? 50),
+      intervalHours: entry.intervalHours ?? null,
       nextReviewAt: entry.nextReviewAt,
+    };
+    const metrics = computeReviewMetrics(resolved);
+    return {
+      correctStreak: resolved.correctStreak,
+      intervalDays: resolved.intervalDays,
+      intervalHours: resolved.intervalHours,
+      nextReviewAt: resolved.nextReviewAt,
+      ...metrics,
     };
   }
 
   const lastAttempt = entry.attempts.at(-1);
   const intervalDays = frequencyToIntervalDays(entry.frequency ?? 50);
   const baseDate = lastAttempt?.date ? new Date(lastAttempt.date) : new Date();
-
-  return {
+  const resolved = {
+    ...entry,
     correctStreak: countTrailingCorrectStreak(entry.attempts),
     intervalDays,
+    intervalHours: null,
     nextReviewAt: addLocalDays(baseDate, intervalDays),
+  };
+  const metrics = computeReviewMetrics(resolved);
+
+  return {
+    correctStreak: resolved.correctStreak,
+    intervalDays,
+    intervalHours: null,
+    nextReviewAt: resolved.nextReviewAt,
+    ...metrics,
   };
 }
 
@@ -95,11 +301,18 @@ export function daysUntilReview(nextReviewAt, now = new Date()) {
 }
 
 export function isReviewDue(nextReviewAt, now = new Date()) {
-  return daysUntilReview(nextReviewAt, now) <= 0;
+  if (!nextReviewAt) return true;
+  return new Date(nextReviewAt).getTime() <= now.getTime() + MS_PER_DAY;
 }
 
 export function formatReviewScheduleLabel(nextReviewAt, now = new Date()) {
   if (!nextReviewAt) return "Dziś";
+
+  const diffMs = new Date(nextReviewAt).getTime() - now.getTime();
+  if (diffMs > 0 && diffMs < MS_PER_DAY) {
+    const hours = Math.max(1, Math.ceil(diffMs / MS_PER_HOUR));
+    return `Za ${hours} godz.`;
+  }
 
   const days = daysUntilReview(nextReviewAt, now);
 
@@ -126,8 +339,15 @@ export function formatReviewScheduleLabel(nextReviewAt, now = new Date()) {
 export function formatReviewScheduleDetail(nextReviewAt, intervalDays) {
   const label = formatReviewScheduleLabel(nextReviewAt);
   const days = intervalDays ?? frequencyToIntervalDays(50);
+  const diffMs = nextReviewAt
+    ? new Date(nextReviewAt).getTime() - Date.now()
+    : null;
   const intervalLabel =
-    days === 1 ? "co 1 dzień" : days < 5 ? `co ${days} dni` : `co ${days} dni`;
+    days === 0 && diffMs && diffMs > 0
+      ? `co ${Math.max(1, Math.ceil(diffMs / MS_PER_HOUR))} godz.`
+      : days === 1
+        ? "co 1 dzień"
+        : `co ${days} dni`;
 
   return { label, intervalLabel };
 }

@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Accordion,
@@ -36,6 +37,7 @@ import MaturaArkuszLink from "@/components/MaturaArkuszLink";
 import FavoriteTaskActions from "@/components/FavoriteTaskActions";
 import FavoriteTaskNoteSection from "@/components/FavoriteTaskNoteSection";
 import TaskRepetitionPanel from "@/components/TaskRepetitionPanel";
+import FrequencyChangeToast from "@/components/FrequencyChangeToast";
 import { createPageUrl } from "@/utils";
 import { publicSupabase } from "@/supabase-config.js";
 import {
@@ -125,8 +127,54 @@ export default function TaskDetailsPage() {
   const [reportAttachedTask, setReportAttachedTask] = useState(null);
   const [reportDescription, setReportDescription] = useState("");
   const [reportSubmitting, setReportSubmitting] = useState(false);
-  const { recordAttempt, getProgress } = useTaskProgress();
+  const [freqChange, setFreqChange] = useState(null);
+  const { recordAttempt, getProgress, progress } = useTaskProgress();
   const { user } = useAuth();
+
+  const prevAttemptsLenRef = useRef(0);
+  const prevFrequencyRef = useRef(null);
+  const pendingAttemptRef = useRef(false);
+
+  useEffect(() => {
+    prevAttemptsLenRef.current = progress[idParam]?.attempts?.length ?? 0;
+    prevFrequencyRef.current = progress[idParam]?.frequency ?? null;
+    pendingAttemptRef.current = false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idParam]);
+
+  useEffect(() => {
+    const entry = progress[idParam];
+    const attempts = entry?.attempts;
+    if (!attempts?.length) {
+      prevAttemptsLenRef.current = 0;
+      prevFrequencyRef.current = null;
+      return;
+    }
+    if (
+      pendingAttemptRef.current &&
+      attempts.length > prevAttemptsLenRef.current
+    ) {
+      const last = attempts.at(-1);
+      const to = last?.frequencyAfter ?? entry.frequency;
+      const from =
+        prevFrequencyRef.current ??
+        (attempts.length >= 2 ? attempts.at(-2)?.frequencyAfter ?? 50 : 50);
+      setFreqChange({
+        id: Date.now(),
+        from,
+        to,
+        isCorrect: !!last?.isCorrect,
+      });
+    }
+    pendingAttemptRef.current = false;
+    prevAttemptsLenRef.current = attempts.length;
+    prevFrequencyRef.current = entry.frequency;
+  }, [idParam, progress]);
+
+  const recordUserAttempt = (isCorrect) => {
+    pendingAttemptRef.current = true;
+    recordAttempt(task.id, isCorrect);
+  };
 
   useEffect(() => {
     if (!idParam) {
@@ -284,7 +332,7 @@ export default function TaskDetailsPage() {
     if (chosen) return;
     setChosen(opt);
     if (task.type === "closed") {
-      recordAttempt(task.id, opt === task.answer);
+      recordUserAttempt(opt === task.answer);
     }
   };
 
@@ -319,8 +367,7 @@ export default function TaskDetailsPage() {
               type="button"
               onClick={() => {
                 setOpenChecked(true);
-                recordAttempt(
-                  task.id,
+                recordUserAttempt(
                   isMultiOpenQuestionCorrect(openQuestionShape, openAnswers),
                 );
               }}
@@ -378,7 +425,7 @@ export default function TaskDetailsPage() {
               <Button
                 type="button"
                 onClick={() => {
-                  recordAttempt(task.id, true);
+                  recordUserAttempt(true);
                   setOpenGradeJustSubmitted(true);
                 }}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
@@ -389,7 +436,7 @@ export default function TaskDetailsPage() {
                 type="button"
                 variant="outline"
                 onClick={() => {
-                  recordAttempt(task.id, false);
+                  recordUserAttempt(false);
                   setOpenGradeJustSubmitted(true);
                 }}
                 className="border-rose-300 text-rose-700 hover:bg-rose-50 dark:border-rose-800 dark:text-rose-300 dark:hover:bg-rose-950/40"
@@ -431,52 +478,44 @@ export default function TaskDetailsPage() {
           const isCorrect = opt === task.answer;
           const isChosen = opt === chosen;
           const base =
-            "w-full px-4 py-3 rounded-lg border transition text-left";
+            "w-full px-4 py-3 rounded-lg border text-left transition-colors duration-200";
           let extra =
-            "bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white";
+            "bg-white dark:bg-slate-700 hover:bg-gray-100 dark:hover:bg-slate-600 hover:border-blue-300 dark:hover:border-blue-500 border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white shadow-sm hover:shadow-md";
           if (chosen) {
             if (isCorrect) {
-              extra = "bg-blue-500 text-white border-blue-500";
+              extra = "bg-blue-500 text-white border-blue-500 shadow-md";
             } else if (isChosen) {
-              extra = "bg-rose-500 text-white border-rose-500";
+              extra = "bg-rose-500 text-white border-rose-500 shadow-md";
             } else {
               extra =
-                "bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white";
+                "bg-gray-100 dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-slate-900 dark:text-white opacity-70";
             }
           }
           return (
-            <button
+            <motion.button
               key={opt}
               type="button"
               onClick={() => handleChoose(opt)}
               disabled={!!chosen}
               className={`${base} ${extra}`}
+              whileHover={chosen ? undefined : { scale: 1.03 }}
+              whileTap={chosen ? undefined : { scale: 0.99 }}
+              transition={{ duration: 0.18, ease: "easeOut" }}
             >
               <MathText text={opt} className="math-text-ui--flow" />
-            </button>
+            </motion.button>
           );
         })}
-        {chosen && (
-          <div
-            className={`mt-2 font-semibold text-center text-white py-2 rounded-md ${
-              chosen === task.answer ? "bg-blue-500" : "bg-rose-500"
-            }`}
-          >
-            {chosen === task.answer ? (
-              "Dobrze!"
-            ) : (
-              <span>
-                Błąd. Poprawna odpowiedź: <MathText text={task.answer} className="math-text-ui--flow" />
-              </span>
-            )}
-          </div>
-        )}
       </div>
     );
   };
 
   return (
     <div className="py-8">
+      <FrequencyChangeToast
+        change={freqChange}
+        onDismiss={() => setFreqChange(null)}
+      />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
           <Link
@@ -495,13 +534,21 @@ export default function TaskDetailsPage() {
               "from-slate-400 to-slate-600"
             }`}
           />
-          <CardHeader className="space-y-4">
-            <CardTitle className="font-normal text-slate-900 dark:text-white">
-              <TaskQuestionBody task={task} />
-            </CardTitle>
-            <MaturaArkuszLink task={task} />
+          <CardHeader className="space-y-3 pb-4">
+            <MaturaArkuszLink task={task} plain />
+            <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/20">
+              <p className="mb-3 text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                Treść zadania
+              </p>
+              <CardTitle className="font-semibold text-slate-950 dark:text-white">
+                <TaskQuestionBody
+                  task={task}
+                  className="[&>div]:text-2xl [&>div]:font-semibold sm:[&>div]:text-[1.65rem]"
+                />
+              </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-5">
             <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-slate-300 mb-4">
               <span>
                 Temat: {task.topic} • Poziom: {task.level} • Źródło:{" "}
@@ -509,17 +556,30 @@ export default function TaskDetailsPage() {
               </span>
             </div>
 
-            {task.type === "closed" ? renderClosed() : renderOpen()}
+            <section className="space-y-4">
+              <p className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                Poprawka
+              </p>
+              {task.type === "closed" ? renderClosed() : renderOpen()}
+            </section>
 
-            {taskProgress?.attempts?.length > 0 ? (
-              <div className="mt-4 border-t border-gray-200 pt-4 dark:border-slate-700">
-                <TaskRepetitionPanel taskId={task.id} />
-              </div>
-            ) : null}
-
-            {task && <FavoriteTaskNoteSection taskId={task.id} />}
+            {task && (
+              <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 shadow-sm dark:border-amber-900/50 dark:bg-amber-950/20">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                  Notatka
+                </p>
+                <FavoriteTaskNoteSection
+                  taskId={task.id}
+                  className="mt-0 border-t-0 pt-0"
+                />
+              </section>
+            )}
           </CardContent>
         </Card>
+
+        {taskProgress?.attempts?.length > 0 ? (
+          <TaskRepetitionPanel taskId={task.id} layout="spread" />
+        ) : null}
 
         {randomSession ? (
           <Card className="border border-purple-200 bg-purple-50/80 dark:border-purple-900/50 dark:bg-purple-950/30">

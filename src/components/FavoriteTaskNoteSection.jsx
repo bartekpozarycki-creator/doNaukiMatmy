@@ -4,6 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import FavoriteNoteDialog from "@/components/FavoriteNoteDialog";
 import MathText from "@/components/MathText";
+import { cn } from "@/lib/utils";
+import { formatMathNoteLine } from "@/utils/math-note-rendering";
+
+const propType = () => null;
 
 function NotePreview({ text, lineClamp }) {
   const lines = text.split("\n");
@@ -17,21 +21,29 @@ function NotePreview({ text, lineClamp }) {
     >
       {lines.map((line, index) => (
         <div key={index} className="min-h-[1.25rem]">
-          {line.trim() ? <MathText text={line} /> : "\u00a0"}
+          {line.trim() ? <MathText text={formatMathNoteLine(line)} /> : "\u00a0"}
         </div>
       ))}
     </div>
   );
 }
 
-export default function FavoriteTaskNoteSection({ taskId }) {
+NotePreview.propTypes = {
+  text: propType,
+  lineClamp: propType,
+};
+
+export default function FavoriteTaskNoteSection({ taskId, className = "" }) {
   const { getNote, hasNote } = useFavorites();
   const [dialogOpen, setDialogOpen] = useState(false);
   const note = getNote(taskId);
 
   return (
     <div
-      className="mt-4 border-t border-slate-100 pt-4 dark:border-slate-700"
+      className={cn(
+        "mt-4 border-t border-slate-100 pt-4 dark:border-slate-700",
+        className,
+      )}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
@@ -48,7 +60,7 @@ export default function FavoriteTaskNoteSection({ taskId }) {
         variant="outline"
         size="sm"
         onClick={() => setDialogOpen(true)}
-        className="dark:border-slate-600"
+        className="mt-6 dark:border-slate-600"
       >
         <Pin className="mr-2 h-4 w-4" />
         {hasNote(taskId) ? "Edytuj notatkę" : "Dodaj notatkę"}
@@ -62,3 +74,8 @@ export default function FavoriteTaskNoteSection({ taskId }) {
     </div>
   );
 }
+
+FavoriteTaskNoteSection.propTypes = {
+  taskId: propType,
+  className: propType,
+};

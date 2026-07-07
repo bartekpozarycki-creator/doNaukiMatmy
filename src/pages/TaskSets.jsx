@@ -6,16 +6,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Layers, Search, ChevronLeft, ChevronRight, BookOpenCheck } from "lucide-react";
+import { Layers, ChevronLeft, ChevronRight, BookOpenCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -23,6 +15,12 @@ import { AnimatePresence, motion } from "framer-motion";
 import TaskQuestionBody from "@/components/TaskQuestionBody";
 import MaturaArkuszLink from "@/components/MaturaArkuszLink";
 import FavoriteTaskActions from "@/components/FavoriteTaskActions";
+import {
+  CycleFilter,
+  FilterBar,
+  FilterSearchField,
+  PrettySelectFilter,
+} from "@/components/ListFilters";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
@@ -499,6 +497,26 @@ export default function TaskSetsPage() {
   const unique = (key) =>
     [...new Set(tasks.map((t) => t[key]).filter(Boolean))].sort();
 
+  const filtersDisabled = loading && tasks.length === 0;
+
+  const levelOptions = [
+    { value: "all", label: "Wszystkie poziomy" },
+    ...unique("level").map((value) => ({ value, label: value })),
+  ];
+  const sourceOptions = [
+    { value: "all", label: "Wszystkie źródła" },
+    ...unique("source").map((value) => ({ value, label: value })),
+  ];
+  const topicOptions = [
+    { value: "all", label: "Wszystkie tematy" },
+    ...unique("topic").map((value) => ({ value, label: value })),
+  ];
+  const typeOptions = [
+    { value: "all", label: "Wszystkie typy" },
+    { value: "closed", label: "Zamknięte" },
+    { value: "open", label: "Otwarte" },
+  ];
+
   const pageStyle = getNotebookPageStyle(isDark);
 
   return (
@@ -559,93 +577,46 @@ export default function TaskSetsPage() {
 
         <Card className="bg-white dark:bg-slate-800 border-0 shadow-lg">
           <CardContent className="p-6 space-y-4">
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-end">
-              <div className="relative lg:col-span-4">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <Input
+            <FilterBar
+              columnsClassName="grid-cols-2 sm:grid-cols-3 xl:grid-cols-4"
+              search={
+                <FilterSearchField
                   placeholder="Szukaj pytania..."
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  disabled={loading && tasks.length === 0}
-                  className="pl-10 dark:bg-slate-700 dark:border-slate-600 bg-white"
+                  disabled={filtersDisabled}
                 />
-              </div>
-              <div className="lg:col-span-2">
-                <Select
-                  value={enforcedLevel || level}
-                  onValueChange={setLevel}
-                  disabled={
-                    !!enforcedLevel || (loading && tasks.length === 0)
-                  }
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                    <SelectValue placeholder="Poziom" />
-                  </SelectTrigger>
-                  <SelectContent side="bottom" align="start">
-                    <SelectItem value="all">Wszystkie poziomy</SelectItem>
-                    {unique("level").map((l) => (
-                      <SelectItem key={l} value={l}>
-                        {l}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="lg:col-span-2">
-                <Select
-                  value={source}
-                  onValueChange={setSource}
-                  disabled={loading && tasks.length === 0}
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                    <SelectValue placeholder="Źródło" />
-                  </SelectTrigger>
-                  <SelectContent side="bottom" align="start">
-                    <SelectItem value="all">Wszystkie źródła</SelectItem>
-                    {unique("source").map((s) => (
-                      <SelectItem key={s} value={s}>
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="lg:col-span-2">
-                <Select
-                  value={topic}
-                  onValueChange={setTopic}
-                  disabled={loading && tasks.length === 0}
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                    <SelectValue placeholder="Temat" />
-                  </SelectTrigger>
-                  <SelectContent side="bottom" align="start">
-                    <SelectItem value="all">Wszystkie tematy</SelectItem>
-                    {unique("topic").map((tp) => (
-                      <SelectItem key={tp} value={tp}>
-                        {tp}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="lg:col-span-2">
-                <Select
-                  value={taskType}
-                  onValueChange={setTaskType}
-                  disabled={loading && tasks.length === 0}
-                >
-                  <SelectTrigger className="dark:bg-slate-700 dark:border-slate-600 bg-white">
-                    <SelectValue placeholder="Typ zadania" />
-                  </SelectTrigger>
-                  <SelectContent side="bottom" align="start">
-                    <SelectItem value="all">Wszystkie typy</SelectItem>
-                    <SelectItem value="closed">Zamknięte</SelectItem>
-                    <SelectItem value="open">Otwarte</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              }
+            >
+              <CycleFilter
+                label="Poziom"
+                value={enforcedLevel || level}
+                options={levelOptions}
+                onChange={setLevel}
+                disabled={!!enforcedLevel || filtersDisabled}
+              />
+              <PrettySelectFilter
+                label="Źródło"
+                value={source}
+                options={sourceOptions}
+                onChange={setSource}
+                disabled={filtersDisabled}
+              />
+              <PrettySelectFilter
+                label="Temat"
+                value={topic}
+                options={topicOptions}
+                onChange={setTopic}
+                disabled={filtersDisabled}
+              />
+              <CycleFilter
+                label="Typ"
+                value={taskType}
+                options={typeOptions}
+                onChange={setTaskType}
+                disabled={filtersDisabled}
+              />
+            </FilterBar>
           </CardContent>
         </Card>
 

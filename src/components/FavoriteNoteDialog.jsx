@@ -8,23 +8,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import MathInsertToolbar from "@/components/MathInsertToolbar";
-import MathText from "@/components/MathText";
+import MathNoteEditor from "@/components/MathNoteEditor";
 
-function NotePreview({ text }) {
-  const lines = text.split("\n");
-  return (
-    <div className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
-      {lines.map((line, index) => (
-        <div key={index} className="min-h-[1.25rem]">
-          {line.trim() ? <MathText text={line} /> : "\u00a0"}
-        </div>
-      ))}
-    </div>
-  );
-}
+const propType = () => null;
 
 export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
   const { getNote, setNote, isFavorite, addFavorite } = useFavorites();
@@ -43,20 +30,44 @@ export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
       addFavorite(taskId);
     }
     setNote(taskId, draft);
-    onOpenChange(false);
+    handleOpenChange(false);
   };
 
   const handleClear = () => {
     if (!taskId) return;
     setNote(taskId, "");
-    onOpenChange(false);
+    handleOpenChange(false);
+  };
+
+  const handleOpenChange = (nextOpen) => {
+    if (!nextOpen) {
+      globalThis.mathVirtualKeyboard?.hide?.();
+    }
+    onOpenChange(nextOpen);
+  };
+
+  const handleInteractOutside = (event) => {
+    const target = event.detail?.originalEvent?.target ?? event.target;
+    if (!(target instanceof Element)) return;
+    if (
+      target.closest(
+        ".ML__keyboard, .MLK__plate, .MLK__backdrop, .MLK__keycap, .ML__popover, .ML__menu, [class*='MLK__'], [class*='ML__keyboard'], math-field",
+      )
+    ) {
+      event.preventDefault();
+    }
   };
 
   if (!taskId) return null;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent
+        onInteractOutside={handleInteractOutside}
+        onPointerDownOutside={handleInteractOutside}
+        onFocusOutside={handleInteractOutside}
+        className="max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+      >
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-white">
             Notatka do zadania
@@ -66,28 +77,12 @@ export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
             paska symboli, aby wstawiać formuły matematyczne.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3">
-          <MathInsertToolbar
-            targetRef={textareaRef}
+        <div>
+          <MathNoteEditor
             value={draft}
             onChange={setDraft}
+            textareaRef={textareaRef}
           />
-          <Textarea
-            ref={textareaRef}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            placeholder="Twoja notatka…"
-            rows={5}
-            className="resize-y border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-white dark:placeholder:text-slate-500"
-          />
-          {draft.trim() ? (
-            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                Podgląd
-              </p>
-              <NotePreview text={draft} />
-            </div>
-          ) : null}
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
           {getNote(taskId) ? (
@@ -112,3 +107,9 @@ export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
     </Dialog>
   );
 }
+
+FavoriteNoteDialog.propTypes = {
+  taskId: propType,
+  open: propType,
+  onOpenChange: propType,
+};

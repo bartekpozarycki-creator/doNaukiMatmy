@@ -60,6 +60,15 @@ export function snapshotCompletedAttempt(attempt) {
     score: attempt.score,
     total: attempt.total,
     timeSpent: attempt.timeSpent,
+    elapsedTime: attempt.elapsedTime,
+    answers: attempt.answers,
+    selfAwardedPoints: attempt.selfAwardedPoints,
+    checkedQuestionIds: attempt.checkedQuestionIds,
+    questionScores: attempt.questionScores,
+    questionScoreRows: attempt.questionScoreRows,
+    currentQuestionIndex: attempt.currentQuestionIndex,
+    viewMode: attempt.viewMode,
+    timerEnabled: attempt.timerEnabled,
     date: attempt.date,
     updatedAt: attempt.updatedAt,
   };
@@ -146,10 +155,21 @@ export function useWorksheetProgress() {
       const { silent = false } = options;
       const existing = getStored(user?.id).find((a) => a.id === id);
       if (!existing) return false;
+      const history = Array.isArray(existing.attemptHistory)
+        ? existing.attemptHistory
+        : [];
       const snapshot = existing.previousCompleted
-        ? { ...existing.previousCompleted, id, status: WORKSHEET_STATUS.COMPLETED }
+        ? {
+            ...existing.previousCompleted,
+            id,
+            status: WORKSHEET_STATUS.COMPLETED,
+            ...(history.length ? { attemptHistory: history } : {}),
+          }
         : isWorksheetCompleted(existing)
-          ? snapshotCompletedAttempt(existing)
+          ? {
+              ...snapshotCompletedAttempt(existing),
+              ...(history.length ? { attemptHistory: history } : {}),
+            }
           : null;
       if (!snapshot) {
         const updated = getStored(user?.id).filter((a) => a.id !== id);

@@ -12,6 +12,7 @@ import DailyChallenge from "./DailyChallenge";
 import Review from "./Review";
 
 import Community from "./Community";
+import CommunityModeration from "./CommunityModeration";
 
 import Profile from "./Profile";
 
@@ -69,6 +70,7 @@ const PAGES = {
     Review: Review,
     
     Community: Community,
+    CommunityModeration: CommunityModeration,
     
     Profile: Profile,
     
@@ -159,6 +161,7 @@ const router = createBrowserRouter([
             { path: "/Review", element: <Review /> },
             { path: "/Progress", element: <Navigate to="/" replace /> },
             { path: "/Community", element: <Community /> },
+            { path: "/CommunityModeration", element: <CommunityModeration /> },
             { path: "/Profile", element: <Profile /> },
             { path: "/Egzamin", element: <WorksheetDetails /> },
             { path: "/Arkusz", element: <WorksheetDetailsRedirect /> },

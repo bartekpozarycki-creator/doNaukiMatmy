@@ -1,18 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Heart, ArrowRight, Search } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Heart, ArrowRight } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { createPageUrl } from "@/utils";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { publicSupabase } from "@/supabase-config.js";
@@ -25,34 +17,51 @@ import TaskQuestionBody from "@/components/TaskQuestionBody";
 import MaturaArkuszLink from "@/components/MaturaArkuszLink";
 import FavoriteTaskActions from "@/components/FavoriteTaskActions";
 import FavoriteTaskNoteSection from "@/components/FavoriteTaskNoteSection";
+import {
+  CycleFilter,
+  FilterBar,
+  FilterSearchField,
+  PrettySelectFilter,
+} from "@/components/ListFilters";
+import { cn } from "@/lib/utils";
 
 const skeletonClass = "bg-slate-200 dark:bg-slate-700";
 
 const taskCardLayoutClass =
-  "flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-shadow duration-300 ease-out group-hover/tile:shadow-md dark:border-slate-700/80 dark:bg-slate-800 dark:group-hover/tile:shadow-lg";
+  "flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 ease-out group-hover/tile:border-slate-300 group-hover/tile:shadow-md dark:border-slate-700/80 dark:bg-slate-800 dark:group-hover/tile:border-slate-600 dark:group-hover/tile:shadow-lg";
 
 const taskTileMotionTransition = {
-  type: "spring",
-  stiffness: 420,
-  damping: 28,
-  mass: 0.85,
+  type: "tween",
+  duration: 0.2,
+  ease: [0.25, 0.1, 0.25, 1],
 };
 
+const taskCardHeaderClass =
+  "flex flex-col space-y-0 overflow-visible !px-3.5 !pt-3.5 !pb-1.5";
+const taskCardBadgeRowClass = "mb-2.5 flex flex-wrap items-center gap-1.5";
+const taskCardTitleBlockClass = "min-w-0 overflow-visible py-1 leading-normal";
+const taskCardFooterClass = "shrink-0 !px-3.5 !pb-3.5 !pt-2.5";
+const taskMasonryTileClass = "mb-5 w-full break-inside-avoid";
 const badgeClass =
-  "pointer-events-none px-2.5 py-0.5 text-xs font-medium leading-tight";
+  "px-2.5 py-0.5 text-xs font-medium leading-tight";
 
 function FavoriteTaskCardSkeleton() {
   return (
     <Card className={taskCardLayoutClass} aria-hidden>
       <Skeleton className={`h-1.5 w-full shrink-0 rounded-none ${skeletonClass}`} />
-      <CardContent className="flex flex-col space-y-3 p-4 sm:p-5">
-        <div className="flex flex-wrap gap-2">
-          <Skeleton className={`h-6 w-24 rounded-full ${skeletonClass}`} />
-          <Skeleton className={`h-6 w-28 rounded-full ${skeletonClass}`} />
+      <CardHeader className={taskCardHeaderClass}>
+        <div className={taskCardBadgeRowClass}>
+          <Skeleton className={`h-6 w-24 shrink-0 rounded-full ${skeletonClass}`} />
+          <Skeleton className={`h-6 w-20 shrink-0 rounded-full ${skeletonClass}`} />
+          <Skeleton className={`ml-auto h-6 w-14 shrink-0 rounded-full ${skeletonClass}`} />
         </div>
-        <Skeleton className={`h-4 w-full ${skeletonClass}`} />
-        <Skeleton className={`h-4 w-[90%] ${skeletonClass}`} />
-        <Skeleton className={`h-3.5 w-2/3 ${skeletonClass}`} />
+        <div className="mt-1 space-y-2">
+          <Skeleton className={`h-3.5 w-full ${skeletonClass}`} />
+          <Skeleton className={`h-3.5 w-[94%] ${skeletonClass}`} />
+        </div>
+      </CardHeader>
+      <CardContent className={taskCardFooterClass}>
+        <Skeleton className={`h-3.5 w-[90%] ${skeletonClass}`} />
       </CardContent>
     </Card>
   );
@@ -81,19 +90,19 @@ function FavoriteTaskCard({ task }) {
           goToTask();
         }
       }}
-      className="group/tile block w-full cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+      className="group/tile block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
       initial={false}
-      whileHover={{ y: -6 }}
-      whileTap={{ y: -2, scale: 0.992 }}
+      whileHover={{ scale: 1.012 }}
+      whileTap={{ scale: 0.988 }}
       transition={taskTileMotionTransition}
     >
-      <Card className={taskCardLayoutClass}>
+      <Card className={cn(taskCardLayoutClass, "relative")}>
         <div
           className={`h-1.5 w-full shrink-0 rounded-none bg-gradient-to-r ${barGradient}`}
         />
-        <CardContent className="flex flex-col p-4 sm:p-5">
+        <CardHeader className={taskCardHeaderClass}>
           <div
-            className="mb-3 flex flex-wrap items-start justify-between gap-2"
+            className={taskCardBadgeRowClass}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
           >
@@ -123,16 +132,23 @@ function FavoriteTaskCard({ task }) {
             />
           </div>
 
-          <div className="min-w-0 overflow-visible">
-            <TaskQuestionBody task={task} compact />
-          </div>
+          <CardTitle className={taskCardTitleBlockClass}>
+            <TaskQuestionBody task={task} compact tile />
+          </CardTitle>
+        </CardHeader>
 
-          <p className="mt-4 text-sm text-gray-600 dark:text-slate-400">
+        <CardContent className={taskCardFooterClass}>
+          <p className="text-sm text-gray-600 dark:text-slate-300">
             Temat: {task.topic} • Typ:{" "}
             {task.type === "closed" ? "zamknięte" : "otwarte"}
           </p>
 
-          <FavoriteTaskNoteSection taskId={task.id} />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
+            <FavoriteTaskNoteSection taskId={task.id} />
+          </div>
         </CardContent>
       </Card>
     </motion.div>
@@ -197,6 +213,29 @@ export default function FavoritesPage() {
   const unique = (key) =>
     [...new Set(tasks.map((t) => t[key]).filter(Boolean))].sort();
 
+  const levelOptions = [
+    { value: "all", label: "Wszystkie poziomy" },
+    ...unique("level").map((value) => ({ value, label: value })),
+  ];
+  const sourceOptions = [
+    { value: "all", label: "Wszystkie źródła" },
+    ...unique("source").map((value) => ({ value, label: value })),
+  ];
+  const topicOptions = [
+    { value: "all", label: "Wszystkie tematy" },
+    ...unique("topic").map((value) => ({ value, label: value })),
+  ];
+  const typeOptions = [
+    { value: "all", label: "Wszystkie typy" },
+    { value: "closed", label: "Zamknięte" },
+    { value: "open", label: "Otwarte" },
+  ];
+  const noteOptions = [
+    { value: "all", label: "Wszystkie" },
+    { value: "with", label: "Z notatką" },
+    { value: "without", label: "Bez notatki" },
+  ];
+
   const filteredTasks = useMemo(
     () =>
       tasks.filter((task) => {
@@ -232,7 +271,7 @@ export default function FavoritesPage() {
 
   return (
     <div className="py-8">
-      <div className="mx-auto max-w-7xl space-y-8 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl space-y-8 px-4 sm:px-6 lg:px-8">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
             <Heart className="h-7 w-7 shrink-0 fill-rose-500 text-rose-500 sm:h-8 sm:w-8" />
@@ -253,94 +292,56 @@ export default function FavoritesPage() {
         {!loading && tasks.length > 0 ? (
           <Card className="border-0 bg-white shadow-lg dark:bg-slate-800">
             <CardContent className="space-y-4 p-6">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-12 lg:items-end">
-                <div className="relative lg:col-span-4">
-                  <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                  <Input
+              <FilterBar
+                search={
+                  <FilterSearchField
                     placeholder="Szukaj pytania lub tematu..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="bg-white pl-10 dark:border-slate-600 dark:bg-slate-700"
                   />
-                </div>
-                <div className="lg:col-span-2">
-                  <Select value={level} onValueChange={setLevel}>
-                    <SelectTrigger className="bg-white dark:border-slate-600 dark:bg-slate-700">
-                      <SelectValue placeholder="Poziom" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="all">Wszystkie poziomy</SelectItem>
-                      {unique("level").map((l) => (
-                        <SelectItem key={l} value={l}>
-                          {l}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="lg:col-span-2">
-                  <Select value={source} onValueChange={setSource}>
-                    <SelectTrigger className="bg-white dark:border-slate-600 dark:bg-slate-700">
-                      <SelectValue placeholder="Źródło" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="all">Wszystkie źródła</SelectItem>
-                      {unique("source").map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="lg:col-span-2">
-                  <Select value={topic} onValueChange={setTopic}>
-                    <SelectTrigger className="bg-white dark:border-slate-600 dark:bg-slate-700">
-                      <SelectValue placeholder="Temat" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="all">Wszystkie tematy</SelectItem>
-                      {unique("topic").map((tp) => (
-                        <SelectItem key={tp} value={tp}>
-                          {tp}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="lg:col-span-1">
-                  <Select value={taskType} onValueChange={setTaskType}>
-                    <SelectTrigger className="bg-white dark:border-slate-600 dark:bg-slate-700">
-                      <SelectValue placeholder="Typ" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="all">Wszystkie typy</SelectItem>
-                      <SelectItem value="closed">Zamknięte</SelectItem>
-                      <SelectItem value="open">Otwarte</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="lg:col-span-1">
-                  <Select value={noteFilter} onValueChange={setNoteFilter}>
-                    <SelectTrigger className="bg-white dark:border-slate-600 dark:bg-slate-700">
-                      <SelectValue placeholder="Notatka" />
-                    </SelectTrigger>
-                    <SelectContent side="bottom" align="start">
-                      <SelectItem value="all">Wszystkie</SelectItem>
-                      <SelectItem value="with">Z notatką</SelectItem>
-                      <SelectItem value="without">Bez notatki</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+                }
+              >
+                <CycleFilter
+                  label="Poziom"
+                  value={level}
+                  options={levelOptions}
+                  onChange={setLevel}
+                />
+                <PrettySelectFilter
+                  label="Źródło"
+                  value={source}
+                  options={sourceOptions}
+                  onChange={setSource}
+                />
+                <PrettySelectFilter
+                  label="Temat"
+                  value={topic}
+                  options={topicOptions}
+                  onChange={setTopic}
+                />
+                <CycleFilter
+                  label="Typ"
+                  value={taskType}
+                  options={typeOptions}
+                  onChange={setTaskType}
+                />
+                <CycleFilter
+                  label="Notatka"
+                  value={noteFilter}
+                  options={noteOptions}
+                  onChange={setNoteFilter}
+                />
+              </FilterBar>
             </CardContent>
           </Card>
         ) : null}
 
         {loading ? (
-          <div className="flex flex-col gap-5">
+          <div className="columns-1 gap-5 md:columns-2">
             {Array.from({ length: 4 }).map((_, i) => (
-              <FavoriteTaskCardSkeleton key={`fav-skel-${i}`} />
+              <div key={`fav-skel-${i}`} className={taskMasonryTileClass}>
+                <FavoriteTaskCardSkeleton />
+              </div>
             ))}
           </div>
         ) : tasks.length === 0 ? (
@@ -373,9 +374,11 @@ export default function FavoritesPage() {
               z {tasks.length} zapisanych zadań
             </p>
             {filteredTasks.length > 0 ? (
-              <div className="flex flex-col gap-5">
+              <div className="columns-1 gap-5 md:columns-2">
                 {filteredTasks.map((task) => (
-                  <FavoriteTaskCard key={task.id} task={task} />
+                  <div key={task.id} className={taskMasonryTileClass}>
+                    <FavoriteTaskCard task={task} />
+                  </div>
                 ))}
               </div>
             ) : (

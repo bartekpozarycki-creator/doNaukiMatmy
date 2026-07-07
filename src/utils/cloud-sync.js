@@ -163,11 +163,29 @@ export function mergeTaskProgress(localProgress, cloudProgress) {
         uniqueAttempts.at(-1)?.intervalDaysAfter ??
         localEntry.intervalDays ??
         cloudEntry.intervalDays,
+      intervalHours:
+        latestEntry.intervalHours ??
+        uniqueAttempts.at(-1)?.intervalHoursAfter ??
+        localEntry.intervalHours ??
+        cloudEntry.intervalHours,
       nextReviewAt:
         latestEntry.nextReviewAt ??
         uniqueAttempts.at(-1)?.nextReviewAtAfter ??
         localEntry.nextReviewAt ??
         cloudEntry.nextReviewAt,
+      difficultyScore:
+        latestEntry.difficultyScore ??
+        uniqueAttempts.at(-1)?.difficultyScoreAfter ??
+        localEntry.difficultyScore ??
+        cloudEntry.difficultyScore,
+      masteryStatus:
+        latestEntry.masteryStatus ??
+        localEntry.masteryStatus ??
+        cloudEntry.masteryStatus,
+      reviewReason:
+        latestEntry.reviewReason ??
+        localEntry.reviewReason ??
+        cloudEntry.reviewReason,
     };
   }
 

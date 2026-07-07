@@ -59,6 +59,23 @@ function groupReviewItemsByBand(reviewItems, threshold) {
   return buckets;
 }
 
+export function filterReviewSessionItems(reviewItems, filters = {}) {
+  const {
+    topic = "all",
+    level = "all",
+    mode = "all",
+  } = filters;
+
+  return reviewItems.filter((item) => {
+    if (topic !== "all" && item.task?.topic !== topic) return false;
+    if (level !== "all" && item.task?.level !== level) return false;
+    if (mode === "due" && !isReviewDue(item.nextReviewAt)) return false;
+    if (mode === "wrong" && item.lastAttempt?.isCorrect) return false;
+    if (mode === "needsWork" && item.masteryStatus?.id !== "needsWork") return false;
+    return true;
+  });
+}
+
 function allocateBandCounts(total, weights) {
   const keys = ["due", "needsReview", "moderate", "mastered"];
   const weightSum = keys.reduce((sum, key) => sum + weights[key], 0);
@@ -101,12 +118,16 @@ function pickFromBuckets(buckets, band, count, selectedIds) {
 export function pickRandomReviewTaskIds(
   reviewItems,
   count,
-  { reviewThreshold = REVIEW_FREQUENCY_THRESHOLD } = {},
+  { reviewThreshold = REVIEW_FREQUENCY_THRESHOLD, filters = null } = {},
 ) {
-  if (!reviewItems.length || count <= 0) return [];
+  const sourceItems = filters
+    ? filterReviewSessionItems(reviewItems, filters)
+    : reviewItems;
 
-  const limit = Math.min(count, reviewItems.length);
-  const buckets = groupReviewItemsByBand(reviewItems, reviewThreshold);
+  if (!sourceItems.length || count <= 0) return [];
+
+  const limit = Math.min(count, sourceItems.length);
+  const buckets = groupReviewItemsByBand(sourceItems, reviewThreshold);
   const targets = allocateBandCounts(limit, BAND_WEIGHTS);
   const selectedIds = new Set();
   const selected = [];
@@ -117,7 +138,7 @@ export function pickRandomReviewTaskIds(
   }
 
   if (selected.length < limit) {
-    const remaining = reviewItems.filter(
+    const remaining = sourceItems.filter(
       (item) => !selectedIds.has(item.task.id),
     );
     selected.push(...shuffleArray(remaining).slice(0, limit - selected.length));

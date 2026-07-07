@@ -34,11 +34,11 @@ function renderLatexPart(latex, displayDelimiter, key) {
 }
 
 function normalizePlainPart(part) {
-  return part.replace(/\s+/g, " ");
+  return part.replace(/−/g, "-").replace(/\s+/g, " ");
 }
 
 export default function MathText({ text, className = "" }) {
-  const parts = String(text ?? "").split(MATH_PART_RE);
+  const parts = String(text ?? "").replace(/−/g, "-").split(MATH_PART_RE);
 
   return (
     <span className={cn("math-text-ui", className)}>
