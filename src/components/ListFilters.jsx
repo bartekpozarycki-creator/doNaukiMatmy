@@ -49,7 +49,7 @@ export function CycleFilter({ label, value, options, onChange, disabled = false 
   };
 
   return (
-    <div className="flex h-full flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </span>
@@ -57,19 +57,19 @@ export function CycleFilter({ label, value, options, onChange, disabled = false 
         type="button"
         onClick={cycle}
         disabled={disabled || options.length <= 1}
-        className="group flex h-full min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/70 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-800 dark:hover:bg-blue-950/30"
+        className="group flex h-11 w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-3 text-left shadow-sm transition hover:border-blue-200 hover:bg-blue-50/70 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-800 dark:hover:bg-blue-950/30"
         aria-label={`${label}: ${current?.label ?? ""}. Kliknij, aby zmienić filtr.`}
       >
         <motion.span
           key={current?.value}
-          initial={{ opacity: 0, y: 6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.16, ease: "easeOut" }}
-          className="min-w-0 flex-1 break-words text-sm font-semibold leading-snug text-slate-800 dark:text-slate-100"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.14 }}
+          className="min-w-0 flex-1 truncate text-sm font-semibold leading-none text-slate-800 dark:text-slate-100"
         >
           {current?.label}
         </motion.span>
-        <span className="shrink-0 self-start rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 transition group-hover:border-blue-200 group-hover:bg-blue-100 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
+        <span className="shrink-0 rounded-full border border-blue-100 bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/40 dark:text-blue-300">
           klik
         </span>
       </button>
@@ -85,12 +85,12 @@ export function PrettySelectFilter({
   disabled = false,
 }) {
   return (
-    <div className="flex h-full flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <span className="block text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
         {label}
       </span>
       <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger className="h-full min-h-11 items-center whitespace-normal rounded-xl border-slate-200 bg-white px-3 py-2 text-left text-sm font-semibold leading-snug text-slate-800 shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50/70 hover:shadow-md focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-blue-800 dark:hover:bg-blue-950/30 [&>span]:line-clamp-none [&>span]:break-words [&>span]:whitespace-normal">
+        <SelectTrigger className="h-11 rounded-xl border-slate-200 bg-white px-3 text-left text-sm font-semibold text-slate-800 shadow-sm transition hover:border-blue-200 hover:bg-blue-50/70 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:border-blue-800 dark:hover:bg-blue-950/30 [&>span]:truncate">
           <SelectValue />
         </SelectTrigger>
         <SelectContent
@@ -117,7 +117,7 @@ export function FilterBar({ search, children, columnsClassName = "grid-cols-2 sm
   return (
     <div className="space-y-3">
       {search}
-      <div className={`grid items-stretch gap-3 ${columnsClassName}`}>{children}</div>
+      <div className={`grid items-start gap-3 ${columnsClassName}`}>{children}</div>
     </div>
   );
 }

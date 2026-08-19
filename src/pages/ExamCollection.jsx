@@ -96,7 +96,10 @@ export default function ExamCollectionPage() {
       setLoading(true);
       setFetchError(null);
 
-      const { data, error } = await publicSupabase.from("tasks").select("*");
+      const { data, error } = await publicSupabase
+        .from("tasks")
+        .select("*")
+        .not("arkusz", "is", null);
 
       if (cancelled) return;
 
@@ -108,7 +111,11 @@ export default function ExamCollectionPage() {
         return;
       }
 
-      setTasks((data ?? []).map(mapDbTaskRow).filter((task) => task && task.question));
+      setTasks(
+        (data ?? [])
+          .map(mapDbTaskRow)
+          .filter((task) => task && task.question && isMaturalneTask(task)),
+      );
       setLoading(false);
     };
 
@@ -127,10 +134,10 @@ export default function ExamCollectionPage() {
     tasks
       .filter(
         (task) =>
+          isMaturalneTask(task) &&
           task.level === selectedExam.level &&
           task.topic &&
-          task.topic !== "—" &&
-          isMaturalneTask(task),
+          task.topic !== "—",
       )
       .forEach((task) => {
         const current = grouped.get(task.topic) || {

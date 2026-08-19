@@ -4,10 +4,8 @@ export function trimField(value) {
   return String(value ?? "").trim();
 }
 
-export function resolveQuestionTitle(formTitle, attachedTask) {
-  const fromForm = trimField(formTitle);
-  if (fromForm) return fromForm;
-  return trimField(attachedTask?.question);
+export function resolveQuestionTitle(formTitle) {
+  return trimField(formTitle);
 }
 
 export function buildCommunityQuestionPayload({
@@ -16,7 +14,7 @@ export function buildCommunityQuestionPayload({
   user,
   imageUrls = [],
 }) {
-  const title = resolveQuestionTitle(newQuestion.title, attachedTask);
+  const title = resolveQuestionTitle(newQuestion.title);
   const description = trimField(newQuestion.description);
   const urls = Array.isArray(imageUrls) ? imageUrls.filter(Boolean) : [];
 

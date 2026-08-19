@@ -36,7 +36,7 @@ export default function ProgressPage() {
   const [goalFilter, setGoalFilter] = useState("all"); // all, matura_podstawowa, matura_rozszerzona
 
   useEffect(() => {
-    const demoUser = { full_name: "MathMaster User", learning_goal: "", theme: "light" };
+    const demoUser = { full_name: "Mauka User", learning_goal: "", theme: "light" };
     setUser(demoUser);
   }, []);
 

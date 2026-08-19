@@ -19,6 +19,18 @@ export const TASK_LEVEL_BAR_GRADIENT = {
   ósmoklasisty: "from-green-400 to-green-600",
 };
 
+export const TASK_LEVEL_BAR_SOLID = {
+  podstawowy: "bg-blue-600",
+  rozszerzony: "bg-purple-600",
+  ósmoklasisty: "bg-green-600",
+};
+
+export const TASK_LEVEL_DISPLAY_LABEL = {
+  podstawowy: "poziom podstawowy",
+  rozszerzony: "poziom rozszerzony",
+  ósmoklasisty: "egzamin ósmoklasisty",
+};
+
 export const TASK_LEVEL_BADGE_THEME = {
   podstawowy: "border-blue-500 text-blue-700 dark:text-blue-400",
   rozszerzony: "border-purple-500 text-purple-700 dark:text-purple-400",
@@ -32,12 +44,139 @@ export function taskLevelBadgeClassName(level) {
   );
 }
 
+export const TASK_DIFFICULTY_TIER_ORDER = [
+  "bardzo_latwe",
+  "latwe",
+  "raczej_latwe",
+  "srednie",
+  "raczej_trudne",
+  "trudne",
+  "bardzo_trudne",
+];
+
+const TASK_DIFFICULTY_TIER = {
+  bardzo_latwe: {
+    label: "Bardzo łatwe",
+    className:
+      "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300",
+  },
+  latwe: {
+    label: "Łatwe",
+    className:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
+  raczej_latwe: {
+    label: "Raczej łatwe",
+    className:
+      "border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950/50 dark:text-green-300",
+  },
+  srednie: {
+    label: "Średnie",
+    className:
+      "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  },
+  raczej_trudne: {
+    label: "Raczej trudne",
+    className:
+      "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300",
+  },
+  trudne: {
+    label: "Trudne",
+    className:
+      "border-rose-400 bg-rose-100 text-rose-900 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-200",
+  },
+  bardzo_trudne: {
+    label: "Bardzo trudne",
+    className:
+      "border-red-800/40 bg-gradient-to-r from-red-700 to-rose-900 text-white shadow-sm shadow-red-900/20 dark:border-red-500/40 dark:from-red-800 dark:to-rose-950 dark:text-red-50",
+  },
+};
+
+const TASK_DIFFICULTY_ALIASES = {
+  "1": "latwe",
+  "2": "raczej_latwe",
+  "3": "srednie",
+  "4": "raczej_trudne",
+  "5": "trudne",
+  "bardzo łatwe": "bardzo_latwe",
+  "bardzo latwe": "bardzo_latwe",
+  bardzo_latwe: "bardzo_latwe",
+  "very easy": "bardzo_latwe",
+  łatwe: "latwe",
+  latwe: "latwe",
+  easy: "latwe",
+  "raczej łatwe": "raczej_latwe",
+  "raczej latwe": "raczej_latwe",
+  raczej_latwe: "raczej_latwe",
+  "rather easy": "raczej_latwe",
+  średnie: "srednie",
+  srednie: "srednie",
+  medium: "srednie",
+  "raczej trudne": "raczej_trudne",
+  "raczej trudne": "raczej_trudne",
+  raczej_trudne: "raczej_trudne",
+  "rather hard": "raczej_trudne",
+  trudne: "trudne",
+  hard: "trudne",
+  "bardzo trudne": "bardzo_trudne",
+  bardzo_trudne: "bardzo_trudne",
+  "very hard": "bardzo_trudne",
+  opanowane: "opanowane",
+  mastered: "opanowane",
+};
+
+export function isTaskMasteredDifficulty(raw) {
+  const value = String(raw ?? "").trim().toLowerCase();
+  return value === "opanowane" || value === "mastered";
+}
+
+export const TASK_MASTERED_DIFFICULTY_BADGE_CLASS =
+  "border-violet-400/50 bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-sm shadow-violet-500/25 dark:border-violet-400/40 dark:from-violet-600 dark:to-purple-700 dark:text-violet-50";
+
+export function resolveTaskDifficultyTier(raw) {
+  if (raw == null || raw === "") return null;
+  const value = String(raw).trim().toLowerCase();
+  if (!value) return null;
+  return TASK_DIFFICULTY_ALIASES[value] ?? null;
+}
+
+export function formatTaskDifficultyLabel(raw) {
+  if (isTaskMasteredDifficulty(raw)) return "Opanowane";
+  const tier = resolveTaskDifficultyTier(raw);
+  if (tier) return TASK_DIFFICULTY_TIER[tier].label;
+  const value = String(raw ?? "").trim();
+  if (!value) return null;
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+export function taskDifficultyBadgeClassName(raw) {
+  if (isTaskMasteredDifficulty(raw)) return TASK_MASTERED_DIFFICULTY_BADGE_CLASS;
+  const tier = resolveTaskDifficultyTier(raw);
+  if (tier) return TASK_DIFFICULTY_TIER[tier].className;
+  return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-300";
+}
+
 export function isMaturalneTask(task) {
   const v = task?.arkusz;
-  if (v === null || v === undefined) return false;
+  if (v === null || v === undefined || v === false) return false;
   if (typeof v === "boolean") return v;
-  if (typeof v === "string") return v.trim() !== "";
-  return true;
+  if (typeof v === "string") {
+    const trimmed = v.trim();
+    if (!trimmed) return false;
+    const normalized = trimmed.toLowerCase();
+    if (
+      normalized === "null" ||
+      normalized === "undefined" ||
+      normalized === "none" ||
+      normalized === "brak" ||
+      normalized === "-" ||
+      normalized === "—"
+    ) {
+      return false;
+    }
+    return true;
+  }
+  return false;
 }
 
 export function arkuszLinkedBadgeLabel(level) {
@@ -87,10 +226,21 @@ export function formatArkuszDisplayLabel(arkuszId) {
       ? `${monthLabel} ${yearLabel}`
       : yearLabel || monthLabel || "";
 
-  if (when && levelPhrase) return `${when} — ${levelPhrase}`;
+  if (when && levelPhrase) return `${when} - ${levelPhrase}`;
   if (when) return when;
   if (levelPhrase) return levelPhrase;
   return cleanArkuszFilePart(arkuszId) || arkuszId;
+}
+
+/** Miesiąc i rok arkusza (np. „maj 2023”) — bez poziomu matury. */
+export function formatArkuszMonthYear(arkuszId) {
+  if (!arkuszId || typeof arkuszId !== "string") return "";
+  const name = arkuszId.replace(/\.[^/.]+$/, "");
+  const [year = "", month = ""] = name.split("-");
+  const monthLabel = formatArkuszFilePart(month);
+  const yearLabel = cleanArkuszFilePart(year);
+  if (monthLabel && yearLabel) return `${monthLabel} ${yearLabel}`;
+  return monthLabel || yearLabel || "";
 }
 
 export function arkuszLinkedBadgeClassName(level) {
@@ -215,6 +365,20 @@ export function mapDbTaskRow(row) {
       ? rawTopic.trim()
       : null;
 
+  const rawSubtopic = row.podtemat ?? row.subtopic ?? null;
+  const subtopic =
+    typeof rawSubtopic === "string" && rawSubtopic.trim() !== ""
+      ? rawSubtopic.trim()
+      : null;
+
+  const rawEstimatedDifficulty =
+    row.szacowana_trudnosc ?? row.trudnosc ?? null;
+  const szacowanaTrudnosc =
+    rawEstimatedDifficulty == null ||
+    String(rawEstimatedDifficulty).trim() === ""
+      ? null
+      : String(rawEstimatedDifficulty).trim();
+
   return {
     id: row.id,
     question: row.question_text ?? "",
@@ -222,6 +386,8 @@ export function mapDbTaskRow(row) {
     level: normalizeDbPoziom(row.poziom),
     source: row.pochodzenie ?? "",
     topic: topic ?? "—",
+    subtopic: subtopic ?? null,
+    szacowanaTrudnosc,
     type: isClosed ? "closed" : "open",
     options: isClosed ? options : undefined,
     arkusz: row.arkusz ?? null,
@@ -242,6 +408,33 @@ export function mapDbTaskRow(row) {
 
 const WORKSHEET_ANSWER_LETTERS = ["A", "B", "C", "D", "E", "F"];
 
+export const CLOSED_WORKSHEET_QUESTION_INSTRUCTION =
+  "Dokończ zdanie. Wybierz właściwą odpowiedź spośród podanych.";
+
+const WORKSHEET_QUESTION_INSTRUCTIONS = {
+  closed: CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
+};
+
+export function stripLeadingWorksheetInstruction(text, instruction) {
+  if (!text || !instruction) return text ?? "";
+  let result = String(text).trim();
+  while (result.startsWith(instruction)) {
+    result = result.slice(instruction.length).trim();
+  }
+  return result;
+}
+
+function normalizeWorksheetOptionText(text, index) {
+  const cleaned = String(text ?? "").trim();
+  if (!cleaned) return "";
+  const existing = cleaned.match(/^([A-F])\.\s*(.*)$/i);
+  if (existing) {
+    return `${existing[1].toUpperCase()}. ${existing[2].trim()}`;
+  }
+  const letter = WORKSHEET_ANSWER_LETTERS[index] || `${index + 1}`;
+  return `${letter}. ${cleaned}`;
+}
+
 export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) {
   if (!task) return null;
 
@@ -251,10 +444,9 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
   let correct_answer = task.answer ?? "";
 
   if (isClosed && task.options?.length) {
-    options = task.options.map((text, index) => {
-      const letter = WORKSHEET_ANSWER_LETTERS[index] || `${index + 1}`;
-      return `${letter}. ${text}`;
-    });
+    options = task.options
+      .map((text, index) => normalizeWorksheetOptionText(text, index))
+      .filter(Boolean);
     const matchIdx = task.options.findIndex(
       (text) => String(text).trim() === String(task.answer).trim(),
     );
@@ -263,6 +455,13 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     }
   }
 
+  const questionText = isClosed
+    ? stripLeadingWorksheetInstruction(
+        task.question,
+        WORKSHEET_QUESTION_INSTRUCTIONS.closed,
+      )
+    : task.question;
+
   return {
     id: String(task.id),
     worksheet_id: worksheetId,
@@ -270,7 +469,7 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     nr: task.nr ?? null,
     key_nr: task.keyNr ?? null,
     question_type: isClosed ? "single_choice" : "open",
-    question_text: task.question,
+    question_text: questionText,
     question_text_po_obrazku: task.questionTextPoObrazku ?? null,
     open_parts: task.openParts ?? null,
     options,

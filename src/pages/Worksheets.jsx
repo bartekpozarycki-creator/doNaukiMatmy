@@ -11,6 +11,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,9 +54,14 @@ import {
   normalizeArkuszWorksheetId,
   parseArkuszWorksheetFilters,
 } from "@/utils/worksheet-arkusz";
-import e8Cover from "@/okladki/e8.png";
-import ppCover from "@/okladki/pp.png";
-import prCover from "@/okladki/pr.png";
+import {
+  mapDbTaskRow,
+  mapDbTaskToWorksheetQuestion,
+  sortTasksByNr,
+} from "@/utils/map-db-task";
+import WorksheetHistoryTaskPreview, {
+  WorksheetHistoryTaskPreviewReveal,
+} from "@/components/WorksheetHistoryTaskPreview";
 
 // Konfiguracja trzech źródeł arkuszy
 const SOURCES = [
@@ -125,12 +138,6 @@ const levelTheme = {
     soft: "bg-green-50 dark:bg-green-900/20",
     text: "text-green-700 dark:text-green-300",
   },
-};
-
-const worksheetCoverByLevel = {
-  podstawowy: ppCover,
-  rozszerzony: prCover,
-  ósmoklasisty: e8Cover,
 };
 
 const monthOrder = {
@@ -233,8 +240,6 @@ const getResultColor = (percent) => {
   return "text-rose-600 dark:text-rose-400";
 };
 
-const MAX_VISIBLE_HISTORY_ROWS = 12;
-
 const formatPointValue = (value) => {
   const number = Number(value);
   if (!Number.isFinite(number)) return "0";
@@ -246,16 +251,36 @@ const getAttemptPercent = (attempt) =>
     ? Math.round((Number(attempt.score) / Number(attempt.total)) * 100)
     : 0;
 
+const compareQuestionNumbers = (a, b) =>
+  String(a ?? "").localeCompare(String(b ?? ""), "pl", { numeric: true });
+
 const getAttemptScoreRows = (attempt) => {
-  if (Array.isArray(attempt?.questionScoreRows)) return attempt.questionScoreRows;
-  return Object.entries(attempt?.questionScores ?? {}).map(([questionId, entry]) => ({
-    questionId,
-    number: entry?.number ?? questionId,
-    earned: entry?.graded ? entry.earned : null,
-    max: entry?.max ?? 0,
-    graded: Boolean(entry?.graded),
-    correct: entry?.correct ?? null,
-  }));
+  const rows = Array.isArray(attempt?.questionScoreRows)
+    ? attempt.questionScoreRows.map((row, index) => ({
+        questionId: row.questionId,
+        number: row.number ?? index + 1,
+        earned: row.graded ? row.earned : null,
+        max: row.max ?? 0,
+        graded: Boolean(row.graded),
+        correct: row.correct ?? null,
+      }))
+    : Object.entries(attempt?.questionScores ?? {}).map(
+        ([questionId, entry], index) => ({
+          questionId,
+          number: entry?.number ?? index + 1,
+          earned: entry?.graded ? entry.earned : null,
+          max: entry?.max ?? 0,
+          graded: Boolean(entry?.graded),
+          correct: entry?.correct ?? null,
+        }),
+      );
+
+  return [...rows].sort((a, b) => compareQuestionNumbers(a.number, b.number));
+};
+
+const formatHistoryTaskScore = (row) => {
+  if (!row?.graded) return "nie ocenione";
+  return `${formatPointValue(row.earned)}/${formatPointValue(row.max)} pkt`;
 };
 
 const getWorksheetAttemptHistory = (attempt) => {
@@ -266,26 +291,6 @@ const getWorksheetAttemptHistory = (attempt) => {
   if (history.length) return history;
   if (attempt.previousCompleted) return [attempt.previousCompleted];
   return isWorksheetCompleted(attempt) ? [attempt] : [];
-};
-
-const getWorksheetCoverStyle = (worksheet) => {
-  const key = [
-    worksheet?.id,
-    worksheet?.year,
-    worksheet?.month,
-    worksheet?.formula,
-  ].join("-");
-  let hash = 0;
-  for (let i = 0; i < key.length; i += 1) {
-    hash = (hash * 31 + key.charCodeAt(i)) % 9973;
-  }
-  const x = hash % 101;
-  const y = Math.floor(hash / 101) % 101;
-  const zoom = 115 + (Math.floor(hash / 997) % 46);
-  return {
-    backgroundPosition: `${x}% ${y}%`,
-    backgroundSize: `${zoom}%`,
-  };
 };
 
 const skeletonClass = "bg-slate-200 dark:bg-slate-700";
@@ -342,10 +347,56 @@ function WorksheetCard({
 }) {
   const [abandonDialogOpen, setAbandonDialogOpen] = useState(false);
   const [historyDialogOpen, setHistoryDialogOpen] = useState(false);
+  const [historyTasksById, setHistoryTasksById] = useState({});
+  const [historyTasksLoading, setHistoryTasksLoading] = useState(false);
+  const [hoveredHistoryRowKey, setHoveredHistoryRowKey] = useState(null);
   const worksheetUrl = `${createPageUrl("WorksheetDetails")}?id=${worksheet.id}`;
-  const coverImage = worksheetCoverByLevel[worksheet.level] || ppCover;
-  const coverStyle = getWorksheetCoverStyle(worksheet);
   const attemptHistory = getWorksheetAttemptHistory(attempt);
+
+  useEffect(() => {
+    if (!historyDialogOpen || !worksheet?.id) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    setHistoryTasksLoading(true);
+
+    (async () => {
+      const { data, error } = await publicSupabase
+        .from("tasks")
+        .select("*")
+        .eq("arkusz", worksheet.id)
+        .order("nr", { ascending: true, nullsFirst: false });
+
+      if (cancelled) return;
+
+      if (error) {
+        console.error("[Worksheets] history tasks", error);
+        setHistoryTasksById({});
+        setHistoryTasksLoading(false);
+        return;
+      }
+
+      const mapped = {};
+      sortTasksByNr((data || []).map(mapDbTaskRow)).forEach((task, index) => {
+        const question = mapDbTaskToWorksheetQuestion(
+          task,
+          worksheet.id,
+          index + 1,
+        );
+        if (question?.id) {
+          mapped[String(question.id)] = question;
+        }
+      });
+
+      setHistoryTasksById(mapped);
+      setHistoryTasksLoading(false);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [historyDialogOpen, worksheet?.id]);
 
   const openWorksheet = () => {
     navigate(worksheetUrl, { state: { from: "worksheets" } });
@@ -527,101 +578,139 @@ function WorksheetCard({
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={historyDialogOpen} onOpenChange={setHistoryDialogOpen}>
-        <AlertDialogContent className="max-w-3xl overflow-hidden border-slate-200 p-0 dark:border-slate-700">
+      <Dialog
+        open={historyDialogOpen}
+        onOpenChange={(open) => {
+          setHistoryDialogOpen(open);
+          if (!open) setHoveredHistoryRowKey(null);
+        }}
+      >
+        <DialogContent className="max-w-3xl overflow-hidden border-slate-200 bg-white p-0 dark:border-slate-700 dark:bg-slate-900 [&>button]:right-5 [&>button]:top-5">
           <div className={`h-1.5 bg-gradient-to-r ${theme.gradient}`} />
-          <div
-            className="relative overflow-hidden p-6"
-            style={{
-              backgroundImage: `url(${coverImage})`,
-              ...coverStyle,
-            }}
-          >
-            <div className="absolute inset-0 bg-white/86 dark:bg-slate-900/88" />
-            <div className="relative space-y-5">
-              <AlertDialogHeader className="space-y-2 text-left sm:text-left">
-                <AlertDialogTitle className="text-lg font-semibold text-slate-900 dark:text-white">
-                  Historia arkusza
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  {worksheet.displayTitle || worksheet.title}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
-                {[...attemptHistory].reverse().map((historyAttempt, historyIndex) => {
-                  const rows = getAttemptScoreRows(historyAttempt);
-                  const hiddenRows = Math.max(0, rows.length - MAX_VISIBLE_HISTORY_ROWS);
-                  const attemptPercent = getAttemptPercent(historyAttempt);
-                  return (
-                    <div
-                      key={`${historyAttempt.date || historyAttempt.updatedAt || historyIndex}-${historyIndex}`}
-                      className="rounded-xl border border-slate-200 bg-white/95 p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/95"
-                    >
-                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900 dark:text-white">
-                            Podejście {attemptHistory.length - historyIndex}
+          <div className="space-y-5 p-6 pt-5">
+            <DialogHeader className="space-y-2 pr-8 text-left sm:text-left">
+              <DialogTitle className="text-lg font-semibold text-slate-900 dark:text-white">
+                Historia arkusza
+              </DialogTitle>
+              <DialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {worksheet.displayTitle || worksheet.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+              {[...attemptHistory].reverse().map((historyAttempt, historyIndex) => {
+                const rows = getAttemptScoreRows(historyAttempt);
+                const gradedCount = rows.filter((row) => row.graded).length;
+                const attemptPercent = getAttemptPercent(historyAttempt);
+                const worksheetTaskCount = Number(worksheet.taskCount) || 0;
+                const taskCountLabel =
+                  worksheetTaskCount > 0 && worksheetTaskCount !== rows.length
+                    ? `${rows.length} z ${worksheetTaskCount} zadań arkusza`
+                    : `${rows.length} ${rows.length === 1 ? "zadanie" : "zadań"}`;
+                return (
+                  <div
+                    key={`${historyAttempt.date || historyAttempt.updatedAt || historyIndex}-${historyIndex}`}
+                    className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800"
+                  >
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                          Podejście {attemptHistory.length - historyIndex}
+                        </p>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          {historyAttempt.date
+                            ? new Date(historyAttempt.date).toLocaleString("pl-PL")
+                            : "Brak daty"}
+                        </p>
+                        {rows.length > 0 ? (
+                          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                            {taskCountLabel}
+                            {gradedCount !== rows.length
+                              ? ` • oceniono ${gradedCount}`
+                              : ""}
                           </p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {historyAttempt.date
-                              ? new Date(historyAttempt.date).toLocaleString("pl-PL")
-                              : "Brak daty"}
-                          </p>
-                        </div>
-                        <div className="text-left sm:text-right">
-                          <p className={`text-lg font-bold ${getResultColor(attemptPercent)}`}>
-                            {attemptPercent}%
-                          </p>
-                          <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
-                            {formatPointValue(historyAttempt.score)}/
-                            {formatPointValue(historyAttempt.total)} pkt
-                          </p>
-                        </div>
+                        ) : null}
                       </div>
-                      {rows.length > 0 ? (
-                        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                          {rows.slice(0, MAX_VISIBLE_HISTORY_ROWS).map((row, rowIndex) => (
-                            <div
-                              key={`${row.questionId || row.number || rowIndex}-${rowIndex}`}
-                              className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50/95 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-800/85"
-                            >
-                              <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">
-                                Zadanie {row.number ?? row.questionId ?? rowIndex + 1}
-                              </span>
-                              <span className="shrink-0 font-semibold text-slate-900 dark:text-white">
-                                {row.graded
-                                  ? `${formatPointValue(row.earned)}/${formatPointValue(row.max)} pkt`
-                                  : `0/${formatPointValue(row.max)} pkt`}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
-                          Brak szczegółowej punktacji zadań dla tego podejścia.
+                      <div className="text-left sm:text-right">
+                        <p className={`text-lg font-bold ${getResultColor(attemptPercent)}`}>
+                          {attemptPercent}%
                         </p>
-                      )}
-                      {hiddenRows > 0 ? (
-                        <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
-                          I jeszcze {hiddenRows} zadań w szczegółach tego podejścia.
+                        <p className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                          {formatPointValue(historyAttempt.score)}/
+                          {formatPointValue(historyAttempt.total)} pkt
                         </p>
-                      ) : null}
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogAction
-                  onClick={() => setHistoryDialogOpen(false)}
-                  className={`border-0 text-white ${theme.btn}`}
-                >
-                  Zamknij
-                </AlertDialogAction>
-              </AlertDialogFooter>
+                    {rows.length > 0 ? (
+                      <div className="mt-4 grid gap-2 sm:grid-cols-2 sm:items-start">
+                        {rows.map((row, rowIndex) => {
+                          const rowKey = `${historyIndex}-${row.questionId || row.number || rowIndex}-${rowIndex}`;
+                          const question =
+                            historyTasksById[String(row.questionId)] || null;
+                          const isOpen = hoveredHistoryRowKey === rowKey;
+                          return (
+                            <div
+                              key={rowKey}
+                              className={`relative min-w-0 ${isOpen ? "z-40" : "z-0"}`}
+                              onMouseEnter={() => setHoveredHistoryRowKey(rowKey)}
+                              onMouseLeave={() =>
+                                setHoveredHistoryRowKey((current) =>
+                                  current === rowKey ? null : current,
+                                )
+                              }
+                            >
+                              <div
+                                className={`flex w-full cursor-default items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                                  isOpen
+                                    ? "border-slate-300 bg-white dark:border-slate-500 dark:bg-slate-900"
+                                    : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/60 dark:hover:border-slate-500 dark:hover:bg-slate-900"
+                                }`}
+                              >
+                                <span className="min-w-0 truncate font-medium text-slate-700 dark:text-slate-200">
+                                  Zadanie {row.number ?? rowIndex + 1}
+                                </span>
+                                <span
+                                  className={`shrink-0 font-semibold ${
+                                    row.graded
+                                      ? "text-slate-900 dark:text-white"
+                                      : "text-slate-500 dark:text-slate-400"
+                                  }`}
+                                >
+                                  {formatHistoryTaskScore(row)}
+                                </span>
+                              </div>
+                              <WorksheetHistoryTaskPreviewReveal open={isOpen}>
+                                <WorksheetHistoryTaskPreview
+                                  question={question}
+                                  answersMap={historyAttempt.answers || {}}
+                                  level={worksheet.level}
+                                  loading={historyTasksLoading}
+                                />
+                              </WorksheetHistoryTaskPreviewReveal>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
+                        Brak szczegółowej punktacji zadań dla tego podejścia.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                onClick={() => setHistoryDialogOpen(false)}
+                className={`border-0 text-white ${theme.btn}`}
+              >
+                Zamknij
+              </Button>
+            </DialogFooter>
           </div>
-        </AlertDialogContent>
-      </AlertDialog>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }

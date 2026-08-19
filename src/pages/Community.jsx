@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
-  Plus, HelpCircle, Clock, CheckCircle, XCircle
+  Plus, HelpCircle, Clock, CheckCircle, XCircle, Paperclip
 } from "lucide-react";
 import {
   Dialog,
@@ -53,12 +53,17 @@ import {
   countAuthorQuestionsToday,
   publishCommunityQuestion,
 } from "@/utils/community-publish";
+import { consumeCommunityPrefillTask, clearCommunityPrefillTask } from "@/utils/community-prefill";
 import { uploadCommunityQuestionImages } from "@/utils/community-images";
 import { registerQuestionView } from "@/utils/register-question-view";
 import {
   bannedContentMessage,
   containsBannedContent,
 } from "@/utils/content-moderation/moderate-content";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { pl } from "date-fns/locale";
+import { motion } from "framer-motion";
 
 const topicNames = {
   liczby_rzeczywiste: "Liczby rzeczywiste",
@@ -72,6 +77,53 @@ const topicNames = {
   kombinatoryka_i_statystyka: "Kombinatoryka i statystyka",
   optymalizacja_i_rozniczkowy: "Optymalizacja",
   ogólne: "Ogólne"
+};
+
+const topicCardStyles = {
+  liczby_rzeczywiste: {
+    bar: "from-blue-500 to-indigo-500",
+    badge: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+  },
+  wyrazenia_algebraiczne: {
+    bar: "from-sky-500 to-cyan-500",
+    badge: "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300",
+  },
+  funkcje: {
+    bar: "from-violet-500 to-purple-500",
+    badge: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-300",
+  },
+  ciagi: {
+    bar: "from-indigo-500 to-blue-500",
+    badge: "border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300",
+  },
+  trygonometria: {
+    bar: "from-fuchsia-500 to-pink-500",
+    badge: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-300",
+  },
+  planimetria: {
+    bar: "from-emerald-500 to-teal-500",
+    badge: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+  },
+  geometria_analityczna: {
+    bar: "from-cyan-500 to-blue-500",
+    badge: "border-cyan-200 bg-cyan-50 text-cyan-700 dark:border-cyan-800 dark:bg-cyan-950/40 dark:text-cyan-300",
+  },
+  stereometria: {
+    bar: "from-teal-500 to-emerald-500",
+    badge: "border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300",
+  },
+  kombinatoryka_i_statystyka: {
+    bar: "from-orange-500 to-rose-500",
+    badge: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-300",
+  },
+  optymalizacja_i_rozniczkowy: {
+    bar: "from-rose-500 to-pink-500",
+    badge: "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-300",
+  },
+  ogólne: {
+    bar: "from-slate-500 to-slate-600",
+    badge: "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-300",
+  },
 };
 
 const questionStatusMeta = {
@@ -122,6 +174,7 @@ export default function CommunityPage() {
 
   const titleInputRef = useRef(null);
   const descriptionInputRef = useRef(null);
+  const prefillHandledRef = useRef(false);
 
   const [newQuestion, setNewQuestion] = useState({
     title: "",
@@ -131,22 +184,38 @@ export default function CommunityPage() {
   });
 
   useEffect(() => {
-    const prefillTask = location.state?.prefillTask;
+    if (location.state?.skipPrefill || location.state?.fromPublish) {
+      clearCommunityPrefillTask();
+      if (location.state?.prefillTask || location.state?.skipPrefill || location.state?.fromPublish) {
+        navigate(location.pathname, { replace: true, state: {} });
+      }
+      return;
+    }
+
+    if (prefillHandledRef.current) return;
+
+    const prefillTask =
+      location.state?.prefillTask ?? consumeCommunityPrefillTask();
     if (!prefillTask) return;
+
+    prefillHandledRef.current = true;
     setAttachedTask(prefillTask);
+    setNewQuestion((prev) => ({
+      ...prev,
+      description: prev.description || "",
+      topic: communityTopicFromTaskTopic(prefillTask.topic),
+    }));
+
     if (!user) {
       setLoginDialogOpen(true);
       return;
     }
-    setDialogOpen(true);
 
-    setNewQuestion((prev) => ({
-      ...prev,
-      title: prefillTask.question,
-      description: prev.description || "",
-      topic: communityTopicFromTaskTopic(prefillTask.topic),
-    }));
-  }, [location.state, user]);
+    setDialogOpen(true);
+    if (location.state?.prefillTask) {
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, location.pathname, user, navigate]);
 
   const { data: questions = [], isLoading } = useQuery({
     queryKey: ['communityQuestions', user?.id],
@@ -213,6 +282,7 @@ export default function CommunityPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['communityQuestions'] });
       queryClient.invalidateQueries({ queryKey: ["myCommunityQuestions"] });
+      clearCommunityPrefillTask();
       setDialogOpen(false);
       setNewQuestion({
         title: "",
@@ -301,7 +371,7 @@ export default function CommunityPage() {
     },
   });
 
-  const resolvedTitle = resolveQuestionTitle(newQuestion.title, attachedTask);
+  const resolvedTitle = resolveQuestionTitle(newQuestion.title);
   const resolvedDescription = trimField(newQuestion.description);
   const canPublish =
     !!user &&
@@ -321,11 +391,11 @@ export default function CommunityPage() {
       return;
     }
 
-    const title = resolveQuestionTitle(newQuestion.title, attachedTask);
+    const title = resolveQuestionTitle(newQuestion.title);
     const description = trimField(newQuestion.description);
 
     if (!title) {
-      toast.error("Podaj tytuł pytania lub podpnij zadanie z treścią");
+      toast.error("Podaj tytuł pytania.");
       return;
     }
     if (!description) {
@@ -341,7 +411,7 @@ export default function CommunityPage() {
     todayStart.setHours(0, 0, 0, 0);
     const { data: todayQuestions, error: todayCountError } = await supabase
       .from("community_questions")
-      .select("created_at, created_date, author_id")
+      .select("created_at, author_id")
       .eq("author_id", session.user.id)
       .gte("created_at", todayStart.toISOString());
     if (todayCountError) {
@@ -441,7 +511,6 @@ export default function CommunityPage() {
     setAttachedTask(payload);
     setNewQuestion((prev) => ({
       ...prev,
-      title: task.question,
       topic: communityTopicFromTaskTopic(task.topic),
     }));
   };
@@ -450,8 +519,7 @@ export default function CommunityPage() {
     setAttachedTask(null);
     setNewQuestion((prev) => ({
       ...prev,
-      title: "",
-      topic: "",
+      topic: "ogólne",
     }));
   };
 
@@ -463,9 +531,11 @@ export default function CommunityPage() {
     setDialogOpen(open);
   };
 
-  const list = questions.length
-    ? questions.filter((question) => question.author_id !== user?.id)
-    : [];
+  const list = questions;
+
+  const moderationQuestions = myQuestions.filter(
+    (question) => question.status === "pending" || question.status === "rejected",
+  );
 
   // filter by search & topic
   const filteredQuestions = list.filter(question => {
@@ -525,11 +595,6 @@ export default function CommunityPage() {
                     className="text-slate-900 dark:text-white"
                   >
                     Tytuł pytania
-                    {attachedTask && (
-                      <span className="ml-2 text-xs font-normal text-slate-500 dark:text-slate-400">
-                        (z podpiętego zadania)
-                      </span>
-                    )}
                   </Label>
                   <Input
                     ref={titleInputRef}
@@ -538,24 +603,16 @@ export default function CommunityPage() {
                     onChange={(e) =>
                       setNewQuestion({ ...newQuestion, title: e.target.value })
                     }
-                    disabled={!!attachedTask}
-                    readOnly={!!attachedTask}
-                    placeholder={
-                      attachedTask
-                        ? "Tytuł ustawiony z zadania"
-                        : "Krótki tytuł pytania"
-                    }
-                    className="bg-white disabled:cursor-not-allowed disabled:opacity-70 dark:bg-slate-700 dark:border-slate-600 dark:text-white dark:disabled:bg-slate-800/80"
+                    placeholder="Krótki tytuł pytania"
+                    className="bg-white dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                   />
-                  {!attachedTask && (
-                    <MathInsertToolbar
-                      targetRef={titleInputRef}
-                      value={newQuestion.title}
-                      onChange={(title) =>
-                        setNewQuestion((prev) => ({ ...prev, title }))
-                      }
-                    />
-                  )}
+                  <MathInsertToolbar
+                    targetRef={titleInputRef}
+                    value={newQuestion.title}
+                    onChange={(title) =>
+                      setNewQuestion((prev) => ({ ...prev, title }))
+                    }
+                  />
                 </div>
                 
                 <div className="space-y-2">
@@ -659,7 +716,7 @@ export default function CommunityPage() {
                       : !resolvedDescription
                         ? "Uzupełnij opis problemu"
                         : !resolvedTitle
-                          ? "Podaj tytuł lub podpnij zadanie z treścią"
+                          ? "Podaj tytuł pytania"
                           : null}
                   </p>
                 )}
@@ -692,7 +749,7 @@ export default function CommunityPage() {
           </DialogContent>
         </Dialog>
 
-        {user && (myQuestionsLoading || myQuestions.length > 0) ? (
+        {user && (myQuestionsLoading || moderationQuestions.length > 0) ? (
           <section className="mb-8">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -700,90 +757,109 @@ export default function CommunityPage() {
                   Twoje pytania
                 </h2>
                 <p className="text-sm text-slate-600 dark:text-slate-300">
-                  Tutaj widzisz swoje zgłoszenia wraz ze statusem moderacji.
+                  Zgłoszenia oczekujące na moderację albo odrzucone. Po
+                  zatwierdzeniu pojawią się na liście poniżej.
                 </p>
               </div>
             </div>
 
             {myQuestionsLoading ? (
-              <Card className="border-0 bg-white dark:bg-slate-800">
-                <CardContent className="p-6 text-sm text-slate-600 dark:text-slate-300">
-                  Ładowanie Twoich pytań...
-                </CardContent>
-              </Card>
+              <div className="space-y-4">
+                <QuestionCardSkeleton />
+              </div>
             ) : (
-              <div className="space-y-3">
-                {myQuestions.map((question) => {
-                  const status = question.status || "approved";
+              <div className="space-y-4">
+                {moderationQuestions.map((question) => {
+                  const status = question.status || "pending";
                   const meta =
-                    questionStatusMeta[status] || questionStatusMeta.approved;
+                    questionStatusMeta[status] || questionStatusMeta.pending;
                   const StatusIcon = meta.icon;
                   const createdAt = question.created_at || question.created_date;
+                  const topicStyle =
+                    topicCardStyles[question.topic] || topicCardStyles.ogólne;
+
                   return (
-                    <Card
+                    <motion.div
                       key={question.id}
-                      className="border-0 bg-white dark:bg-slate-800"
+                      whileHover={{ y: -2 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 30 }}
                     >
-                      <CardContent className="p-5">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                          <div className="min-w-0 flex-1">
-                            <div className="mb-2 flex flex-wrap items-center gap-2">
-                              <Badge
-                                variant="outline"
-                                className={`inline-flex items-center gap-1.5 ${meta.className}`}
-                              >
-                                <StatusIcon className="h-3.5 w-3.5" />
-                                {meta.label}
-                              </Badge>
-                              <Badge
-                                variant="outline"
-                                className="dark:border-slate-600 dark:text-slate-300"
-                              >
-                                {topicNames[question.topic] || question.topic}
-                              </Badge>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                              <MathText text={question.title} />
-                            </h3>
-                            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                              {createdAt
-                                ? new Date(createdAt).toLocaleString("pl-PL")
-                                : "Brak daty"}
-                            </p>
-                          </div>
-                          {status === "approved" ? (
-                            <Link
-                              to={`${createPageUrl("QuestionDetails")}?id=${question.id}`}
-                              state={{ question }}
+                      <Card className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/40 dark:border-slate-700/80 dark:bg-slate-800 dark:shadow-none">
+                        <div
+                          className={cn("h-1 w-full bg-gradient-to-r", topicStyle.bar)}
+                          aria-hidden
+                        />
+                        <CardContent className="p-4 sm:p-5">
+                          <div className="mb-3 flex flex-wrap items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "inline-flex items-center gap-1.5 font-medium",
+                                meta.className,
+                              )}
                             >
-                              <Button
-                                type="button"
-                                variant="outline"
-                                className="shrink-0"
-                              >
-                                Otwórz
-                              </Button>
-                            </Link>
-                          ) : null}
-                        </div>
-                        <div className="mt-3 line-clamp-2 whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">
-                          <MathText text={question.description} />
-                        </div>
-                        {status === "rejected" && question.rejection_reason ? (
-                          <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
-                            <span className="font-semibold">
-                              Powód odrzucenia:
-                            </span>{" "}
-                            {question.rejection_reason}
+                              <StatusIcon className="h-3.5 w-3.5" />
+                              {meta.label}
+                            </Badge>
+                            <Badge
+                              variant="outline"
+                              className={cn("font-medium", topicStyle.badge)}
+                            >
+                              {topicNames[question.topic] || question.topic}
+                            </Badge>
                           </div>
-                        ) : null}
-                        {status === "rejected" ? (
-                          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-                            Odrzucone pytanie zostanie automatycznie usunięte po 24 godzinach od weryfikacji.
+
+                          <h3 className="text-lg font-bold leading-snug text-slate-900 dark:text-white sm:text-xl">
+                            <MathText text={question.title} />
+                          </h3>
+
+                          <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                            {createdAt
+                              ? format(new Date(createdAt), "d MMM yyyy, HH:mm", {
+                                  locale: pl,
+                                })
+                              : "Brak daty"}
                           </p>
-                        ) : null}
-                      </CardContent>
-                    </Card>
+
+                          <div className="mt-3 line-clamp-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                            <MathText text={question.description} />
+                          </div>
+
+                          {question.attached_task ? (
+                            <div className="mt-4 rounded-xl border border-blue-200/80 bg-blue-50/70 p-3 dark:border-slate-600 dark:bg-slate-900/40">
+                              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-blue-700 dark:text-blue-300">
+                                <Paperclip className="h-3.5 w-3.5" />
+                                Podpięte zadanie
+                              </p>
+                              <div className="line-clamp-2 text-sm text-slate-800 dark:text-slate-200">
+                                <MathText text={question.attached_task.question} />
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {status === "rejected" && question.rejection_reason ? (
+                            <div className="mt-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
+                              <span className="font-semibold">
+                                Powód odrzucenia:
+                              </span>{" "}
+                              {question.rejection_reason}
+                            </div>
+                          ) : null}
+                          {status === "rejected" ? (
+                            <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                              Odrzucone pytanie zostanie automatycznie usunięte po
+                              24 godzinach od weryfikacji.
+                            </p>
+                          ) : null}
+                          {status === "pending" ? (
+                            <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+                              Po zatwierdzeniu pytanie pojawi się na liście
+                              społeczności poniżej.
+                            </p>
+                          ) : null}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
                   );
                 })}
               </div>

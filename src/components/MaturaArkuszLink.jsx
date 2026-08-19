@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import {
   isMaturalneTask,
   formatArkuszDisplayLabel,
+  formatArkuszMonthYear,
   arkuszLinkedBadgeClassName,
 } from "@/utils/map-db-task";
 
@@ -20,10 +21,13 @@ export default function MaturaArkuszLink({
   openInNewTab = true,
   linkTarget = "worksheet",
   plain = false,
+  monthYearOnly = false,
 }) {
   if (!isMaturalneTask(task) || !task.arkusz) return null;
 
-  const label = formatArkuszDisplayLabel(task.arkusz);
+  const label = monthYearOnly
+    ? formatArkuszMonthYear(task.arkusz)
+    : formatArkuszDisplayLabel(task.arkusz);
   const to =
     linkTarget === "worksheets-list"
       ? `${createPageUrl("Worksheets")}?arkusz=${encodeURIComponent(task.arkusz)}`

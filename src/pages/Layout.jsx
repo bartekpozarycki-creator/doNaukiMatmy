@@ -27,6 +27,7 @@ const visibleTopNavigationItems = topNavigationItems.filter((item) => item.visib
 
 const drawerNavigationItems = [
   { title: "Zbiory zadań", url: createPageUrl("TaskSets"), icon: Layers },
+  { title: "Kursy i dydaktyka", url: createPageUrl("Course"), icon: BookOpen },
   { title: "Ulubione", url: createPageUrl("Favorites"), icon: Heart },
   { title: "Społeczność", url: createPageUrl("Community"), icon: Users },
   { title: "O nas", url: createPageUrl("About"), icon: Info },
@@ -106,7 +107,9 @@ export default function Layout({ children, currentPageName }) {
 
   const showFooter = currentPageName === "Home";
   const showFab =
-    currentPageName === "WorksheetDetails" || currentPageName === "TaskDetails";
+    currentPageName === "WorksheetDetails" ||
+    currentPageName === "TaskDetails" ||
+    currentPageName === "ReviewSession";
   const visibleDrawerNavigationItems = isAdmin
     ? [
         ...drawerNavigationItems,
@@ -173,20 +176,20 @@ export default function Layout({ children, currentPageName }) {
               <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 shadow-lg">
                 <FileText className="w-5 h-5 text-white" />
               </div>
-              <div className="hidden sm:flex items-baseline gap-1">
-                <span className={`text-xl font-extrabold tracking-tight ${isDark ? "text-white" : "text-slate-900"}`}>
-                  Math
-                </span>
-                <span className="text-xl font-extrabold tracking-tight bg-gradient-to-r from-blue-500 to-blue-700 text-transparent bg-clip-text">
-                  Master
-                </span>
-              </div>
+              <span
+                className={`hidden text-xl font-extrabold tracking-tight sm:inline ${isDark ? "text-white" : "text-slate-900"}`}
+              >
+                <span className="text-blue-600 dark:text-blue-400">M</span>auka
+              </span>
             </Link>
 
             {/* Top Navigation Items */}
             <div className="flex items-center gap-2">
               {visibleTopNavigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
+                const isActive =
+                  location.pathname === item.url ||
+                  (item.url === createPageUrl("Review") &&
+                    currentPageName === "ReviewSession");
                 return (
                   <Link
                     key={item.title}
@@ -311,7 +314,10 @@ export default function Layout({ children, currentPageName }) {
           <div className="min-h-0 flex-1 space-y-1 overflow-y-auto hide-scrollbar px-3 py-4">
             <nav className="space-y-1">
               {visibleDrawerNavigationItems.map((item) => {
-                const isActive = location.pathname === item.url;
+                const isActive =
+                  location.pathname === item.url ||
+                  (item.url === createPageUrl("Review") &&
+                    currentPageName === "ReviewSession");
                 return (
                   <Link
                     key={item.title}
@@ -489,17 +495,12 @@ export default function Layout({ children, currentPageName }) {
                 <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-700 rounded-lg flex items-center justify-center shadow-lg">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
-                    Math
-                  </span>
-                  <span className="text-lg font-bold bg-gradient-to-r from-blue-500 to-blue-700 text-transparent bg-clip-text">
-                    Master
-                  </span>
-                </div>
+                <span className={`text-lg font-bold ${isDark ? "text-white" : "text-slate-900"}`}>
+                  <span className="text-blue-600 dark:text-blue-400">M</span>auka
+                </span>
               </div>
               <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>
-                © 2024 MathMaster. Matematyka może być prosta.
+                © 2024 Mauka. Matematyka może być prosta.
               </p>
             </div>
           </div>

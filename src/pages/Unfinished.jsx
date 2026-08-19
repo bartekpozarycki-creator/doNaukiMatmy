@@ -1,5 +1,5 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -8,6 +8,13 @@ import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { motion } from "framer-motion";
 import tasks from "@/data/tasksets.json";
 import MathText from "@/components/MathText";
+import {
+  getReviewStatusBadgeClass,
+  getReviewStatusMeta,
+  isReviewDue,
+  resolveTaskSchedule,
+  statusToPriority,
+} from "@/utils/review-schedule";
 
 export default function UnfinishedPage() {
   const { getAllProgress } = useTaskProgress();
@@ -15,16 +22,20 @@ export default function UnfinishedPage() {
 
   const tasksToReview = tasks
     .filter((t) => {
-      const p = progress[t.id];
-      return p && p.frequency >= 40;
+      const entry = progress[t.id];
+      if (!entry?.attempts?.length) return false;
+      const schedule = resolveTaskSchedule(entry);
+      if (isReviewDue(schedule?.nextReviewAt)) return true;
+      return statusToPriority(schedule?.reviewStatus) >= statusToPriority("trudne");
     })
-    .sort((a, b) => (progress[b.id]?.frequency || 0) - (progress[a.id]?.frequency || 0));
-
-  const getFreqColor = (freq) => {
-    if (freq >= 80) return "bg-violet-600 text-white";
-    if (freq >= 60) return "bg-sky-500 text-white";
-    return "bg-blue-500 text-white";
-  };
+    .sort((a, b) => {
+      const scheduleA = resolveTaskSchedule(progress[a.id]);
+      const scheduleB = resolveTaskSchedule(progress[b.id]);
+      return (
+        statusToPriority(scheduleB?.reviewStatus) -
+        statusToPriority(scheduleA?.reviewStatus)
+      );
+    });
 
   return (
     <div className="py-10">
@@ -35,7 +46,7 @@ export default function UnfinishedPage() {
             Niezaliczone zadania
           </h1>
           <p className="mt-2 text-gray-600 dark:text-slate-300">
-            Zadania, które wymagają powtórki. Im wyższa częstość, tym bardziej potrzebujesz ćwiczeń.
+            Zadania, które wymagają powtórki — według terminu i statusu trudności.
           </p>
         </div>
 
@@ -60,8 +71,10 @@ export default function UnfinishedPage() {
         ) : (
           <div className="space-y-4">
             {tasksToReview.map((t, idx) => {
-              const p = progress[t.id];
-              const lastAttempt = p.attempts[p.attempts.length - 1];
+              const entry = progress[t.id];
+              const schedule = resolveTaskSchedule(entry);
+              const statusMeta = getReviewStatusMeta(schedule?.reviewStatus);
+              const lastAttempt = entry.attempts[entry.attempts.length - 1];
               return (
                 <motion.div
                   key={t.id}
@@ -89,14 +102,14 @@ export default function UnfinishedPage() {
                               </Badge>
                             </div>
                             <p className="text-xs text-gray-500 dark:text-slate-400 mt-2">
-                              Prób: {p.attempts.length} • Ostatnia: {new Date(lastAttempt.date).toLocaleDateString("pl-PL")}
+                              Prób: {entry.attempts.length} • Ostatnia: {new Date(lastAttempt.date).toLocaleDateString("pl-PL")}
                             </p>
                           </div>
                           <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                            <Badge className={`${getFreqColor(p.frequency)} text-sm px-3 py-1`}>
-                              {p.frequency}
+                            <Badge className={`${getReviewStatusBadgeClass(statusMeta.id)} text-sm px-3 py-1`}>
+                              {statusMeta.label}
                             </Badge>
-                            <span className="text-[10px] text-gray-400 dark:text-slate-500">częstość</span>
+                            <span className="text-[10px] text-gray-400 dark:text-slate-500">status</span>
                           </div>
                         </div>
                       </CardContent>

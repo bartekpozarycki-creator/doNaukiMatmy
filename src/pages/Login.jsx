@@ -21,7 +21,7 @@ const tabMeta = {
     submit: "Zaloguj się",
   },
   register: {
-    title: "Dołącz do MathMaster",
+    title: "Dołącz do Mauka",
     subtitle: "Załóż konto i zapisuj swój postęp",
     submit: "Załóż konto",
   },

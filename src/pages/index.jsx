@@ -37,6 +37,7 @@ import QuickMath from "./QuickMath";
 import PotegiMemory from "./PotegiMemory";
 import TaskDetails from "./TaskDetails";
 import Favorites from "./Favorites";
+import ReviewSession from "./ReviewSession";
 
 import {
     createBrowserRouter,
@@ -93,6 +94,7 @@ const PAGES = {
     PotegiMemory: PotegiMemory,
     QuickMath: QuickMath,
     TaskDetails: TaskDetails,
+    ReviewSession: ReviewSession,
 
     Favorites: Favorites,
     About: About,
@@ -110,6 +112,7 @@ function _getCurrentPage(url) {
 
     if (urlLastPart === "Arkusze") return "Worksheets";
     if (urlLastPart === "Egzamin") return "WorksheetDetails";
+    if (urlLastPart === "Kursy-i-dydaktyka") return "Course";
     const pageName = Object.keys(PAGES).find(page => page.toLowerCase() === urlLastPart.toLowerCase());
     return pageName || Object.keys(PAGES)[0];
 }
@@ -169,8 +172,9 @@ const router = createBrowserRouter([
             { path: "/worksheetdetails", element: <WorksheetDetailsRedirect /> },
             { path: "/Dashboard", element: <Dashboard /> },
             { path: "/QuestionDetails", element: <QuestionDetails /> },
-            { path: "/Course", element: <Course /> },
-            { path: "/Kursy", element: <Course /> },
+            { path: "/Kursy-i-dydaktyka", element: <Course /> },
+            { path: "/Course", element: <Navigate to="/Kursy-i-dydaktyka" replace /> },
+            { path: "/Kursy", element: <Navigate to="/Kursy-i-dydaktyka" replace /> },
             { path: "/CourseOverview", element: <CourseOverview /> },
             { path: "/course-overview", element: <CourseOverview /> },
             { path: "/LessonView", element: <LessonView /> },
@@ -182,6 +186,7 @@ const router = createBrowserRouter([
             { path: "/MicroTopic", element: <Navigate to="/" replace /> },
             { path: "/TaskSets", element: <TaskSets /> },
             { path: "/TaskDetails", element: <TaskDetails /> },
+            { path: "/ReviewSession", element: <ReviewSession /> },
             { path: "/Favorites", element: <Favorites /> },
             { path: "/PotegiMemory", element: <PotegiMemory /> },
             { path: "/QuickMath", element: <QuickMath /> },

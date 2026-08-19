@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -66,18 +65,14 @@ export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
         onInteractOutside={handleInteractOutside}
         onPointerDownOutside={handleInteractOutside}
         onFocusOutside={handleInteractOutside}
-        className="max-w-lg border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
+        className="max-w-lg overflow-hidden border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
       >
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-white">
             Notatka do zadania
           </DialogTitle>
-          <DialogDescription className="text-slate-600 dark:text-slate-400">
-            Zapisz własną notatkę — np. wskazówkę lub skrót rozwiązania. Użyj
-            paska symboli, aby wstawiać formuły matematyczne.
-          </DialogDescription>
         </DialogHeader>
-        <div>
+        <div className="min-w-0">
           <MathNoteEditor
             value={draft}
             onChange={setDraft}

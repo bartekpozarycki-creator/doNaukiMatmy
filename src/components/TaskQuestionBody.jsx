@@ -1,5 +1,59 @@
 import MathText from "@/components/MathText";
 import { cn } from "@/lib/utils";
+import {
+  CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
+  stripLeadingWorksheetInstruction,
+} from "@/utils/map-db-task";
+
+function splitQuestionParts(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return { instruction: null, body: "" };
+
+  const breakIndex = raw.search(/\n\s*\n/);
+  if (breakIndex === -1) {
+    return { instruction: null, body: raw };
+  }
+
+  const instruction = raw.slice(0, breakIndex).trim();
+  const body = raw.slice(breakIndex).trim();
+  if (!instruction || !body) {
+    return { instruction: null, body: raw };
+  }
+
+  return { instruction, body };
+}
+
+function getQuestionPartsForDisplay(question, { hideClosedInstruction = false } = {}) {
+  let text = String(question ?? "").trim();
+  if (!text) return { instruction: null, body: "" };
+
+  if (hideClosedInstruction) {
+    text = stripLeadingWorksheetInstruction(
+      text,
+      CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
+    );
+  }
+
+  const parts = splitQuestionParts(text);
+  if (
+    hideClosedInstruction &&
+    parts.instruction === CLOSED_WORKSHEET_QUESTION_INSTRUCTION
+  ) {
+    return { instruction: null, body: parts.body || text };
+  }
+
+  return parts;
+}
+
+function QuestionTextBlock({ text, bold = false, className = "" }) {
+  if (!text?.trim()) return null;
+
+  return (
+    <div className={cn(bold ? "font-bold leading-snug" : "font-normal leading-normal", className)}>
+      <MathText text={text} className="math-text-ui--flow" />
+    </div>
+  );
+}
 
 export default function TaskQuestionBody({
   task,
@@ -9,9 +63,13 @@ export default function TaskQuestionBody({
 }) {
   const textClass = compact
     ? tile
-      ? "text-sm font-medium leading-normal text-slate-900 dark:text-white"
-      : "text-sm font-medium leading-normal text-slate-900 dark:text-white"
-    : "text-xl leading-normal text-slate-950 dark:text-slate-100";
+      ? "text-base text-slate-900 dark:text-white"
+      : "text-sm text-slate-900 dark:text-white"
+    : "text-xl text-slate-950 dark:text-slate-100";
+
+  const questionParts = getQuestionPartsForDisplay(task?.question, {
+    hideClosedInstruction: tile,
+  });
 
   return (
     <div
@@ -29,11 +87,17 @@ export default function TaskQuestionBody({
         <div
           className={cn(
             textClass,
-            "overflow-visible",
-            compact ? (tile ? "pt-0.5 pb-0.5" : "pt-1 pb-0.5") : "py-1",
+            "overflow-visible space-y-1",
+            compact ? (tile ? "p-0" : "pt-1 pb-0.5") : "py-1",
           )}
         >
-          <MathText text={task.question} className="math-text-ui--flow" />
+          {questionParts.instruction ? (
+            <QuestionTextBlock text={questionParts.instruction} bold />
+          ) : null}
+          <QuestionTextBlock
+            text={questionParts.body}
+            bold={!questionParts.instruction}
+          />
         </div>
       ) : null}
 
@@ -57,7 +121,7 @@ export default function TaskQuestionBody({
           className={cn(
             textClass,
             "overflow-visible",
-            compact ? (tile ? "pt-0.5 pb-0.5" : "pt-1 pb-0.5") : "py-1",
+            compact ? (tile ? "p-0" : "pt-1 pb-0.5") : "py-1",
           )}
         >
           <MathText text={task.questionTextPoObrazku} className="math-text-ui--flow" />

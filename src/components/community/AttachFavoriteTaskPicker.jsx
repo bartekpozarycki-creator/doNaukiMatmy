@@ -26,21 +26,7 @@ export function taskToAttachedPayload(task) {
   };
 }
 
-const topicMap = {
-  algebra: "wyrazenia_algebraiczne",
-  analiza: "optymalizacja_i_rozniczkowy",
-  geometria: "planimetria",
-  "geometria analityczna": "geometria_analityczna",
-  "teoria liczb": "liczby_rzeczywiste",
-  arytmetyka: "liczby_rzeczywiste",
-  potęgi: "liczby_rzeczywiste",
-};
-
-export function communityTopicFromTaskTopic(taskTopic) {
-  if (!taskTopic || taskTopic === "—") return "ogólne";
-  const key = String(taskTopic).toLowerCase();
-  return topicMap[key] || "ogólne";
-}
+export { communityTopicFromTaskTopic } from "@/utils/community-topic-from-task";
 
 export default function AttachFavoriteTaskPicker({
   attachedTask,

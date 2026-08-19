@@ -1,12 +1,13 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
+import { animate, motion } from "framer-motion";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  ArrowLeft, ArrowRight, CheckCircle, Clock, Award, Eye, FileText,
-  Calendar, List, Layers, Timer, BookOpen,
-  KeyRound,
+  ArrowLeft, ArrowRight, CheckCircle, Clock, Eye, FileText,
+  Calendar, CalendarDays, List, Layers, Timer, BookOpen,
+  KeyRound, Sparkles, Trophy, XCircle, CircleDot, RotateCcw,
 } from "lucide-react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -136,35 +137,169 @@ const skeletonClass = "bg-slate-200 dark:bg-slate-700";
 const skeletonOnBandClass = "bg-white/25 dark:bg-white/20";
 const propType = () => null;
 
+const CONFETTI_COLORS = [
+  "#60a5fa",
+  "#a78bfa",
+  "#34d399",
+  "#fbbf24",
+  "#f472b6",
+  "#fb7185",
+  "#38bdf8",
+  "#c084fc",
+];
+
+function ResultsConfetti() {
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 32 }, (_, i) => ({
+        id: i,
+        left: `${((i * 17) % 97) + 1.5}%`,
+        delay: (i % 10) * 0.07,
+        duration: 2.1 + (i % 6) * 0.22,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        rotate: (i * 53) % 360,
+        size: 5 + (i % 5) * 2,
+        drift: i % 2 === 0 ? 36 : -36,
+        round: i % 3 === 0,
+      })),
+    [],
+  );
+
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 overflow-hidden"
+      aria-hidden
+    >
+      {pieces.map((piece) => (
+        <motion.span
+          key={piece.id}
+          className={`absolute top-0 ${piece.round ? "rounded-full" : "rounded-sm"}`}
+          style={{
+            left: piece.left,
+            width: piece.size,
+            height: piece.round ? piece.size : piece.size * 1.55,
+            backgroundColor: piece.color,
+          }}
+          initial={{ y: -24, opacity: 0, rotate: 0, x: 0 }}
+          animate={{
+            y: [0, 460],
+            opacity: [0, 1, 1, 0],
+            rotate: piece.rotate + 220,
+            x: [0, piece.drift],
+          }}
+          transition={{
+            duration: piece.duration,
+            delay: piece.delay,
+            ease: "easeOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function AnimatedCount({ value, suffix = "" }) {
+  const [display, setDisplay] = useState(0);
+
+  useEffect(() => {
+    const controls = animate(0, Number(value) || 0, {
+      duration: 0.95,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => setDisplay(Math.round(latest)),
+    });
+    return () => controls.stop();
+  }, [value]);
+
+  return (
+    <span className="tabular-nums">
+      {display}
+      {suffix}
+    </span>
+  );
+}
+
+function getResultsHeadline(percentage) {
+  if (percentage >= 90) return "Fenomenalnie!";
+  if (percentage >= 75) return "Świetnie!";
+  if (percentage >= 50) return "Gratulacje!";
+  if (percentage >= 30) return "Arkusz ukończony";
+  return "Próba za Tobą";
+}
+
+function getResultsSubline(percentage) {
+  if (percentage >= 90) return "Prawie perfekcyjny wynik — tak trzymaj.";
+  if (percentage >= 75) return "Mocny wynik. Warto zajrzeć w słabsze zadania.";
+  if (percentage >= 50) return "Solidna baza — powtórz trudniejsze fragmenty.";
+  if (percentage >= 30) return "Każda próba buduje nawyk. Przejrzyj odpowiedzi.";
+  return "Spokojnie — obejrzyj arkusz i wróć do słabszych miejsc.";
+}
+
+const REVIEW_FILTER_ALL = "all";
+const REVIEW_FILTER_CORRECT = "correct";
+const REVIEW_FILTER_PARTIAL = "partial";
+const REVIEW_FILTER_WRONG = "wrong";
+
+function getQuestionReviewOutcome(scoreEntry) {
+  if (!scoreEntry?.graded) return REVIEW_FILTER_WRONG;
+  const earned = Number(scoreEntry.earned) || 0;
+  const max = Number(scoreEntry.max) || 0;
+  if (scoreEntry.correct === true || (max > 0 && earned >= max)) {
+    return REVIEW_FILTER_CORRECT;
+  }
+  if (earned > 0 && earned < max) return REVIEW_FILTER_PARTIAL;
+  return REVIEW_FILTER_WRONG;
+}
+
+function collectFailedQuestionIds(questionsList, scoresMap) {
+  return questionsList
+    .filter((question) => {
+      const outcome = getQuestionReviewOutcome(scoresMap?.[question.id]);
+      return (
+        outcome === REVIEW_FILTER_WRONG || outcome === REVIEW_FILTER_PARTIAL
+      );
+    })
+    .map((question) => String(question.id));
+}
+
+function pickScoreMap(...candidates) {
+  for (const candidate of candidates) {
+    if (candidate && typeof candidate === "object" && Object.keys(candidate).length > 0) {
+      return candidate;
+    }
+  }
+  return {};
+}
+
 function WorksheetDetailsSkeleton({ examTheme }) {
   return (
     <>
       <Skeleton className={`mb-4 h-9 w-44 rounded-md ${skeletonClass}`} />
 
-      <Card className="mb-6 overflow-hidden border-0 bg-white shadow-lg dark:bg-slate-800">
-        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-6 py-5`}>
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      <Card className="mb-6 overflow-hidden border border-slate-200/90 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-5 sm:px-6`}>
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0 flex-1 space-y-3">
-              <Skeleton className={`h-6 w-36 rounded-full ${skeletonOnBandClass}`} />
+              <Skeleton className={`h-5 w-36 rounded-full ${skeletonOnBandClass}`} />
               <Skeleton className={`h-8 w-full max-w-sm rounded-md ${skeletonOnBandClass}`} />
               <Skeleton className={`h-4 w-48 rounded-md ${skeletonOnBandClass}`} />
             </div>
-            <Skeleton
-              className={`h-[4.25rem] w-28 shrink-0 rounded-xl ${skeletonOnBandClass}`}
-            />
+            <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[16rem] sm:gap-3">
+              <Skeleton className={`h-[4.25rem] rounded-2xl ${skeletonOnBandClass}`} />
+              <Skeleton className={`h-[4.25rem] rounded-2xl ${skeletonOnBandClass}`} />
+            </div>
           </div>
         </div>
-        <CardContent className="space-y-5 p-6">
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        <CardContent className="space-y-4 p-5 sm:p-6">
+          <div className="flex flex-wrap gap-2">
             {Array.from({ length: 4 }, (_, i) => (
               <Skeleton
                 key={`meta-skel-${i}`}
-                className={`h-[3.25rem] rounded-lg ${skeletonClass}`}
+                className={`h-10 w-28 rounded-full ${skeletonClass}`}
               />
             ))}
           </div>
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <Skeleton className={`h-12 w-full max-w-sm rounded-xl ${skeletonClass}`} />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Skeleton className={`h-11 w-full max-w-sm rounded-xl ${skeletonClass}`} />
             <Skeleton className={`h-11 w-full max-w-xs rounded-xl sm:w-56 ${skeletonClass}`} />
           </div>
         </CardContent>
@@ -185,7 +320,7 @@ function WorksheetDetailsSkeleton({ examTheme }) {
             {Array.from({ length: 4 }, (_, i) => (
               <Skeleton
                 key={`choice-skel-${i}`}
-                className={`h-14 rounded-sm ${skeletonClass}`}
+                className={`h-14 rounded-xl ${skeletonClass}`}
               />
             ))}
           </div>
@@ -289,6 +424,9 @@ export default function WorksheetDetailsPage() {
   const timerRef = useRef(null);
   const startTimeRef = useRef(Date.now());
   const [viewMode, setViewMode] = useState("single");
+  const [reviewFilter, setReviewFilter] = useState(REVIEW_FILTER_ALL);
+  const [retryQuestionIds, setRetryQuestionIds] = useState(null);
+  const [retryPoolIds, setRetryPoolIds] = useState([]);
   const [saveAttemptDialogOpen, setSaveAttemptDialogOpen] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [tasksLoading, setTasksLoading] = useState(true);
@@ -326,6 +464,9 @@ export default function WorksheetDetailsPage() {
     setShowResults(false);
     setReviewMode(false);
     setReviewAnswers(null);
+    setReviewFilter(REVIEW_FILTER_ALL);
+    setRetryQuestionIds(null);
+    setRetryPoolIds([]);
     setAnswerKeyUrl(null);
     setAnswerKeyDialogOpen(false);
     setAnswerKeyPdfPage(1);
@@ -398,7 +539,6 @@ export default function WorksheetDetailsPage() {
   };
   const { saveProgress, getAttempt, restorePreviousCompleted } =
     useWorksheetProgress();
-  const currentQuestion = questions[currentQuestionIndex] || questions[0];
   const displayMonth = formatDisplayPart(worksheet.month);
   const displayYear = worksheet.year || parsedMeta.year;
   const displayFormula = formatDisplayPart(worksheet.formula);
@@ -443,8 +583,12 @@ export default function WorksheetDetailsPage() {
   }, [timerEnabled, elapsedTime]);
 
   const answeredQuestionCount = useMemo(() => {
-    if (!questions.length) return 0;
-    return questions.filter((q) => {
+    const list =
+      retryQuestionIds?.length > 0
+        ? questions.filter((q) => retryQuestionIds.includes(q.id))
+        : questions;
+    if (!list.length) return 0;
+    return list.filter((q) => {
       if (hasOpenParts(q)) {
         return getOpenPartsList(q).some(
           (part) => String(getOpenPartValue(answers, q.id, part.id)).trim() !== "",
@@ -453,9 +597,11 @@ export default function WorksheetDetailsPage() {
       const value = answers[q.id];
       return value != null && String(value).trim() !== "";
     }).length;
-  }, [questions, answers]);
+  }, [questions, answers, retryQuestionIds]);
 
   const canPauseOrFinish = answeredQuestionCount > 1;
+
+  const isRetrySession = Boolean(retryQuestionIds?.length);
 
   sessionStateRef.current = {
     answers,
@@ -468,6 +614,7 @@ export default function WorksheetDetailsPage() {
     questions,
     showResults,
     reviewMode,
+    isRetrySession,
     sheetTitle,
     worksheetTitle: worksheet.title,
   };
@@ -476,7 +623,7 @@ export default function WorksheetDetailsPage() {
     (patch = {}) => {
       if (!worksheetId) return;
       const state = sessionStateRef.current;
-      if (!state.questions?.length || state.showResults || state.reviewMode) return;
+      if (!state.questions?.length || state.showResults || state.reviewMode || state.isRetrySession) return;
 
       const existing = getAttempt(worksheetId);
       if (isWorksheetCompleted(existing) && !patch.force) return;
@@ -539,7 +686,7 @@ export default function WorksheetDetailsPage() {
   const flushSessionOnLeave = useCallback(({ silent = false } = {}) => {
     if (!worksheetId) return;
     const state = sessionStateRef.current;
-    if (!state.questions?.length || state.showResults || state.reviewMode) return;
+    if (!state.questions?.length || state.showResults || state.reviewMode || state.isRetrySession) return;
 
     if (state.timerEnabled) {
       const elapsed = Math.floor((Date.now() - startTimeRef.current) / 1000);
@@ -564,7 +711,7 @@ export default function WorksheetDetailsPage() {
   }, [worksheetId]);
 
   useEffect(() => {
-    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode || isRetrySession) return;
 
     const session = getAttempt(worksheetId);
     if (session?.status === WORKSHEET_STATUS.STARTED && !isWorksheetStarted(session)) {
@@ -593,10 +740,10 @@ export default function WorksheetDetailsPage() {
     if (session.selfAwardedPoints && typeof session.selfAwardedPoints === "object") {
       setSelfAwardedPoints(session.selfAwardedPoints);
     }
-  }, [tasksLoading, questions.length, worksheetId, getAttempt, showResults, reviewMode, restorePreviousCompleted]);
+  }, [tasksLoading, questions.length, worksheetId, getAttempt, showResults, reviewMode, isRetrySession, restorePreviousCompleted]);
 
   useEffect(() => {
-    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode || isRetrySession) return;
     const timeoutId = setTimeout(() => persistInProgressSession(), 500);
     return () => clearTimeout(timeoutId);
   }, [
@@ -611,11 +758,12 @@ export default function WorksheetDetailsPage() {
     questions.length,
     showResults,
     reviewMode,
+    isRetrySession,
     persistInProgressSession,
   ]);
 
   useEffect(() => {
-    if (tasksLoading || questions.length === 0 || showResults || reviewMode) return;
+    if (tasksLoading || questions.length === 0 || showResults || reviewMode || isRetrySession) return;
     if (Object.keys(answers).length === 0) return;
     const existing = getAttempt(worksheetId);
     if (!isWorksheetCompleted(existing)) return;
@@ -629,6 +777,8 @@ export default function WorksheetDetailsPage() {
     tasksLoading,
     questions.length,
     showResults,
+    reviewMode,
+    isRetrySession,
     worksheetId,
     getAttempt,
     persistInProgressSession,
@@ -673,26 +823,74 @@ export default function WorksheetDetailsPage() {
     });
   };
 
-  const handleNext = () => {
-    if (currentQuestionIndex < questions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
-    }
-  };
+  const retryQuestions = useMemo(() => {
+    if (!retryQuestionIds?.length) return null;
+    const idSet = new Set(retryQuestionIds.map(String));
+    return questions.filter((question) => idSet.has(String(question.id)));
+  }, [questions, retryQuestionIds]);
 
-  const handlePrevious = () => {
-    if (currentQuestionIndex > 0) {
-      setCurrentQuestionIndex(prev => prev - 1);
-    }
-  };
+  const scoringSourceQuestions = retryQuestions ?? questions;
 
   const scoring = useWorksheetScores({
-    questions,
+    questions: scoringSourceQuestions,
     answers,
     checkedQuestionIds,
     selfAwardedPoints,
     overrideScores:
       reviewMode && Object.keys(questionScores).length > 0 ? questionScores : null,
   });
+
+  const reviewFilterCounts = useMemo(() => {
+    const counts = {
+      [REVIEW_FILTER_ALL]: questions.length,
+      [REVIEW_FILTER_CORRECT]: 0,
+      [REVIEW_FILTER_PARTIAL]: 0,
+      [REVIEW_FILTER_WRONG]: 0,
+    };
+    questions.forEach((question) => {
+      const outcome = getQuestionReviewOutcome(scoring.questionScores[question.id]);
+      counts[outcome] += 1;
+    });
+    return counts;
+  }, [questions, scoring.questionScores]);
+
+  const visibleQuestions = useMemo(() => {
+    if (retryQuestions) return retryQuestions;
+    if (!reviewMode || reviewFilter === REVIEW_FILTER_ALL) return questions;
+    return questions.filter(
+      (question) =>
+        getQuestionReviewOutcome(scoring.questionScores[question.id]) ===
+        reviewFilter,
+    );
+  }, [retryQuestions, reviewMode, reviewFilter, questions, scoring.questionScores]);
+
+  const clampedQuestionIndex = Math.min(
+    currentQuestionIndex,
+    Math.max(0, visibleQuestions.length - 1),
+  );
+  const currentQuestion =
+    visibleQuestions[clampedQuestionIndex] || visibleQuestions[0];
+
+  useEffect(() => {
+    if (currentQuestionIndex === clampedQuestionIndex) return;
+    setCurrentQuestionIndex(clampedQuestionIndex);
+  }, [currentQuestionIndex, clampedQuestionIndex]);
+
+  const handleReviewFilterChange = (nextFilter) => {
+    if (nextFilter === reviewFilter) return;
+    setReviewFilter(nextFilter);
+    setCurrentQuestionIndex(0);
+  };
+
+  const handleNext = () => {
+    setCurrentQuestionIndex((prev) =>
+      Math.min(prev + 1, Math.max(0, visibleQuestions.length - 1)),
+    );
+  };
+
+  const handlePrevious = () => {
+    setCurrentQuestionIndex((prev) => Math.max(0, prev - 1));
+  };
 
   const canCheckQuestion = (question, answersMap) => {
     if (hasOpenParts(question)) {
@@ -743,6 +941,17 @@ export default function WorksheetDetailsPage() {
     const finalElapsed = syncElapsedTime();
     stopTimer();
     const { questionScores: qScores, score, total } = scoring.buildFinalSnapshot();
+    const scoredQuestions = scoringSourceQuestions;
+    const nextRetryPool = collectFailedQuestionIds(scoredQuestions, qScores);
+
+    if (isRetrySession) {
+      setQuestionScores(qScores);
+      setRetryPoolIds(nextRetryPool);
+      setSaveAttemptDialogOpen(false);
+      setShowResults(true);
+      return;
+    }
+
     const existing = getAttempt(worksheet.id);
     const previousHistory = Array.isArray(existing?.attemptHistory)
       ? existing.attemptHistory
@@ -781,10 +990,63 @@ export default function WorksheetDetailsPage() {
       viewMode,
       elapsedTime: finalElapsed,
       timerEnabled,
+      failedQuestionIds: nextRetryPool,
     };
     setQuestionScores(qScores);
+    setRetryPoolIds(nextRetryPool);
     setSaveAttemptDialogOpen(false);
     setShowResults(true);
+  };
+
+  const startRetrySession = useCallback(
+    (failedIds) => {
+      const uniqueIds = [...new Set((failedIds || []).map(String).filter(Boolean))];
+      if (!uniqueIds.length) return false;
+
+      const idSet = new Set(uniqueIds);
+      const failedQuestions = questions.filter((q) => idSet.has(String(q.id)));
+      if (!failedQuestions.length) return false;
+
+      setRetryQuestionIds(uniqueIds);
+      setRetryPoolIds(uniqueIds);
+      setAnswers({});
+      setCheckedQuestionIds({});
+      setSelfAwardedPoints({});
+      setQuestionScores({});
+      setReviewMode(false);
+      setReviewAnswers(null);
+      setReviewFilter(REVIEW_FILTER_ALL);
+      setShowResults(false);
+      setCurrentQuestionIndex(0);
+      setViewMode("single");
+      setElapsedTime(0);
+      setTimerEnabled(false);
+      startTimeRef.current = Date.now();
+      setSaveAttemptDialogOpen(false);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return true;
+    },
+    [questions],
+  );
+
+  const handleRetryFailedQuestions = () => {
+    const savedAttempt = worksheet?.id ? getAttempt(worksheet.id) : null;
+    const scoresMap = pickScoreMap(
+      completedSnapshotRef.current?.questionScores,
+      savedAttempt?.questionScores,
+      questionScores,
+      scoring.finalScores,
+    );
+    const sourceQuestions = retryQuestions?.length ? retryQuestions : questions;
+    const fromPool = (retryPoolIds || [])
+      .map(String)
+      .filter((id) => sourceQuestions.some((q) => String(q.id) === id));
+    const fromScores = collectFailedQuestionIds(sourceQuestions, scoresMap);
+    const failedIds = fromPool.length ? fromPool : fromScores;
+
+    if (!startRetrySession(failedIds) && fromScores.length) {
+      startRetrySession(fromScores);
+    }
   };
 
   const handleViewCompletedWorksheet = () => {
@@ -811,6 +1073,7 @@ export default function WorksheetDetailsPage() {
         selfPoints: restoredSelf ?? {},
         countUngradedAsZero: true,
       });
+    setRetryQuestionIds(null);
     setReviewAnswers(frozen);
     setAnswers(frozen);
     setQuestionScores(scores);
@@ -828,11 +1091,15 @@ export default function WorksheetDetailsPage() {
     }
     setShowResults(false);
     setReviewMode(true);
+    setReviewFilter(REVIEW_FILTER_ALL);
   };
 
   const handleExitReviewMode = () => {
     setReviewMode(false);
     setReviewAnswers(null);
+    setReviewFilter(REVIEW_FILTER_ALL);
+    setRetryQuestionIds(null);
+    setRetryPoolIds([]);
     setAnswerKeyUrl(null);
     setAnswerKeyDialogOpen(false);
     goToWorksheets();
@@ -898,6 +1165,11 @@ export default function WorksheetDetailsPage() {
       handleExitReviewMode();
       return;
     }
+    if (isRetrySession) {
+      setRetryQuestionIds(null);
+      goToWorksheets({ skipFlush: true });
+      return;
+    }
     if (showResults) {
       goToWorksheets();
       return;
@@ -948,8 +1220,8 @@ export default function WorksheetDetailsPage() {
       },
     ];
 
-    if (viewMode === "single" && questions[currentQuestionIndex]) {
-      const question = questions[currentQuestionIndex];
+    if (viewMode === "single" && currentQuestion) {
+      const question = currentQuestion;
       items.push({
         id: "answer-key-page",
         label: `Klucz — zadanie ${question.question_number}`,
@@ -996,6 +1268,7 @@ export default function WorksheetDetailsPage() {
     reviewMode,
     timerEnabled,
     currentQuestionIndex,
+    currentQuestion,
     openAnswerKeyDialog,
     openAnswerKeyAtQuestion,
     handleTimerToggle,
@@ -1012,12 +1285,13 @@ export default function WorksheetDetailsPage() {
     reviewMode,
     timerEnabled,
     currentQuestionIndex,
+    currentQuestion?.id,
   ]);
 
   const reviewCorrectChoiceClass =
-    "border-green-600 bg-green-50 ring-2 ring-green-200 dark:border-green-400 dark:bg-green-950/50 dark:ring-green-900/60";
+    "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200 dark:border-emerald-400 dark:bg-emerald-950/50 dark:ring-emerald-900/60";
   const reviewWrongPickChoiceClass =
-    "border-slate-400 bg-slate-100 ring-2 ring-slate-200 dark:border-slate-500 dark:bg-slate-800/90 dark:ring-slate-700";
+    "border-rose-400 bg-rose-50 ring-2 ring-rose-200 dark:border-rose-500 dark:bg-rose-950/40 dark:ring-rose-900/50";
 
   const renderChoice = (question, option, index, type = "single_choice") => {
     const value = type === "true_false" ? option : option;
@@ -1031,6 +1305,7 @@ export default function WorksheetDetailsPage() {
       reviewMode || (practiceMode && checkedQuestionIds[question.id]);
     const isUserWrongPick = answerRevealed && isSelected && !isCorrectOption;
     const optionLabel = splitOptionLabel(option, index);
+    const justChecked = Boolean(practiceMode && checkedQuestionIds[question.id]);
 
     let choiceClassName =
       "border-slate-300 dark:border-slate-600 " + examTheme.hoverChoice;
@@ -1041,9 +1316,32 @@ export default function WorksheetDetailsPage() {
       choiceClassName = `${examTheme.selectedChoice} ring-2`;
     }
 
+    let choiceAnimate = { scale: 1, x: 0, boxShadow: "0 0 0 0 rgba(0,0,0,0)" };
+    if (justChecked && isCorrectOption) {
+      choiceAnimate = {
+        scale: [1, 1.04, 1],
+        boxShadow: [
+          "0 0 0 0 rgba(16,185,129,0)",
+          "0 0 0 10px rgba(16,185,129,0.28)",
+          "0 0 0 0 rgba(16,185,129,0)",
+        ],
+        transition: { duration: 0.55, ease: "easeOut" },
+      };
+    } else if (justChecked && isUserWrongPick) {
+      choiceAnimate = {
+        x: [0, -8, 8, -6, 6, -3, 0],
+        boxShadow: [
+          "0 0 0 0 rgba(244,63,94,0)",
+          "0 0 0 8px rgba(244,63,94,0.22)",
+          "0 0 0 0 rgba(244,63,94,0)",
+        ],
+        transition: { duration: 0.5, ease: "easeInOut" },
+      };
+    }
+
     return (
-      <div
-        key={value}
+      <motion.div
+        key={`${value}-${justChecked ? "checked" : "open"}`}
         role="radio"
         aria-checked={isSelected}
         tabIndex={reviewMode || answerRevealed ? -1 : 0}
@@ -1057,7 +1355,9 @@ export default function WorksheetDetailsPage() {
           if (reviewMode || answerRevealed) return;
           handleSelectAnswer(question.id, value);
         }}
-        className={`flex min-h-14 items-center gap-3 rounded-sm border bg-white px-4 py-3 transition-all dark:bg-slate-900/70 ${
+        initial={justChecked ? { scale: 1, x: 0 } : false}
+        animate={choiceAnimate}
+        className={`flex min-h-14 items-center gap-3 rounded-xl border bg-white px-4 py-3 transition-colors dark:bg-slate-900/70 ${
           reviewMode || answerRevealed ? "cursor-default" : "cursor-pointer"
         } ${choiceClassName}`}
       >
@@ -1070,7 +1370,7 @@ export default function WorksheetDetailsPage() {
             className="math-text-ui--flow"
           />
         </span>
-      </div>
+      </motion.div>
     );
   };
 
@@ -1239,13 +1539,17 @@ export default function WorksheetDetailsPage() {
                   earnedPts < maxPts;
 
                 return (
-                  <div
-                    className={`rounded-lg px-4 py-3 text-center text-sm font-semibold text-white ${
+                  <motion.div
+                    key={`feedback-${question.id}`}
+                    initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                    className={`rounded-xl px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md ${
                       fullCredit
-                        ? "bg-emerald-600"
+                        ? "bg-emerald-600 shadow-emerald-600/25"
                         : partialOpen
-                          ? "bg-amber-600"
-                          : "bg-rose-600"
+                          ? "bg-amber-600 shadow-amber-600/25"
+                          : "bg-rose-600 shadow-rose-600/25"
                     }`}
                   >
                     {fullCredit ? (
@@ -1260,36 +1564,44 @@ export default function WorksheetDetailsPage() {
                         <MathText text={question.correct_answer} />
                       </span>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })()
             )}
-
-            {question.video_url ? (
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem
-                  value={`video-${question.id}`}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700"
-                >
-                  <AccordionTrigger className="px-4 text-base font-semibold text-slate-900 hover:no-underline dark:text-white">
-                    Wytłumaczenie wideo
-                  </AccordionTrigger>
-                  <AccordionContent className="px-4 pb-4">
-                    <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
-                      <iframe
-                        src={question.video_url}
-                        title={`Wytłumaczenie zadania ${question.question_number}`}
-                        className="h-full w-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                      />
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            ) : null}
           </div>
         )}
+
+        {question.video_url ? (
+          <div
+            className={`${
+              practiceMode || reviewMode
+                ? "border-t border-slate-200 pt-6 dark:border-slate-700"
+                : ""
+            }`}
+          >
+            <Accordion type="single" collapsible className="w-full">
+              <AccordionItem
+                value={`video-${question.id}`}
+                className="rounded-xl border border-slate-200 bg-slate-50/80 dark:border-slate-700 dark:bg-slate-900/40"
+              >
+                <AccordionTrigger className="px-4 text-base font-semibold text-slate-900 hover:no-underline dark:text-white">
+                  Wytłumaczenie wideo
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4">
+                  <div className="aspect-video w-full overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800">
+                    <iframe
+                      src={question.video_url}
+                      title={`Wytłumaczenie zadania ${question.question_number}`}
+                      className="h-full w-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
+          </div>
+        ) : null}
 
         </CardContent>
       </Card>
@@ -1381,87 +1693,192 @@ export default function WorksheetDetailsPage() {
       completedSnapshotRef.current?.timerEnabled ?? timerEnabled;
     const resultsElapsed =
       completedSnapshotRef.current?.elapsedTime ?? elapsedTime;
+    const headline = getResultsHeadline(percentage);
+    const subline = isRetrySession
+      ? "To tylko powtórka — wynik nie zmienia oceny arkusza."
+      : getResultsSubline(percentage);
+    const resultsQuestionCount = isRetrySession
+      ? retryQuestions?.length || 0
+      : questions.length;
+    const scoresForRetryButton = pickScoreMap(
+      completedSnapshotRef.current?.questionScores,
+      questionScores,
+      scoring.finalScores,
+    );
+    const failedRetryCount = Math.max(
+      retryPoolIds.length,
+      collectFailedQuestionIds(
+        isRetrySession ? retryQuestions || [] : questions,
+        scoresForRetryButton,
+      ).length,
+    );
+    const resultStats = [
+      {
+        key: "score",
+        label: "Punkty",
+        value: (
+          <>
+            <AnimatedCount value={correct} />
+            <span className="text-2xl font-semibold text-emerald-500/80 dark:text-emerald-300/80">
+              /{total}
+            </span>
+          </>
+        ),
+        className:
+          "border-emerald-200/80 bg-emerald-50 dark:border-emerald-800/60 dark:bg-emerald-950/35",
+        valueClass: "text-emerald-600 dark:text-emerald-300",
+      },
+      {
+        key: "questions",
+        label: isRetrySession ? "W powtórce" : "Zadań",
+        value: <AnimatedCount value={resultsQuestionCount} />,
+        className:
+          "border-violet-200/80 bg-violet-50 dark:border-violet-800/60 dark:bg-violet-950/35",
+        valueClass: "text-violet-600 dark:text-violet-300",
+      },
+      ...((isRetrySession ? timerEnabled || elapsedTime > 0 : resultsTimerEnabled)
+        ? [
+            {
+              key: "time",
+              label: isRetrySession ? "Czas powtórki" : "Czas",
+              value: formatTime(isRetrySession ? elapsedTime : resultsElapsed),
+              className:
+                "border-slate-200 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/80",
+              valueClass: "text-slate-700 dark:text-slate-100",
+            },
+          ]
+        : []),
+    ];
+
     return (
-      <div className={`py-8`}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <Card className="dark:bg-slate-800 bg-white border-0 shadow-xl">
-            <CardContent className="p-12 text-center">
-              <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-blue-400 to-purple-600 rounded-full flex items-center justify-center">
-                <Award className="w-12 h-12 text-white" />
-              </div>
-              <h2 className="text-4xl font-bold text-slate-900 dark:text-white mb-4">
-                Gratulacje!
-              </h2>
-              <p className="text-xl text-gray-600 dark:text-slate-300 mb-8">
-                Ukończyłeś arkusz: {worksheet.title}
-              </p>
-
+      <div className="relative overflow-hidden py-8">
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/70 via-transparent to-transparent dark:from-blue-950/40" />
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 28, scale: 0.97 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ type: "spring", stiffness: 280, damping: 24 }}
+          >
+            <Card className="relative overflow-hidden border border-slate-200/90 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
+              <ResultsConfetti />
               <div
-                className={`grid gap-6 mb-8 ${
-                  resultsTimerEnabled ? "md:grid-cols-4" : "md:grid-cols-3"
-                }`}
+                className={`relative ${examTheme.paperBand} ${examTheme.paperBandDark} px-6 pb-10 pt-9 text-center sm:px-10`}
               >
-                <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
-                  <div className="text-4xl font-bold text-blue-600 dark:text-blue-400 mb-2">
-                    {percentage}%
+                <motion.div
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ type: "spring", stiffness: 360, damping: 16, delay: 0.08 }}
+                  className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full border border-white/35 bg-white/20 shadow-lg backdrop-blur-sm"
+                >
+                  <Trophy className="h-10 w-10 text-white" />
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.4 }}
+                >
+                  <div className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/95 backdrop-blur-sm">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    {isRetrySession ? "Powtórka niezaliczonych" : "Arkusz ukończony"}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-slate-400">
+                  <h2 className={`text-3xl font-extrabold tracking-tight sm:text-4xl ${examTheme.headerText}`}>
+                    {headline}
+                  </h2>
+                  <p className="mx-auto mt-2 max-w-lg text-sm text-white/80 sm:text-base">
+                    {worksheet.title}
+                  </p>
+                  <p className="mx-auto mt-1.5 max-w-md text-sm text-white/70">
+                    {subline}
+                  </p>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.28, type: "spring", stiffness: 260, damping: 18 }}
+                  className="mx-auto mt-7 inline-flex min-w-[9.5rem] flex-col items-center rounded-3xl border border-white/30 bg-white/15 px-8 py-4 backdrop-blur-md"
+                >
+                  <span className={`text-5xl font-black tabular-nums leading-none sm:text-6xl ${examTheme.headerText}`}>
+                    <AnimatedCount value={percentage} suffix="%" />
+                  </span>
+                  <span className="mt-2 text-xs font-semibold uppercase tracking-wider text-white/75">
                     Wynik końcowy
-                  </div>
-                </div>
-                <div className="p-6 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl">
-                  <div className="text-4xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
-                    {correct}/{total}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-slate-400">
-                    Punktów
-                  </div>
-                </div>
-                <div className="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                  <div className="text-4xl font-bold text-purple-600 dark:text-purple-400 mb-2">
-                    {questions.length}
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-slate-400">
-                    Pytań
-                  </div>
-                </div>
-                {resultsTimerEnabled ? (
-                  <div className="p-6 bg-slate-50 dark:bg-slate-800/80 rounded-xl">
-                    <div className="text-4xl font-bold text-slate-700 dark:text-slate-200 mb-2">
-                      {formatTime(resultsElapsed)}
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-slate-400">
-                      Czas
-                    </div>
-                  </div>
-                ) : null}
+                  </span>
+                </motion.div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button
-                  type="button"
-                  size="lg"
-                  variant="outline"
-                  className="dark:border-slate-600"
-                  onClick={goToWorksheets}
+              <CardContent className="relative space-y-7 p-6 sm:p-8">
+                <div
+                  className={`grid gap-3 ${
+                    resultsTimerEnabled ? "sm:grid-cols-3" : "sm:grid-cols-2"
+                  }`}
                 >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Powrót do arkuszy
-                </Button>
-                <Button
-                  size="lg"
-                  onClick={handleViewCompletedWorksheet}
-                  className={`${examTheme.button} text-white`}
+                  {resultStats.map((stat, index) => (
+                    <motion.div
+                      key={stat.key}
+                      initial={{ opacity: 0, y: 16 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.35 + index * 0.08, duration: 0.35 }}
+                      className={`rounded-2xl border px-4 py-5 text-center ${stat.className}`}
+                    >
+                      <div className={`text-3xl font-bold leading-none ${stat.valueClass}`}>
+                        {stat.value}
+                      </div>
+                      <div className="mt-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                        {stat.label}
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55, duration: 0.35 }}
+                  className="flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap"
                 >
-                  <Eye className="w-4 h-4 mr-2" />
-                  Obejrzyj arkusz
-                </Button>
-                <Button size="lg" onClick={() => window.location.reload()} className="bg-blue-600 hover:bg-blue-700">
-                  Spróbuj ponownie
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  <Button
+                    type="button"
+                    size="lg"
+                    variant="outline"
+                    className="h-11 border-slate-300 dark:border-slate-600"
+                    onClick={goToWorksheets}
+                  >
+                    <ArrowLeft className="mr-2 h-4 w-4" />
+                    Powrót do arkuszy
+                  </Button>
+                  <Button
+                    size="lg"
+                    onClick={handleViewCompletedWorksheet}
+                    className={`h-11 text-white shadow-md ${examTheme.button}`}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    Obejrzyj arkusz
+                  </Button>
+                  {!isRetrySession && failedRetryCount > 0 && (
+                    <Button
+                      type="button"
+                      size="lg"
+                      onClick={handleRetryFailedQuestions}
+                      className={`h-11 text-white shadow-md ${finishButtonClass}`}
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Spróbuj jeszcze raz niezaliczone
+                    </Button>
+                  )}
+                  {!isRetrySession && (
+                    <Button
+                      size="lg"
+                      onClick={() => window.location.reload()}
+                      variant="outline"
+                      className="h-11 border-slate-300 dark:border-slate-600"
+                    >
+                      Spróbuj ponownie
+                    </Button>
+                  )}
+                </motion.div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </div>
     );
@@ -1479,140 +1896,230 @@ export default function WorksheetDetailsPage() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Powrót do arkuszy
           </Button>
-          <Card className="overflow-hidden border-0 bg-white shadow-lg dark:bg-slate-800">
-            <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-6 py-5`}>
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    <Badge className="border-white/30 bg-white/20 font-semibold text-white backdrop-blur-sm">
+          <Card className="overflow-hidden border border-slate-200/90 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+            <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-5 sm:px-6`}>
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="mb-2.5 flex flex-wrap gap-2">
+                    <Badge className="border-white/35 bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white backdrop-blur-sm">
                       {examTheme.label}
                     </Badge>
                     {reviewMode && (
-                      <Badge className="border-white/30 bg-white/20 font-semibold text-white backdrop-blur-sm">
+                      <Badge className="border-white/35 bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
                         Podgląd ukończonego arkusza
                       </Badge>
                     )}
+                    {isRetrySession && !reviewMode && (
+                      <Badge className="border-white/35 bg-white/20 px-2.5 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+                        Powtórka niezaliczonych · bez wpływu na wynik
+                      </Badge>
+                    )}
                   </div>
-                  <h1 className={`text-2xl font-bold sm:text-3xl ${examTheme.headerText}`}>
+                  <h1 className={`text-2xl font-extrabold tracking-tight sm:text-3xl ${examTheme.headerText}`}>
                     {sheetTitle}
                   </h1>
                   {worksheet.title && worksheet.title !== sheetTitle && (
-                    <p className="mt-1 text-sm text-white/80">{worksheet.title}</p>
+                    <p className="mt-1.5 max-w-xl truncate text-sm text-white/70">
+                      {worksheet.title}
+                    </p>
                   )}
                 </div>
-                <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-start">
+                <div className="grid w-full grid-cols-2 gap-2 sm:w-auto sm:min-w-[16rem] sm:gap-3">
                   <div
-                    className={`min-w-[5.5rem] rounded-xl border border-white/25 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
+                    className={`rounded-2xl border border-white/30 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
                   >
-                    <div className="text-2xl font-bold tabular-nums">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                      Punkty
+                    </p>
+                    <div className="mt-0.5 text-2xl font-bold tabular-nums leading-none">
                       {scoring.summary.earned}
-                      <span className="text-lg font-medium text-white/70">
+                      <span className="text-base font-medium text-white/65">
                         /{scoring.summary.totalMax}
                       </span>
                     </div>
-                    <p className="text-xs font-medium text-white/80">punktów</p>
                   </div>
                   <div
-                    className={`min-w-[5.5rem] rounded-xl border border-white/25 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
+                    className={`rounded-2xl border border-white/30 bg-white/15 px-4 py-3 text-center backdrop-blur-sm ${examTheme.headerText}`}
                   >
-                    <div className="text-2xl font-bold tabular-nums">
-                      {viewMode === "single" ? currentQuestionIndex + 1 : questions.length}
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-white/70">
+                      {viewMode === "single" ? "Zadanie" : "Zadań"}
+                    </p>
+                    <div className="mt-0.5 text-2xl font-bold tabular-nums leading-none">
+                      {viewMode === "single"
+                        ? visibleQuestions.length === 0
+                          ? 0
+                          : clampedQuestionIndex + 1
+                        : visibleQuestions.length}
                       {viewMode === "single" && (
-                        <span className="text-lg font-medium text-white/70">/{questions.length}</span>
+                        <span className="text-base font-medium text-white/65">
+                          /{visibleQuestions.length}
+                        </span>
                       )}
                     </div>
-                    <p className="text-xs font-medium text-white/80">
-                      {viewMode === "single" ? "aktualne zadanie" : "zadania w arkuszu"}
-                    </p>
                   </div>
                 </div>
               </div>
             </div>
-            <CardContent className="space-y-5 p-6">
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            <CardContent className="space-y-4 p-5 sm:p-6">
+              <div className="flex flex-wrap gap-2">
                 {displayYear && (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
-                    <Calendar className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Rok</p>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayYear}</p>
-                    </div>
+                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                    <Calendar className={`h-3.5 w-3.5 shrink-0 ${examTheme.accentText}`} />
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Rok
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {displayYear}
+                    </span>
                   </div>
                 )}
                 {displayMonth && (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
-                    <Calendar className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Termin</p>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayMonth}</p>
-                    </div>
+                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                    <CalendarDays className={`h-3.5 w-3.5 shrink-0 ${examTheme.accentText}`} />
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Termin
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {displayMonth}
+                    </span>
                   </div>
                 )}
                 {displayFormula && (
-                  <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
-                    <Layers className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
-                    <div>
-                      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Formuła</p>
-                      <p className="text-sm font-semibold text-slate-900 dark:text-white">{displayFormula}</p>
-                    </div>
+                  <div className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                    <Layers className={`h-3.5 w-3.5 shrink-0 ${examTheme.accentText}`} />
+                    <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Formuła
+                    </span>
+                    <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                      {displayFormula}
+                    </span>
                   </div>
                 )}
-                <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-900/50">
-                  <FileText className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
-                  <div>
-                    <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Zadania</p>
-                    <p className="text-sm font-semibold text-slate-900 dark:text-white">{questions.length}</p>
-                  </div>
+                <div className="inline-flex h-10 items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3.5 dark:border-slate-700 dark:bg-slate-900/55">
+                  <FileText className={`h-3.5 w-3.5 shrink-0 ${examTheme.accentText}`} />
+                  <span className="text-[11px] font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Zadania
+                  </span>
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">
+                    {questions.length}
+                  </span>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 {!reviewMode && (
                   <div className="flex flex-wrap items-center gap-3">
-                  <div className="inline-flex w-full max-w-sm shrink-0 items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900/60 sm:w-auto">
-                    {timerEnabled ? (
-                      <div className="flex min-w-[6.5rem] items-center gap-2">
-                        <Clock className={`h-4 w-4 shrink-0 ${examTheme.accentText}`} />
-                        <span className="w-[4.5rem] tabular-nums text-base font-semibold text-slate-900 dark:text-white">
-                          {formatTime(elapsedTime)}
+                    <div className="inline-flex h-11 items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 dark:border-slate-700 dark:bg-slate-900/60">
+                      <div className="flex w-[6.75rem] shrink-0 items-center gap-2">
+                        <Clock
+                          className={`h-4 w-4 shrink-0 transition-colors ${
+                            timerEnabled
+                              ? examTheme.accentText
+                              : "text-slate-400 dark:text-slate-500"
+                          }`}
+                        />
+                        <span
+                          className={`w-[4.5rem] tabular-nums text-base font-semibold transition-colors ${
+                            timerEnabled
+                              ? "text-slate-900 dark:text-white"
+                              : "text-slate-400 dark:text-slate-500"
+                          }`}
+                        >
+                          {timerEnabled ? formatTime(elapsedTime) : "00:00"}
                         </span>
                       </div>
-                    ) : null}
-                    {timerEnabled ? (
-                      <div className="h-8 w-px shrink-0 bg-slate-200 dark:bg-slate-600" />
-                    ) : null}
-                    <label className="flex shrink-0 cursor-pointer items-center gap-2.5">
-                      <Switch
-                        checked={timerEnabled}
-                        onCheckedChange={handleTimerToggle}
-                        className={examTheme.switch}
-                      />
-                      <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                        Mierz czas
-                      </span>
-                    </label>
+                      <div className="h-6 w-px shrink-0 bg-slate-200 dark:bg-slate-600" />
+                      <label className="flex shrink-0 cursor-pointer items-center gap-2.5">
+                        <Switch
+                          checked={timerEnabled}
+                          onCheckedChange={handleTimerToggle}
+                          className={examTheme.switch}
+                        />
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                          Mierz czas
+                        </span>
+                      </label>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={handleSubmitClick}
+                      className={`${finishButtonClass} h-11 shrink-0 px-5 text-white`}
+                    >
+                      Zakończ
+                    </Button>
                   </div>
-                  <Button
-                    type="button"
-                    onClick={handleSubmitClick}
-                    className={`${finishButtonClass} shrink-0 text-white`}
+                )}
+
+                {reviewMode && (
+                  <div
+                    className="inline-flex max-w-full flex-wrap gap-1 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900"
+                    role="group"
+                    aria-label="Filtr zadań w podglądzie"
                   >
-                    Zakończ
-                  </Button>
+                    {[
+                      {
+                        id: REVIEW_FILTER_ALL,
+                        label: "Wszystkie",
+                        count: reviewFilterCounts[REVIEW_FILTER_ALL],
+                      },
+                      {
+                        id: REVIEW_FILTER_CORRECT,
+                        label: "Dobrze",
+                        count: reviewFilterCounts[REVIEW_FILTER_CORRECT],
+                        icon: CheckCircle,
+                      },
+                      {
+                        id: REVIEW_FILTER_PARTIAL,
+                        label: "Częściowo",
+                        count: reviewFilterCounts[REVIEW_FILTER_PARTIAL],
+                        icon: CircleDot,
+                      },
+                      {
+                        id: REVIEW_FILTER_WRONG,
+                        label: "Źle",
+                        count: reviewFilterCounts[REVIEW_FILTER_WRONG],
+                        icon: XCircle,
+                      },
+                    ].map((option) => {
+                      const Icon = option.icon;
+                      const active = reviewFilter === option.id;
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          onClick={() => handleReviewFilterChange(option.id)}
+                          className={`inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm font-semibold transition-colors ${
+                            active
+                              ? `${examTheme.button} text-white shadow-sm`
+                              : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
+                          }`}
+                        >
+                          {Icon ? <Icon className="h-3.5 w-3.5 shrink-0" /> : null}
+                          <span>{option.label}</span>
+                          <span
+                            className={`tabular-nums text-xs ${
+                              active ? "text-white/80" : "text-slate-400 dark:text-slate-500"
+                            }`}
+                          >
+                            {option.count}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
 
                 <div
-                  className={`inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900 ${
+                  className={`inline-flex h-11 rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-900 ${
                     reviewMode ? "sm:ml-auto" : ""
                   }`}
                 >
                   <button
                     type="button"
                     onClick={() => setViewMode("single")}
-                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                    className={`inline-flex h-full items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors ${
                       viewMode === "single"
-                        ? `${examTheme.button} text-white shadow-md`
+                        ? `${examTheme.button} text-white shadow-sm`
                         : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                     }`}
                   >
@@ -1622,9 +2129,9 @@ export default function WorksheetDetailsPage() {
                   <button
                     type="button"
                     onClick={() => setViewMode("list")}
-                    className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
+                    className={`inline-flex h-full items-center gap-2 rounded-lg px-4 text-sm font-semibold transition-colors ${
                       viewMode === "list"
-                        ? `${examTheme.button} text-white shadow-md`
+                        ? `${examTheme.button} text-white shadow-sm`
                         : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
                     }`}
                   >
@@ -1640,21 +2147,46 @@ export default function WorksheetDetailsPage() {
 
         {viewMode === "single" ? (
           <>
-            {renderExamQuestion(currentQuestion)}
-            <div className="flex justify-between items-center">
+            {visibleQuestions.length === 0 ? (
+              <Card className="mb-6 border border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
+                <CardContent className="px-6 py-12 text-center">
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    Brak zadań w tym filtrze
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Wybierz inny filtr albo wróć do „Wszystkie”.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              renderExamQuestion(currentQuestion)
+            )}
+            <div className="flex items-center justify-between gap-3">
               <Button
                 onClick={handlePrevious}
-                disabled={currentQuestionIndex === 0}
+                disabled={clampedQuestionIndex <= 0 || visibleQuestions.length === 0}
                 className="bg-gray-200 hover:bg-gray-300 text-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-white disabled:opacity-50"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Poprzednie
               </Button>
 
-              {!reviewMode && (
+              {reviewMode ? (
+                <Button
+                  onClick={handleNext}
+                  disabled={
+                    visibleQuestions.length === 0 ||
+                    clampedQuestionIndex >= visibleQuestions.length - 1
+                  }
+                  className={`${examTheme.button} text-white disabled:opacity-50`}
+                >
+                  Następne
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              ) : (
                 <div className="flex items-center gap-2">
                   {canPauseOrFinish &&
-                    currentQuestionIndex < questions.length - 1 && (
+                    clampedQuestionIndex < visibleQuestions.length - 1 && (
                       <Button
                         type="button"
                         variant="outline"
@@ -1665,7 +2197,7 @@ export default function WorksheetDetailsPage() {
                         <CheckCircle className="w-4 h-4 ml-2" />
                       </Button>
                     )}
-                  {currentQuestionIndex === questions.length - 1 ? (
+                  {clampedQuestionIndex === visibleQuestions.length - 1 ? (
                     <Button
                       onClick={handleSubmitClick}
                       className={finishButtonClass}
@@ -1688,7 +2220,20 @@ export default function WorksheetDetailsPage() {
           </>
         ) : (
           <>
-            {questions.map((q) => renderExamQuestion(q))}
+            {visibleQuestions.length === 0 ? (
+              <Card className="mb-6 border border-dashed border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-900">
+                <CardContent className="px-6 py-12 text-center">
+                  <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    Brak zadań w tym filtrze
+                  </p>
+                  <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+                    Wybierz inny filtr albo wróć do „Wszystkie”.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              visibleQuestions.map((q) => renderExamQuestion(q))
+            )}
             {!reviewMode && canPauseOrFinish && (
               <div className="flex justify-end">
                 <Button onClick={handleSubmitClick} className={finishButtonClass}>
@@ -1701,31 +2246,44 @@ export default function WorksheetDetailsPage() {
         )}
 
         <AlertDialog open={saveAttemptDialogOpen} onOpenChange={setSaveAttemptDialogOpen}>
-          <AlertDialogContent className={confirmDialogContentClass}>
-            <div className={`h-1.5 ${examTheme.dialogStrip}`} />
-            <div className="space-y-5 p-6">
-              <AlertDialogHeader className="space-y-2 text-center sm:text-center">
-                <AlertDialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
-                  Zakończyć arkusz?
-                </AlertDialogTitle>
-                <AlertDialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                  Zobaczysz podsumowanie z oceną odpowiedzi. Możesz też wrócić i dokończyć
-                  rozwiązywanie.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="flex flex-col items-center gap-2.5 sm:flex-col sm:justify-center">
-                <AlertDialogCancel
-                  className={`${confirmDialogCancelClass} mt-0 w-full max-w-xs`}
-                  onClick={handleCloseFinishDialog}
+          <AlertDialogContent className={`${confirmDialogContentClass} max-w-md`}>
+            <div className={`h-2 ${examTheme.dialogStrip}`} />
+            <div className="space-y-5 p-6 sm:p-7">
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ type: "spring", stiffness: 380, damping: 26 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div
+                  className={`mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br ${examTheme.gradient} shadow-lg`}
                 >
-                  Zostań
-                </AlertDialogCancel>
+                  <CheckCircle className="h-8 w-8 text-white" />
+                </div>
+                <AlertDialogHeader className="space-y-2 text-center sm:text-center">
+                  <AlertDialogTitle className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                    {isRetrySession ? "Zakończyć powtórkę?" : "Zakończyć arkusz?"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                    {isRetrySession
+                      ? "Zobaczysz wynik samej powtórki. Nie zmienia on oceny ukończonego arkusza."
+                      : "Zobaczysz podsumowanie z oceną odpowiedzi. Możesz też wrócić i dokończyć rozwiązywanie."}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+              </motion.div>
+              <AlertDialogFooter className="flex flex-col items-stretch gap-2.5 sm:flex-col sm:justify-center sm:space-x-0">
                 <AlertDialogAction
                   onClick={finishWorksheet}
-                  className={`mt-0 w-full max-w-xs border-0 text-white shadow-sm hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${examTheme.button}`}
+                  className={`mt-0 h-11 w-full border-0 text-base font-semibold text-white shadow-md hover:opacity-90 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900 ${examTheme.button}`}
                 >
-                  Zakończ
+                  {isRetrySession ? "Zakończ powtórkę" : "Zakończ i zobacz wynik"}
                 </AlertDialogAction>
+                <AlertDialogCancel
+                  className={`${confirmDialogCancelClass} mt-0 h-11 w-full`}
+                  onClick={handleCloseFinishDialog}
+                >
+                  {isRetrySession ? "Zostań w powtórce" : "Zostań w arkuszu"}
+                </AlertDialogCancel>
               </AlertDialogFooter>
             </div>
           </AlertDialogContent>

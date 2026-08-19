@@ -58,7 +58,7 @@ export function getNotebookPageStyle(isDark, themeKey = "default") {
   return buildNotebookStyle(isDark, gridRgb);
 }
 
-export const NOTEBOOK_EXCLUDED_PAGES = ["Home", "Profile", "About"];
+export const NOTEBOOK_EXCLUDED_PAGES = ["Home", "About"];
 
 export function shouldShowNotebookBackground(pageName) {
   return !NOTEBOOK_EXCLUDED_PAGES.includes(pageName);

@@ -1,14 +1,25 @@
-import { isReviewDue } from "@/utils/review-schedule";
+import { isReviewDue, statusToPriority } from "@/utils/review-schedule";
 
 export const REVIEW_RANDOM_QUEUE_KEY = "mm_review_random_queue";
 
-export const REVIEW_FREQUENCY_THRESHOLD = 40;
+export const REVIEW_SCOPE_OPTIONS = [
+  { id: "hardest", label: "Najtrudniejsze" },
+  { id: "dueToday", label: "Dziś powtórka" },
+  { id: "random", label: "Losowe" },
+];
 
 const BAND_WEIGHTS = {
   due: 0.55,
   needsReview: 0.25,
   moderate: 0.12,
   mastered: 0.08,
+};
+
+const HARDEST_BAND_WEIGHTS = {
+  due: 0.2,
+  needsReview: 0.55,
+  moderate: 0.2,
+  mastered: 0.05,
 };
 
 const FALLBACK_ORDER = {
@@ -27,24 +38,21 @@ function shuffleArray(items) {
   return copy;
 }
 
-export function classifyReviewFrequency(
-  frequency,
-  threshold = REVIEW_FREQUENCY_THRESHOLD,
-) {
-  const freq = frequency ?? 50;
-  if (freq >= threshold) return "needsReview";
-  if (freq >= 20) return "moderate";
-  return "mastered";
+export function classifyReviewStatus(status) {
+  const priority = statusToPriority(status);
+  if (priority >= statusToPriority("trudne")) return "needsReview";
+  if (priority <= statusToPriority("bardzo_latwe")) return "mastered";
+  return "moderate";
 }
 
-export function classifyReviewItem(item, threshold = REVIEW_FREQUENCY_THRESHOLD) {
+export function classifyReviewItem(item) {
   if (item.nextReviewAt && isReviewDue(item.nextReviewAt)) {
     return "due";
   }
-  return classifyReviewFrequency(item.frequency, threshold);
+  return classifyReviewStatus(item.reviewStatus ?? item.status);
 }
 
-function groupReviewItemsByBand(reviewItems, threshold) {
+function groupReviewItemsByBand(reviewItems) {
   const buckets = {
     due: [],
     needsReview: [],
@@ -53,27 +61,41 @@ function groupReviewItemsByBand(reviewItems, threshold) {
   };
 
   for (const item of reviewItems) {
-    buckets[classifyReviewItem(item, threshold)].push(item);
+    buckets[classifyReviewItem(item)].push(item);
   }
 
   return buckets;
 }
 
+export function isHardReviewStatus(status) {
+  return statusToPriority(status) >= statusToPriority("raczej_trudne");
+}
+
 export function filterReviewSessionItems(reviewItems, filters = {}) {
   const {
+    scope = "random",
     topic = "all",
+    subtopic = "all",
     level = "all",
-    mode = "all",
   } = filters;
 
-  return reviewItems.filter((item) => {
+  const base = reviewItems.filter((item) => {
     if (topic !== "all" && item.task?.topic !== topic) return false;
+    if (subtopic !== "all" && item.task?.subtopic !== subtopic) return false;
     if (level !== "all" && item.task?.level !== level) return false;
-    if (mode === "due" && !isReviewDue(item.nextReviewAt)) return false;
-    if (mode === "wrong" && item.lastAttempt?.isCorrect) return false;
-    if (mode === "needsWork" && item.masteryStatus?.id !== "needsWork") return false;
     return true;
   });
+
+  if (scope === "dueToday") {
+    return base.filter((item) => isReviewDue(item.nextReviewAt));
+  }
+
+  if (scope === "hardest") {
+    const hard = base.filter((item) => isHardReviewStatus(item.reviewStatus));
+    return hard.length > 0 ? hard : base;
+  }
+
+  return base;
 }
 
 function allocateBandCounts(total, weights) {
@@ -118,7 +140,7 @@ function pickFromBuckets(buckets, band, count, selectedIds) {
 export function pickRandomReviewTaskIds(
   reviewItems,
   count,
-  { reviewThreshold = REVIEW_FREQUENCY_THRESHOLD, filters = null } = {},
+  { filters = null } = {},
 ) {
   const sourceItems = filters
     ? filterReviewSessionItems(reviewItems, filters)
@@ -127,8 +149,10 @@ export function pickRandomReviewTaskIds(
   if (!sourceItems.length || count <= 0) return [];
 
   const limit = Math.min(count, sourceItems.length);
-  const buckets = groupReviewItemsByBand(sourceItems, reviewThreshold);
-  const targets = allocateBandCounts(limit, BAND_WEIGHTS);
+  const buckets = groupReviewItemsByBand(sourceItems);
+  const weights =
+    filters?.scope === "hardest" ? HARDEST_BAND_WEIGHTS : BAND_WEIGHTS;
+  const targets = allocateBandCounts(limit, weights);
   const selectedIds = new Set();
   const selected = [];
 

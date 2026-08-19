@@ -133,7 +133,7 @@ export function mergeTaskProgress(localProgress, cloudProgress) {
     const uniqueAttempts = Array.from(
       new Map(
         attempts.map((attempt) => [
-          `${attempt?.date ?? ""}:${attempt?.isCorrect ?? ""}:${attempt?.frequencyAfter ?? ""}`,
+          `${attempt?.date ?? ""}:${attempt?.isCorrect ?? ""}:${attempt?.reviewStatusAfter ?? attempt?.nextReviewAtAfter ?? ""}`,
           attempt,
         ]),
       ).values(),
@@ -148,11 +148,10 @@ export function mergeTaskProgress(localProgress, cloudProgress) {
       ...localEntry,
       ...latestEntry,
       attempts: uniqueAttempts,
-      frequency:
-        uniqueAttempts.at(-1)?.frequencyAfter ??
-        latestEntry.frequency ??
-        localEntry.frequency ??
-        cloudEntry.frequency,
+      baseDifficulty:
+        latestEntry.baseDifficulty ??
+        localEntry.baseDifficulty ??
+        cloudEntry.baseDifficulty,
       correctStreak:
         latestEntry.correctStreak ??
         uniqueAttempts.at(-1)?.correctStreakAfter ??
@@ -178,6 +177,11 @@ export function mergeTaskProgress(localProgress, cloudProgress) {
         uniqueAttempts.at(-1)?.difficultyScoreAfter ??
         localEntry.difficultyScore ??
         cloudEntry.difficultyScore,
+      reviewStatus:
+        uniqueAttempts.at(-1)?.reviewStatusAfter ??
+        latestEntry.reviewStatus ??
+        localEntry.reviewStatus ??
+        cloudEntry.reviewStatus,
       masteryStatus:
         latestEntry.masteryStatus ??
         localEntry.masteryStatus ??

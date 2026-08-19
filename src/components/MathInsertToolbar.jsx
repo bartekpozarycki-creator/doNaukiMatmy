@@ -12,7 +12,7 @@ export default function MathInsertToolbar({ targetRef, value, onChange, classNam
   return (
     <div
       className={cn(
-        "flex gap-1.5 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-700 dark:bg-slate-800/70 sm:flex-wrap sm:overflow-visible",
+        "flex min-w-0 max-w-full flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-slate-50/80 p-2 dark:border-slate-700 dark:bg-slate-800/70",
         className,
       )}
       role="toolbar"

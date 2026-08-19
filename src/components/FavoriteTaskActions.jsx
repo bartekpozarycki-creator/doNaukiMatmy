@@ -5,6 +5,11 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import FavoriteTaskButton from "@/components/FavoriteTaskButton";
 import FavoriteNoteDialog from "@/components/FavoriteNoteDialog";
 
+function stopTileNavigation(event) {
+  event.preventDefault();
+  event.stopPropagation();
+}
+
 const sizeClass = {
   sm: "h-8 w-8",
   md: "h-9 w-9",
@@ -30,10 +35,13 @@ export default function FavoriteTaskActions({
   return (
     <>
       <div
-        className={cn("flex shrink-0 items-center gap-1.5", className)}
-        onClick={stopPropagation ? (event) => event.stopPropagation() : undefined}
-        onKeyDown={stopPropagation ? (event) => event.stopPropagation() : undefined}
-        onPointerDown={stopPropagation ? (event) => event.stopPropagation() : undefined}
+        data-task-tile-ignore={stopPropagation ? true : undefined}
+        className={cn("relative z-10 flex shrink-0 items-center gap-1.5", className)}
+        onClick={stopPropagation ? stopTileNavigation : undefined}
+        onKeyDown={stopPropagation ? stopTileNavigation : undefined}
+        onPointerDown={stopPropagation ? stopTileNavigation : undefined}
+        onMouseDown={stopPropagation ? stopTileNavigation : undefined}
+        onPointerDownCapture={stopPropagation ? stopTileNavigation : undefined}
       >
         <FavoriteTaskButton
           taskId={taskId}
@@ -42,16 +50,22 @@ export default function FavoriteTaskActions({
         />
         <button
           type="button"
+          data-task-tile-ignore={stopPropagation ? true : undefined}
           aria-label={showPin ? "Pokaż notatkę" : "Dodaj notatkę"}
           onClick={(event) => {
             if (stopPropagation) {
-              event.preventDefault();
-              event.stopPropagation();
+              stopTileNavigation(event);
             }
             setNoteDialogOpen(true);
           }}
           onPointerDown={
-            stopPropagation ? (event) => event.stopPropagation() : undefined
+            stopPropagation ? stopTileNavigation : undefined
+          }
+          onMouseDown={
+            stopPropagation ? stopTileNavigation : undefined
+          }
+          onPointerDownCapture={
+            stopPropagation ? stopTileNavigation : undefined
           }
           className={cn(
             "inline-flex shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900",

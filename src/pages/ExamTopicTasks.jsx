@@ -5,21 +5,17 @@ import {
   ArrowLeft,
   Loader2,
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import TaskQuestionBody from "@/components/TaskQuestionBody";
-import MaturaArkuszLink from "@/components/MaturaArkuszLink";
-import FavoriteTaskActions from "@/components/FavoriteTaskActions";
+import { Card, CardContent } from "@/components/ui/card";
+import TaskListCard from "@/components/TaskListCard";
 import { createPageUrl } from "@/utils";
 import { publicSupabase } from "@/supabase-config.js";
 import {
   isMaturalneTask,
   mapDbTaskRow,
-  TASK_LEVEL_BAR_GRADIENT,
   taskLevelBadgeClassName,
 } from "@/utils/map-db-task";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useTaskProgress } from "@/contexts/TaskProgressContext";
+import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 
 const monthOrder = {
   styczen: 1,
@@ -58,21 +54,9 @@ function levelLabel(level) {
   return "egzamin";
 }
 
-const taskCardLayoutClass =
-  "flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 ease-out group-hover/tile:border-slate-300 group-hover/tile:shadow-md dark:border-slate-700/80 dark:bg-slate-800 dark:group-hover/tile:border-slate-600 dark:group-hover/tile:shadow-lg";
-
-const taskCardHeaderClass =
-  "flex flex-col space-y-0 overflow-visible !px-3.5 !pt-3.5 !pb-1.5";
-const taskCardBadgeRowClass = "mb-2.5 flex flex-wrap items-center gap-1.5";
-const taskCardTitleBlockClass = "min-w-0 overflow-visible py-1 leading-normal";
-const taskCardFooterClass = "shrink-0 !px-3.5 !pb-3.5 !pt-2.5";
-const badgeClass = "px-2.5 py-0.5 text-xs font-medium leading-tight";
-
 export default function ExamTopicTasksPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { isDark } = useTheme();
-  const { getProgress } = useTaskProgress();
   const topicParam = searchParams.get("topic") || "";
   const levelParam = searchParams.get("level") || "";
   const [tasks, setTasks] = useState([]);
@@ -86,7 +70,10 @@ export default function ExamTopicTasksPage() {
       setLoading(true);
       setLoadError(null);
 
-      const { data, error } = await publicSupabase.from("tasks").select("*");
+      const { data, error } = await publicSupabase
+        .from("tasks")
+        .select("*")
+        .not("arkusz", "is", null);
 
       if (cancelled) return;
 
@@ -98,7 +85,11 @@ export default function ExamTopicTasksPage() {
         return;
       }
 
-      setTasks((data ?? []).map(mapDbTaskRow).filter((task) => task && task.question));
+      setTasks(
+        (data ?? [])
+          .map(mapDbTaskRow)
+          .filter((task) => task && task.question && isMaturalneTask(task)),
+      );
       setLoading(false);
     };
 
@@ -130,7 +121,8 @@ export default function ExamTopicTasksPage() {
       });
   }, [tasks, topicParam, levelParam]);
 
-  const openTask = (task) => {
+  const openTask = (task, event) => {
+    if (event && !shouldNavigateTaskTile(event)) return;
     navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`, {
       state: {
         from: "exam-topic-tasks",
@@ -180,85 +172,34 @@ export default function ExamTopicTasksPage() {
           </Card>
         ) : (
           <div className="flex flex-col gap-5">
-            {filteredTasks.map((task, index) => {
-              const barGradient = TASK_LEVEL_BAR_GRADIENT[task.level] ?? "from-slate-400 to-slate-600";
-              const isUnattempted = !getProgress(task.id)?.attempts?.length;
-
-              return (
-                <div key={task.id} className="relative w-full">
-                  <motion.div
-                    role="link"
-                    tabIndex={0}
-                    onClick={() => openTask(task)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        openTask(task);
-                      }
-                    }}
-                    className="group/tile block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
-                    initial={{ opacity: 0, y: 12 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ scale: 1.012 }}
-                    whileTap={{ scale: 0.988 }}
-                    transition={{
-                      type: "tween",
-                      duration: 0.2,
-                      delay: Math.min(index * 0.02, 0.2),
-                      ease: [0.25, 0.1, 0.25, 1],
-                    }}
-                  >
-                    <Card className={`${taskCardLayoutClass} relative`}>
-                      <div className={isUnattempted ? "opacity-60" : ""}>
-                        <div className={`h-1.5 w-full shrink-0 bg-gradient-to-r ${barGradient} rounded-none`} />
-                        <CardHeader className={taskCardHeaderClass}>
-                          <div
-                            className={taskCardBadgeRowClass}
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <Badge
-                              variant="outline"
-                              className={`${badgeClass} ${taskLevelBadgeClassName(task.level)}`}
-                            >
-                              {task.level}
-                            </Badge>
-                            <MaturaArkuszLink
-                              task={task}
-                              className={`${badgeClass} shrink-0`}
-                              linkTarget="worksheets-list"
-                            />
-                            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                              <FavoriteTaskActions taskId={task.id} size="sm" stopPropagation />
-                              <Badge
-                                variant="outline"
-                                className={`${badgeClass} border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400`}
-                              >
-                                {task.source}
-                              </Badge>
-                            </div>
-                          </div>
-                          <CardTitle className={taskCardTitleBlockClass}>
-                            <TaskQuestionBody task={task} compact tile />
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className={taskCardFooterClass}>
-                          <p className="text-sm text-gray-600 dark:text-slate-300">
-                            Temat: {task.topic} • Typ:{" "}
-                            {task.type === "closed" ? "zamknięte" : "otwarte"}
-                          </p>
-                        </CardContent>
-                      </div>
-                      {isUnattempted && (
-                        <span className="pointer-events-none absolute bottom-3 right-3.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-                          nigdy nie robione
-                        </span>
-                      )}
-                    </Card>
-                  </motion.div>
-                </div>
-              );
-            })}
+            {filteredTasks.map((task, index) => (
+              <div key={task.id} className="relative w-full">
+                <motion.div
+                  role="link"
+                  tabIndex={0}
+                  onClick={(event) => openTask(task, event)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openTask(task, event);
+                    }
+                  }}
+                  className="group/tile block cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.012 }}
+                  whileTap={{ scale: 0.988 }}
+                  transition={{
+                    type: "tween",
+                    duration: 0.2,
+                    delay: Math.min(index * 0.02, 0.2),
+                    ease: [0.25, 0.1, 0.25, 1],
+                  }}
+                >
+                  <TaskListCard task={task} maturaLinkTarget="worksheets-list" />
+                </motion.div>
+              </div>
+            ))}
           </div>
         )}
 

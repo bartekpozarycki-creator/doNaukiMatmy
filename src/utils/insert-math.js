@@ -82,12 +82,13 @@ export function insertMathIntoField(element, currentValue, onChange, snippet) {
   if (!snippet) return;
 
   if (element?.tagName?.toLowerCase() === "math-field") {
+    const latex = snippet.mathlive || snippet.latex;
+    if (!latex) return;
     element.focus();
-    element.executeCommand?.(["switchMode", "math"]);
-    element.insert(snippet.mathlive || snippet.latex, {
+    element.insert(wrapInlineMath(latex), {
       focus: true,
       insertionMode: "replaceSelection",
-      selectionMode: "placeholder",
+      selectionMode: latex.includes("#@") ? "placeholder" : "after",
     });
     onChange?.(element.getValue());
     return;

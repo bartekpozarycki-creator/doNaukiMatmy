@@ -6,7 +6,7 @@ import { Star, ExternalLink, MessageSquarePlus } from "lucide-react";
 
 const GOOGLE_REVIEW_URL =
   import.meta.env.VITE_GOOGLE_REVIEW_URL ||
-  "https://www.google.com/maps/search/?api=1&query=MathMaster";
+  "https://www.google.com/maps/search/?api=1&query=Mauka";
 
 const GOOGLE_PROFILE_URL =
   import.meta.env.VITE_GOOGLE_PROFILE_URL || GOOGLE_REVIEW_URL;
@@ -209,7 +209,7 @@ export default function CarouselReviews() {
       </div>
 
       <p className="text-xs text-slate-500 dark:text-slate-400">
-        Twoja opinia pomaga innym uczniom znaleźć MathMaster i wspiera rozwój
+        Twoja opinia pomaga innym uczniom znaleźć Mauka i wspiera rozwój
         platformy.
       </p>
     </motion.div>

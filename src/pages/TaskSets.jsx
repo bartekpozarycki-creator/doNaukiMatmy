@@ -1,20 +1,15 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Layers, ChevronLeft, ChevronRight, BookOpenCheck } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Layers, ChevronRight, BookOpenCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import TaskQuestionBody from "@/components/TaskQuestionBody";
-import MaturaArkuszLink from "@/components/MaturaArkuszLink";
-import FavoriteTaskActions from "@/components/FavoriteTaskActions";
+import TaskListCard, {
+  TaskListCardSkeleton,
+  taskMasonryTileClass,
+} from "@/components/TaskListCard";
+import TaskListPagination from "@/components/TaskListPagination";
 import {
   CycleFilter,
   FilterBar,
@@ -23,142 +18,13 @@ import {
 } from "@/components/ListFilters";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { getNotebookPageStyle } from "@/utils/notebook-page-style";
-import { cn } from "@/lib/utils";
 import { publicSupabase } from "@/supabase-config.js";
-import { mapDbTaskRow, TASK_LEVEL_BAR_GRADIENT } from "@/utils/map-db-task";
+import { mapDbTaskRow } from "@/utils/map-db-task";
+import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 
 const TASKS_PER_PAGE = 8;
 const INITIAL_SKELETON_COUNT = TASKS_PER_PAGE;
-
-function buildPaginationItems(currentPage, totalPages) {
-  if (totalPages <= 1) return [];
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, i) => ({
-      type: "page",
-      value: i + 1,
-    }));
-  }
-
-  const items = [];
-  const seen = new Set();
-
-  const addPage = (page) => {
-    if (page < 1 || page > totalPages || seen.has(page)) return;
-    seen.add(page);
-    items.push({ type: "page", value: page });
-  };
-
-  addPage(1);
-
-  if (currentPage > 3) {
-    items.push({ type: "ellipsis", key: "start" });
-  }
-
-  for (
-    let page = Math.max(2, currentPage - 1);
-    page <= Math.min(totalPages - 1, currentPage + 1);
-    page += 1
-  ) {
-    addPage(page);
-  }
-
-  if (currentPage < totalPages - 2) {
-    items.push({ type: "ellipsis", key: "end" });
-  }
-
-  addPage(totalPages);
-  return items;
-}
-
-function TaskSetsPagination({ currentPage, totalPages, onPageChange }) {
-  if (totalPages <= 1) return null;
-
-  const items = buildPaginationItems(currentPage, totalPages);
-
-  return (
-    <nav
-      className="flex flex-wrap items-center justify-center gap-1.5 pt-2"
-      aria-label="Paginacja zadań"
-    >
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-9 w-9 shrink-0 dark:border-slate-600 dark:bg-slate-800"
-        disabled={currentPage <= 1}
-        onClick={() => onPageChange(currentPage - 1)}
-        aria-label="Poprzednia strona"
-      >
-        <ChevronLeft className="h-4 w-4" />
-      </Button>
-
-      {items.map((item) =>
-        item.type === "ellipsis" ? (
-          <span
-            key={item.key}
-            className="px-1 text-sm text-slate-400 dark:text-slate-500"
-            aria-hidden
-          >
-            …
-          </span>
-        ) : (
-          <Button
-            key={item.value}
-            type="button"
-            variant={item.value === currentPage ? "default" : "outline"}
-            size="sm"
-            className={`min-w-9 h-9 px-2 ${
-              item.value === currentPage
-                ? "bg-blue-600 text-white hover:bg-blue-700"
-                : "dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
-            }`}
-            onClick={() => onPageChange(item.value)}
-            aria-label={`Strona ${item.value}`}
-            aria-current={item.value === currentPage ? "page" : undefined}
-          >
-            {item.value}
-          </Button>
-        ),
-      )}
-
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-9 w-9 shrink-0 dark:border-slate-600 dark:bg-slate-800"
-        disabled={currentPage >= totalPages}
-        onClick={() => onPageChange(currentPage + 1)}
-        aria-label="Następna strona"
-      >
-        <ChevronRight className="h-4 w-4" />
-      </Button>
-    </nav>
-  );
-}
-
-const skeletonClass = "bg-slate-200 dark:bg-slate-700";
-
-const taskCardLayoutClass =
-  "flex flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm transition-[box-shadow,border-color] duration-200 ease-out group-hover/tile:border-slate-300 group-hover/tile:shadow-md dark:border-slate-700/80 dark:bg-slate-800 dark:group-hover/tile:border-slate-600 dark:group-hover/tile:shadow-lg";
-
-const taskTileMotionTransition = {
-  type: "tween",
-  duration: 0.2,
-  ease: [0.25, 0.1, 0.25, 1],
-};
-
-const taskCardHeaderClass =
-  "flex flex-col space-y-0 overflow-visible !px-3.5 !pt-3.5 !pb-1.5";
-const taskCardBadgeRowClass = "mb-2.5 flex flex-wrap items-center gap-1.5";
-const taskCardTitleBlockClass = "min-w-0 overflow-visible py-1 leading-normal";
-const taskCardFooterClass = "shrink-0 !px-3.5 !pb-3.5 !pt-2.5";
-
-const taskMasonryTileClass = "mb-5 w-full break-inside-avoid";
-
-const badgeClass = "px-2.5 py-0.5 text-xs font-medium leading-tight";
 
 function getExamCollectionCta(userLevel) {
   if (userLevel === "osma_klasa") {
@@ -181,105 +47,19 @@ function getExamCollectionCta(userLevel) {
   };
 }
 
-function TaskSetCardSkeleton() {
-  return (
-    <Card className={taskCardLayoutClass} aria-hidden>
-      <Skeleton
-        className={`h-1.5 w-full shrink-0 rounded-none ${skeletonClass}`}
-      />
-      <CardHeader className={taskCardHeaderClass}>
-        <div className={taskCardBadgeRowClass}>
-          <Skeleton
-            className={`h-6 w-24 shrink-0 rounded-full ${skeletonClass}`}
-          />
-          <Skeleton
-            className={`h-6 w-20 shrink-0 rounded-full ${skeletonClass}`}
-          />
-          <Skeleton
-            className={`ml-auto h-6 w-14 shrink-0 rounded-full ${skeletonClass}`}
-          />
-        </div>
-        <div className="mt-1 space-y-2">
-          <Skeleton className={`h-3.5 w-full ${skeletonClass}`} />
-          <Skeleton className={`h-3.5 w-[94%] ${skeletonClass}`} />
-        </div>
-      </CardHeader>
-      <CardContent className={taskCardFooterClass}>
-        <Skeleton className={`h-3.5 w-[90%] ${skeletonClass}`} />
-      </CardContent>
-    </Card>
-  );
-}
+const taskTileMotionTransition = {
+  type: "tween",
+  duration: 0.2,
+  ease: [0.25, 0.1, 0.25, 1],
+};
 
-function TaskSetCard({ task, levelTheme }) {
-  const { getProgress } = useTaskProgress();
-  const isUnattempted = !getProgress(task.id)?.attempts?.length;
-  const barGradient =
-    TASK_LEVEL_BAR_GRADIENT[task.level] ?? "from-slate-400 to-slate-600";
-
-  return (
-    <Card className={cn(taskCardLayoutClass, "relative")}>
-      <div className={cn(isUnattempted && "opacity-60")}>
-        <div
-          className={`h-1.5 w-full shrink-0 bg-gradient-to-r ${barGradient} rounded-none`}
-        />
-        <CardHeader className={taskCardHeaderClass}>
-          <div
-            className={taskCardBadgeRowClass}
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <Badge
-              variant="outline"
-              className={`${badgeClass} ${
-                levelTheme[task.level] ||
-                "border-slate-300 text-slate-600 dark:border-slate-600 dark:text-slate-300"
-              }`}
-            >
-              {task.level}
-            </Badge>
-            <MaturaArkuszLink
-              task={task}
-              className={`${badgeClass} shrink-0`}
-              linkTarget="worksheets-list"
-            />
-            <div className="ml-auto flex shrink-0 items-center gap-1.5">
-              <FavoriteTaskActions taskId={task.id} size="sm" stopPropagation />
-              <Badge
-                variant="outline"
-                className={`${badgeClass} border-slate-300 text-slate-500 dark:border-slate-600 dark:text-slate-400`}
-              >
-                {task.source}
-              </Badge>
-            </div>
-          </div>
-          <CardTitle className={taskCardTitleBlockClass}>
-            <TaskQuestionBody task={task} compact tile />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className={taskCardFooterClass}>
-          <p className="text-sm text-gray-600 dark:text-slate-300">
-            Temat: {task.topic} • Typ:{" "}
-            {task.type === "closed" ? "zamknięte" : "otwarte"}
-          </p>
-        </CardContent>
-      </div>
-      {isUnattempted && (
-        <span className="pointer-events-none absolute bottom-3 right-3.5 text-xs font-medium text-slate-400 dark:text-slate-500">
-          nigdy nie robione
-        </span>
-      )}
-    </Card>
-  );
-}
-
-function TaskSetGridTile({ task, showMask, levelTheme }) {
+function TaskSetGridTile({ task, showMask }) {
   const navigate = useNavigate();
 
   if (!task) {
     return (
       <div className={taskMasonryTileClass}>
-        <TaskSetCardSkeleton />
+        <TaskListCardSkeleton />
       </div>
     );
   }
@@ -293,22 +73,24 @@ function TaskSetGridTile({ task, showMask, levelTheme }) {
         <motion.div
           role="link"
           tabIndex={0}
-          onClick={() =>
-            navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`)
-          }
+          onClick={(event) => {
+            if (!shouldNavigateTaskTile(event)) return;
+            navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
+              if (!shouldNavigateTaskTile(e)) return;
               navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`);
             }
           }}
-          className="group/tile block cursor-pointer rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
+          className="group/tile block cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"
           initial={false}
           whileHover={{ scale: 1.012 }}
           whileTap={{ scale: 0.988 }}
           transition={taskTileMotionTransition}
         >
-          <TaskSetCard task={task} levelTheme={levelTheme} />
+          <TaskListCard task={task} maturaLinkTarget="worksheets-list" />
         </motion.div>
       </div>
       <AnimatePresence>
@@ -320,7 +102,7 @@ function TaskSetGridTile({ task, showMask, levelTheme }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.28, ease: "easeOut" }}
           >
-            <TaskSetCardSkeleton />
+            <TaskListCardSkeleton />
           </motion.div>
         )}
       </AnimatePresence>
@@ -335,7 +117,7 @@ export default function TaskSetsPage() {
   const [level, setLevel] = useState("all");
   const [source, setSource] = useState("all");
   const [topic, setTopic] = useState("all");
-  const [taskType, setTaskType] = useState("all");
+  const [subtopic, setSubtopic] = useState("all");
   const { userLevel } = useAuth();
   const { isDark } = useTheme();
   const examCollectionCta = getExamCollectionCta(userLevel);
@@ -350,6 +132,16 @@ export default function TaskSetsPage() {
       setTopic(filterTopic.trim());
     }
   }, [location.state?.filterTopic]);
+
+  useEffect(() => {
+    const filterSubtopic = location.state?.filterSubtopic;
+    if (
+      typeof filterSubtopic === "string" &&
+      filterSubtopic.trim() !== ""
+    ) {
+      setSubtopic(filterSubtopic.trim());
+    }
+  }, [location.state?.filterSubtopic]);
 
   useEffect(() => {
     const filterLevel = location.state?.filterLevel;
@@ -373,11 +165,6 @@ export default function TaskSetsPage() {
     osma_klasa: "ósmoklasisty",
     matura_podstawowa: "podstawowy",
     matura_rozszerzona: "rozszerzony",
-  };
-  const levelTheme = {
-    podstawowy: "border-blue-500 text-blue-700 dark:text-blue-400",
-    rozszerzony: "border-purple-500 text-purple-700 dark:text-purple-400",
-    ósmoklasisty: "border-green-500 text-green-700 dark:text-green-400",
   };
   const enforcedLevel =
     userLevel && userLevel !== "brak" ? levelMap[userLevel] : null;
@@ -447,19 +234,17 @@ export default function TaskSetsPage() {
           levelToCheck === "all" || t.level === levelToCheck;
         const matchesSource = source === "all" || t.source === source;
         const matchesTopic = topic === "all" || t.topic === topic;
-        const matchesType =
-          taskType === "all" ||
-          (taskType === "closed" && t.type === "closed") ||
-          (taskType === "open" && t.type === "open");
+        const matchesSubtopic =
+          subtopic === "all" || t.subtopic === subtopic;
         return (
           matchesQuery &&
           matchesLevel &&
           matchesSource &&
           matchesTopic &&
-          matchesType
+          matchesSubtopic
         );
       }),
-    [tasks, query, level, source, topic, taskType, enforcedLevel],
+    [tasks, query, level, source, topic, subtopic, enforcedLevel],
   );
 
   const totalPages = Math.max(
@@ -477,7 +262,7 @@ export default function TaskSetsPage() {
   useEffect(() => {
     setCurrentPage(1);
     skipScrollRef.current = true;
-  }, [query, level, source, topic, taskType, enforcedLevel]);
+  }, [query, level, source, topic, subtopic, enforcedLevel]);
 
   useEffect(() => {
     if (currentPage > totalPages) {
@@ -511,10 +296,9 @@ export default function TaskSetsPage() {
     { value: "all", label: "Wszystkie tematy" },
     ...unique("topic").map((value) => ({ value, label: value })),
   ];
-  const typeOptions = [
-    { value: "all", label: "Wszystkie typy" },
-    { value: "closed", label: "Zamknięte" },
-    { value: "open", label: "Otwarte" },
+  const subtopicOptions = [
+    { value: "all", label: "Wszystkie podtematy" },
+    ...unique("subtopic").map((value) => ({ value, label: value })),
   ];
 
   const pageStyle = getNotebookPageStyle(isDark);
@@ -609,11 +393,11 @@ export default function TaskSetsPage() {
                 onChange={setTopic}
                 disabled={filtersDisabled}
               />
-              <CycleFilter
-                label="Typ"
-                value={taskType}
-                options={typeOptions}
-                onChange={setTaskType}
+              <PrettySelectFilter
+                label="Podtemat"
+                value={subtopic}
+                options={subtopicOptions}
+                onChange={setSubtopic}
                 disabled={filtersDisabled}
               />
             </FilterBar>
@@ -655,16 +439,16 @@ export default function TaskSetsPage() {
                     key={t.id}
                     task={t}
                     showMask={!contentRevealed}
-                    levelTheme={levelTheme}
                   />
                 ))}
           </div>
 
           {!loading && filtered.length > TASKS_PER_PAGE && (
-            <TaskSetsPagination
+            <TaskListPagination
               currentPage={safePage}
               totalPages={totalPages}
               onPageChange={setCurrentPage}
+              ariaLabel="Paginacja zadań"
             />
           )}
         </div>

@@ -1,6 +1,66 @@
-const CORRECT_INTERVALS_DAYS = [3, 7, 14, 21, 30, 45, 60, 90];
+import {
+  isTaskMasteredDifficulty,
+  resolveTaskDifficultyTier,
+  TASK_DIFFICULTY_TIER_ORDER,
+} from "@/utils/map-db-task";
+
 const MS_PER_HOUR = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+export const TASK_REVIEW_STATUS_ORDER = [
+  "opanowane",
+  "bardzo_latwe",
+  "latwe",
+  "raczej_latwe",
+  "srednie",
+  "raczej_trudne",
+  "trudne",
+  "bardzo_trudne",
+];
+
+const STATUS_INTERVALS = {
+  opanowane: {
+    label: "Opanowane",
+    correctDays: [14, 21, 30, 45],
+    wrong: { intervalDays: 3 },
+  },
+  bardzo_latwe: {
+    label: "Bardzo łatwe",
+    correctDays: [10, 14, 21, 30],
+    wrong: { intervalDays: 2 },
+  },
+  latwe: {
+    label: "Łatwe",
+    correctDays: [7, 10, 14, 21],
+    wrong: { intervalDays: 2 },
+  },
+  raczej_latwe: {
+    label: "Raczej łatwe",
+    correctDays: [5, 7, 10, 14],
+    wrong: { intervalDays: 1 },
+  },
+  srednie: {
+    label: "Średnie",
+    correctDays: [3, 5, 7, 10],
+    wrong: { intervalDays: 1 },
+  },
+  raczej_trudne: {
+    label: "Raczej trudne",
+    correctDays: [2, 3, 5, 7],
+    wrong: { intervalHours: 8, intervalDays: 0 },
+  },
+  trudne: {
+    label: "Trudne",
+    correctDays: [1, 2, 3, 5],
+    wrong: { intervalHours: 4, intervalDays: 0 },
+  },
+  bardzo_trudne: {
+    label: "Bardzo trudne",
+    correctDays: [1, 1, 2, 3],
+    wrong: { intervalHours: 4, intervalDays: 0 },
+  },
+};
+
 const MASTERY_STATUSES = {
   new: { id: "new", label: "Nowe" },
   needsWork: { id: "needsWork", label: "Do poprawy" },
@@ -38,15 +98,110 @@ export function countTrailingCorrectStreak(attempts = []) {
   return streak;
 }
 
-export function frequencyToIntervalDays(frequency) {
-  const value = Math.min(100, Math.max(1, Number(frequency) || 50));
-  if (value >= 71) return 1;
-  if (value >= 51) return 2;
-  if (value >= 41) return 3;
-  if (value >= 31) return 7;
-  if (value >= 21) return 14;
-  if (value >= 11) return 30;
-  return 60;
+export function countTrailingWrongStreak(attempts = []) {
+  let streak = 0;
+  for (let i = attempts.length - 1; i >= 0; i -= 1) {
+    if (!attempts[i]?.isCorrect) streak += 1;
+    else break;
+  }
+  return streak;
+}
+
+export function normalizeReviewStatus(raw) {
+  if (isTaskMasteredDifficulty(raw)) return "opanowane";
+  const tier = resolveTaskDifficultyTier(raw);
+  if (tier && STATUS_INTERVALS[tier]) return tier;
+  return "srednie";
+}
+
+export function getReviewStatusMeta(status) {
+  const id = normalizeReviewStatus(status);
+  return {
+    id,
+    label: STATUS_INTERVALS[id]?.label ?? "Średnie",
+  };
+}
+
+export function statusToPriority(status) {
+  const id = normalizeReviewStatus(status);
+  const index = TASK_REVIEW_STATUS_ORDER.indexOf(id);
+  return index >= 0 ? index : TASK_REVIEW_STATUS_ORDER.indexOf("srednie");
+}
+
+function tierIndex(tier) {
+  const index = TASK_DIFFICULTY_TIER_ORDER.indexOf(tier);
+  return index >= 0 ? index : TASK_DIFFICULTY_TIER_ORDER.indexOf("srednie");
+}
+
+function indexToTier(index) {
+  const clamped = Math.min(
+    TASK_DIFFICULTY_TIER_ORDER.length - 1,
+    Math.max(0, index),
+  );
+  return TASK_DIFFICULTY_TIER_ORDER[clamped];
+}
+
+export function resolveReviewStatusFromAttempts(
+  entry = {},
+  baseDifficulty = null,
+) {
+  const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
+  if (!attempts.length) {
+    if (isTaskMasteredDifficulty(baseDifficulty)) return "opanowane";
+    return normalizeReviewStatus(baseDifficulty);
+  }
+
+  const difficultyScore =
+    entry.difficultyScore ?? calculateReviewDifficulty(entry);
+  const correctStreak =
+    entry.correctStreak ?? countTrailingCorrectStreak(attempts);
+  const wrongStreak = countTrailingWrongStreak(attempts);
+  const wrongCount = attempts.filter((attempt) => !attempt?.isCorrect).length;
+  const wrongRate = wrongCount / attempts.length;
+  const lastAttempt = attempts.at(-1);
+
+  if (
+    lastAttempt?.isCorrect &&
+    correctStreak >= 4 &&
+    difficultyScore <= 25 &&
+    wrongRate <= 0.2
+  ) {
+    return "opanowane";
+  }
+
+  let index = tierIndex(
+    resolveTaskDifficultyTier(baseDifficulty) ?? "srednie",
+  );
+
+  if (wrongStreak >= 3) {
+    index = Math.max(index, tierIndex("bardzo_trudne"));
+  } else if (wrongStreak === 2) {
+    index = Math.min(index + 2, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  } else if (wrongStreak === 1) {
+    index = Math.min(index + 1, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  }
+
+  if (wrongRate >= 0.5 && attempts.length >= 4) {
+    index = Math.min(index + 1, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  }
+
+  if (wrongStreak === 0 && correctStreak >= 2) {
+    index = Math.max(0, index - 1);
+  }
+  if (wrongStreak === 0 && correctStreak >= 4 && wrongRate <= 0.2) {
+    index = Math.max(0, index - 1);
+  }
+
+  if (
+    lastAttempt?.isCorrect &&
+    correctStreak >= 3 &&
+    difficultyScore <= 35 &&
+    index <= tierIndex("bardzo_latwe")
+  ) {
+    return "bardzo_latwe";
+  }
+
+  return indexToTier(index);
 }
 
 export function calculateReviewDifficulty(entry = {}) {
@@ -59,12 +214,14 @@ export function calculateReviewDifficulty(entry = {}) {
   const lastAttempt = attempts.at(-1);
   const correctStreak =
     entry.correctStreak ?? countTrailingCorrectStreak(attempts);
-  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
+  const statusPriority = statusToPriority(
+    entry.reviewStatus ?? entry.status ?? "srednie",
+  );
 
   let score = 0;
   score += wrongRate * 42;
   score += Math.min(wrongCount, 5) * 7;
-  score += frequency * 0.28;
+  score += statusPriority * 6;
   if (lastAttempt && !lastAttempt.isCorrect) score += 18;
   score -= Math.min(correctStreak, 5) * 8;
   if (total === 1 && lastAttempt?.isCorrect) score -= 10;
@@ -77,58 +234,35 @@ export function getMasteryStatus(entry = {}) {
   const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
   if (!attempts.length) return MASTERY_STATUSES.new;
 
-  const difficultyScore =
-    entry.difficultyScore ?? calculateReviewDifficulty(entry);
-  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
-  const correctStreak =
-    entry.correctStreak ?? countTrailingCorrectStreak(attempts);
-  const lastAttempt = attempts.at(-1);
-  const intervalDays = entry.intervalDays ?? frequencyToIntervalDays(frequency);
-  const wrongCount = attempts.filter((attempt) => !attempt?.isCorrect).length;
-
-  if (!lastAttempt?.isCorrect || difficultyScore >= 70 || frequency >= 75) {
+  const reviewStatus =
+    entry.reviewStatus ??
+    resolveReviewStatusFromAttempts(entry, entry.baseDifficulty);
+  if (reviewStatus === "opanowane") return MASTERY_STATUSES.mastered;
+  if (reviewStatus === "bardzo_trudne" || reviewStatus === "trudne") {
     return MASTERY_STATUSES.needsWork;
   }
-  if (
-    correctStreak >= 4 &&
-    difficultyScore <= 25 &&
-    frequency <= 20 &&
-    intervalDays >= 30
-  ) {
-    return MASTERY_STATUSES.mastered;
-  }
-  if (
-    correctStreak >= 2 &&
-    difficultyScore <= 45 &&
-    frequency <= 40 &&
-    intervalDays >= 14
-  ) {
+  if (reviewStatus === "bardzo_latwe" || reviewStatus === "latwe") {
     return MASTERY_STATUSES.almostMastered;
   }
-  if (wrongCount > 0 || correctStreak > 0 || attempts.length > 0) {
-    return MASTERY_STATUSES.inProgress;
-  }
-
-  return MASTERY_STATUSES.new;
+  return MASTERY_STATUSES.inProgress;
 }
 
 export function getReviewReason(entry = {}, now = new Date()) {
   const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
   const lastAttempt = attempts.at(-1);
-  const difficultyScore =
-    entry.difficultyScore ?? calculateReviewDifficulty(entry);
-  const frequency = clamp(Number(entry.frequency ?? 50), 1, 100);
+  const reviewStatus = normalizeReviewStatus(
+    entry.reviewStatus ??
+      resolveReviewStatusFromAttempts(entry, entry.baseDifficulty),
+  );
+  const statusMeta = getReviewStatusMeta(reviewStatus);
   const nextReviewAt = entry.nextReviewAt;
   const intervalDays = entry.intervalDays;
 
   if (lastAttempt && !lastAttempt.isCorrect) {
     return "Do powtórki, bo ostatnio był błąd";
   }
-  if (difficultyScore >= 70) {
-    return "Trudne zadanie: dużo błędnych prób";
-  }
-  if (frequency >= 70) {
-    return `Wysoki priorytet: ${frequency}/100`;
+  if (reviewStatus === "bardzo_trudne" || reviewStatus === "trudne") {
+    return `Status „${statusMeta.label}”: wróć częściej`;
   }
   if (nextReviewAt && isReviewDue(nextReviewAt, now)) {
     if (new Date(nextReviewAt).getTime() > now.getTime()) {
@@ -139,61 +273,71 @@ export function getReviewReason(entry = {}, now = new Date()) {
     }
     return "Do powtórki, bo termin już nadszedł";
   }
-
-  const status = getMasteryStatus(entry);
-  if (status.id === "almostMastered") {
-    return "Prawie opanowane: utrwal jeszcze raz";
-  }
-  if (status.id === "mastered") {
+  if (reviewStatus === "opanowane") {
     return "Opanowane: wróć w zaplanowanym terminie";
   }
+  if (reviewStatus === "bardzo_latwe" || reviewStatus === "latwe") {
+    return `Status „${statusMeta.label}”: dłuższy odstęp między powtórkami`;
+  }
 
-  return "W trakcie nauki";
+  return `Status „${statusMeta.label}”`;
 }
 
 export function computeReviewMetrics(entry = {}) {
-  const difficultyScore = calculateReviewDifficulty(entry);
+  const reviewStatus = normalizeReviewStatus(
+    entry.reviewStatus ??
+      resolveReviewStatusFromAttempts(entry, entry.baseDifficulty),
+  );
+  const difficultyScore = calculateReviewDifficulty({
+    ...entry,
+    reviewStatus,
+  });
   const masteryStatus = getMasteryStatus({
     ...entry,
+    reviewStatus,
     difficultyScore,
   });
   const reviewReason = getReviewReason({
     ...entry,
+    reviewStatus,
     difficultyScore,
     masteryStatus,
   });
 
   return {
+    reviewStatus,
     difficultyScore,
     masteryStatus,
     reviewReason,
   };
 }
 
-function getWrongAttemptInterval(difficultyScore, previousWrongCount) {
-  if (difficultyScore >= 85 || previousWrongCount >= 3) {
-    return { intervalHours: 4, intervalDays: 0 };
-  }
-  if (difficultyScore >= 70 || previousWrongCount >= 2) {
-    return { intervalHours: 8, intervalDays: 0 };
-  }
-  if (difficultyScore >= 45 || previousWrongCount >= 1) {
-    return { intervalDays: 1 };
-  }
-  return { intervalDays: 2 };
-}
+function getIntervalForStatus(status, isCorrect, correctStreak) {
+  const config =
+    STATUS_INTERVALS[normalizeReviewStatus(status)] ?? STATUS_INTERVALS.srednie;
 
-function getCorrectAttemptInterval(baseIntervalDays, difficultyScore, wrongCount) {
-  if (difficultyScore >= 75) return Math.max(2, Math.round(baseIntervalDays * 0.5));
-  if (difficultyScore >= 55) return Math.max(2, Math.round(baseIntervalDays * 0.7));
-  if (wrongCount >= 2) return Math.max(2, Math.round(baseIntervalDays * 0.85));
-  return baseIntervalDays;
+  if (!isCorrect) {
+    return {
+      intervalDays: config.wrong.intervalDays ?? 0,
+      intervalHours: config.wrong.intervalHours ?? null,
+    };
+  }
+
+  const daysList = config.correctDays;
+  const index = Math.min(
+    Math.max((correctStreak || 1) - 1, 0),
+    daysList.length - 1,
+  );
+  return {
+    intervalDays: daysList[index],
+    intervalHours: null,
+  };
 }
 
 export function computeScheduleAfterAttempt(
   prevEntry,
   isCorrect,
-  frequency,
+  baseDifficulty = null,
   baseDate = new Date(),
 ) {
   const prevStreak = prevEntry?.correctStreak ?? 0;
@@ -201,34 +345,31 @@ export function computeScheduleAfterAttempt(
     ? prevEntry.attempts
     : [];
   const attempts = [...previousAttempts, { isCorrect }];
-  const frequencyAfter = frequency ?? prevEntry?.frequency ?? 50;
-  const previousWrongCount = previousAttempts.filter(
-    (attempt) => !attempt?.isCorrect,
-  ).length;
-  let correctStreak;
-  let intervalDays = 1;
-  let intervalHours = null;
+  const correctStreak = isCorrect ? prevStreak + 1 : 0;
 
-  const difficultyScore = calculateReviewDifficulty({
+  const provisionalEntry = {
+    ...prevEntry,
     attempts,
-    correctStreak: isCorrect ? prevStreak + 1 : 0,
-    frequency: frequencyAfter,
+    correctStreak,
+    baseDifficulty:
+      baseDifficulty ?? prevEntry?.baseDifficulty ?? null,
+  };
+  const reviewStatus = resolveReviewStatusFromAttempts(
+    provisionalEntry,
+    provisionalEntry.baseDifficulty,
+  );
+  const difficultyScore = calculateReviewDifficulty({
+    ...provisionalEntry,
+    reviewStatus,
   });
 
-  if (isCorrect) {
-    correctStreak = prevStreak + 1;
-    const index = Math.min(correctStreak - 1, CORRECT_INTERVALS_DAYS.length - 1);
-    intervalDays = getCorrectAttemptInterval(
-      CORRECT_INTERVALS_DAYS[index],
-      difficultyScore,
-      previousWrongCount,
-    );
-  } else {
-    correctStreak = 0;
-    const interval = getWrongAttemptInterval(difficultyScore, previousWrongCount);
-    intervalDays = interval.intervalDays ?? 0;
-    intervalHours = interval.intervalHours ?? null;
-  }
+  const interval = getIntervalForStatus(
+    reviewStatus,
+    isCorrect,
+    correctStreak,
+  );
+  const intervalDays = interval.intervalDays ?? 0;
+  const intervalHours = interval.intervalHours ?? null;
 
   const nextReviewAt = intervalHours
     ? addHours(baseDate, intervalHours)
@@ -240,25 +381,42 @@ export function computeScheduleAfterAttempt(
     intervalHours,
     nextReviewAt,
     difficultyScore,
+    reviewStatus,
   };
 }
 
-export function scheduleFromFrequency(frequency, baseDate = new Date()) {
-  const intervalDays = frequencyToIntervalDays(frequency);
+export function scheduleFromStatus(status, correctStreak = 1, baseDate = new Date()) {
+  const interval = getIntervalForStatus(status, true, correctStreak);
   return {
-    intervalDays,
-    nextReviewAt: addLocalDays(baseDate, intervalDays),
+    intervalDays: interval.intervalDays,
+    intervalHours: interval.intervalHours,
+    nextReviewAt: interval.intervalHours
+      ? addHours(baseDate, interval.intervalHours)
+      : addLocalDays(baseDate, interval.intervalDays ?? 1),
   };
 }
 
 export function resolveTaskSchedule(entry) {
   if (!entry?.attempts?.length) return null;
 
+  const reviewStatus = normalizeReviewStatus(
+    entry.reviewStatus ??
+      resolveReviewStatusFromAttempts(entry, entry.baseDifficulty),
+  );
+
   if (entry.nextReviewAt) {
     const resolved = {
       ...entry,
-      correctStreak: entry.correctStreak ?? countTrailingCorrectStreak(entry.attempts),
-      intervalDays: entry.intervalDays ?? frequencyToIntervalDays(entry.frequency ?? 50),
+      reviewStatus,
+      correctStreak:
+        entry.correctStreak ?? countTrailingCorrectStreak(entry.attempts),
+      intervalDays:
+        entry.intervalDays ??
+        getIntervalForStatus(
+          reviewStatus,
+          true,
+          entry.correctStreak ?? countTrailingCorrectStreak(entry.attempts),
+        ).intervalDays,
       intervalHours: entry.intervalHours ?? null,
       nextReviewAt: entry.nextReviewAt,
     };
@@ -273,21 +431,30 @@ export function resolveTaskSchedule(entry) {
   }
 
   const lastAttempt = entry.attempts.at(-1);
-  const intervalDays = frequencyToIntervalDays(entry.frequency ?? 50);
+  const correctStreak = countTrailingCorrectStreak(entry.attempts);
+  const interval = getIntervalForStatus(
+    reviewStatus,
+    Boolean(lastAttempt?.isCorrect),
+    correctStreak,
+  );
   const baseDate = lastAttempt?.date ? new Date(lastAttempt.date) : new Date();
+  const nextReviewAt = interval.intervalHours
+    ? addHours(baseDate, interval.intervalHours)
+    : addLocalDays(baseDate, interval.intervalDays ?? 1);
   const resolved = {
     ...entry,
-    correctStreak: countTrailingCorrectStreak(entry.attempts),
-    intervalDays,
-    intervalHours: null,
-    nextReviewAt: addLocalDays(baseDate, intervalDays),
+    reviewStatus,
+    correctStreak,
+    intervalDays: interval.intervalDays ?? 0,
+    intervalHours: interval.intervalHours ?? null,
+    nextReviewAt,
   };
   const metrics = computeReviewMetrics(resolved);
 
   return {
     correctStreak: resolved.correctStreak,
-    intervalDays,
-    intervalHours: null,
+    intervalDays: resolved.intervalDays,
+    intervalHours: resolved.intervalHours,
     nextReviewAt: resolved.nextReviewAt,
     ...metrics,
   };
@@ -324,21 +491,13 @@ export function formatReviewScheduleLabel(nextReviewAt, now = new Date()) {
   if (days === 0) return "Dziś";
   if (days === 1) return "Jutro";
   if (days < 7) return `Za ${days} dni`;
-  if (days < 30) {
-    const weeks = Math.round(days / 7);
-    return weeks === 1 ? "Za tydzień" : `Za ${weeks} tyg.`;
-  }
-
-  return new Date(nextReviewAt).toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+  if (days < 14) return "Za tydzień";
+  return "Za dwa tygodnie";
 }
 
 export function formatReviewScheduleDetail(nextReviewAt, intervalDays) {
   const label = formatReviewScheduleLabel(nextReviewAt);
-  const days = intervalDays ?? frequencyToIntervalDays(50);
+  const days = intervalDays ?? 3;
   const diffMs = nextReviewAt
     ? new Date(nextReviewAt).getTime() - Date.now()
     : null;
@@ -364,4 +523,28 @@ export function getScheduleBadgeClass(nextReviewAt, now = new Date()) {
     return "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200";
   }
   return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-300";
+}
+
+export function getReviewStatusBadgeClass(status) {
+  const id = normalizeReviewStatus(status);
+  switch (id) {
+    case "opanowane":
+      return "border-violet-400/50 bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-sm shadow-violet-500/25 dark:border-violet-400/40 dark:from-violet-600 dark:to-purple-700 dark:text-violet-50";
+    case "bardzo_latwe":
+      return "border-teal-200 bg-teal-50 text-teal-800 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-300";
+    case "latwe":
+      return "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
+    case "raczej_latwe":
+      return "border-green-300 bg-green-100 text-green-800 dark:border-green-700 dark:bg-green-950/50 dark:text-green-300";
+    case "srednie":
+      return "border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200";
+    case "raczej_trudne":
+      return "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300";
+    case "trudne":
+      return "border-rose-400 bg-rose-100 text-rose-900 dark:border-rose-700 dark:bg-rose-950/50 dark:text-rose-200";
+    case "bardzo_trudne":
+      return "border-red-800/40 bg-gradient-to-r from-red-700 to-rose-900 text-white shadow-sm shadow-red-900/20 dark:border-red-500/40 dark:from-red-800 dark:to-rose-950 dark:text-red-50";
+    default:
+      return "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800/60 dark:text-slate-300";
+  }
 }
