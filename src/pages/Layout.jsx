@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { 
   FileText, Users, User, Layers,
   Menu, X, BookOpen, Calculator, LogOut,
-  ChevronRight, Heart, Info, Plus, ScrollText, ShieldCheck,
+  ChevronRight, Heart, Plus, ScrollText, ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +30,6 @@ const drawerNavigationItems = [
   { title: "Kursy i dydaktyka", url: createPageUrl("Course"), icon: BookOpen },
   { title: "Ulubione", url: createPageUrl("Favorites"), icon: Heart },
   { title: "Społeczność", url: createPageUrl("Community"), icon: Users },
-  { title: "O nas", url: createPageUrl("About"), icon: Info },
 ];
 
 const fabQuickActions = [

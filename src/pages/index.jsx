@@ -31,7 +31,6 @@ import LessonView from "./LessonView";
 import Login from "./Login";
 import Flashcards from "./Flashcards";
 import Unfinished from "./Unfinished";
-import About from "./About";
 import MicroReview from "./MicroReview";
 import MicroTopic from "./MicroTopic";
 import QuickMath from "./QuickMath";
@@ -99,7 +98,6 @@ const PAGES = {
     ReviewSession: ReviewSession,
 
     Favorites: Favorites,
-    About: About,
     
 }
 
@@ -193,8 +191,8 @@ const router = createBrowserRouter([
             { path: "/PotegiMemory", element: <PotegiMemory /> },
             { path: "/QuickMath", element: <QuickMath /> },
             { path: "/Login", element: <Login /> },
-            { path: "/About", element: <About /> },
-            { path: "/O-nas", element: <Navigate to="/About" replace /> },
+            { path: "/About", element: <Navigate to="/" replace /> },
+            { path: "/O-nas", element: <Navigate to="/" replace /> },
         ],
     },
 ]);
