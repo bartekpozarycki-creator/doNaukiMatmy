@@ -25,9 +25,19 @@ export default function MaturaArkuszLink({
 }) {
   if (!isMaturalneTask(task) || !task.arkusz) return null;
 
-  const label = monthYearOnly
+  const existingLabel = monthYearOnly
     ? formatArkuszMonthYear(task.arkusz)
     : formatArkuszDisplayLabel(task.arkusz);
+
+  const monthYear = formatArkuszMonthYear(task.arkusz);
+
+  const taskNr =
+    task?.nr != null && String(task.nr).trim() ? String(task.nr).trim() : "";
+
+  const label =
+    monthYear && taskNr
+      ? `matura ${monthYear} zadanie ${taskNr}`
+      : existingLabel;
   const to =
     linkTarget === "worksheets-list"
       ? `${createPageUrl("Worksheets")}?arkusz=${encodeURIComponent(task.arkusz)}`

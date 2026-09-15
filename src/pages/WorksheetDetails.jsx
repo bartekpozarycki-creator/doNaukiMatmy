@@ -67,7 +67,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   resolveWorksheetAnswerKeyUrl,
   answerKeyPdfUrlWithPage,
-  resolveAnswerKeyPage,
 } from "@/utils/worksheet-answer-key";
 import { recordContinueLearning } from "@/utils/continue-learning";
 
@@ -1138,8 +1137,8 @@ export default function WorksheetDetailsPage() {
   }, []);
 
   const openAnswerKeyAtQuestion = useCallback(
-    (question) => {
-      openAnswerKeyDialog(resolveAnswerKeyPage(question));
+    () => {
+      openAnswerKeyDialog(1);
     },
     [openAnswerKeyDialog],
   );

@@ -24,6 +24,7 @@ import QuestionDetails from "./QuestionDetails";
 
 import Course from "./Course";
 import CourseOverview from "./CourseOverview";
+import ArticleView from "./ArticleView";
 
 import QuizView from "./QuizView";
 import LessonView from "./LessonView";
@@ -82,6 +83,7 @@ const PAGES = {
     QuestionDetails: QuestionDetails,
     Course: Course,
     CourseOverview: CourseOverview,
+    ArticleView: ArticleView,
 
     QuizView: QuizView,
     
@@ -177,9 +179,9 @@ const router = createBrowserRouter([
             { path: "/Kursy", element: <Navigate to="/Kursy-i-dydaktyka" replace /> },
             { path: "/CourseOverview", element: <CourseOverview /> },
             { path: "/course-overview", element: <CourseOverview /> },
+            { path: "/ArticleView", element: <ArticleView /> },
             { path: "/LessonView", element: <LessonView /> },
             { path: "/QuizView", element: <Navigate to="/" replace /> },
-            { path: "/LessonView", element: <Navigate to="/" replace /> },
             { path: "/Flashcards", element: <Navigate to="/" replace /> },
             { path: "/Unfinished", element: <Unfinished /> },
             { path: "/MicroReview", element: <Navigate to="/" replace /> },

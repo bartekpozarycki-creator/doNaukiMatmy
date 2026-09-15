@@ -1,18 +1,12 @@
-import coursesPodstawowka from "@/data/sample-courses/podstawowka.json";
 import coursesPodstawa from "@/data/sample-courses/podstawa.json";
-import coursesRozszerzenie from "@/data/sample-courses/rozszerzenie.json";
 
 export const sampleCoursesByLevel = {
-  podstawówka: coursesPodstawowka,
+  podstawówka: [],
   podstawowy: coursesPodstawa,
-  rozszerzony: coursesRozszerzenie,
+  rozszerzony: [],
 };
 
-export const allSampleCourses = [
-  ...coursesPodstawowka,
-  ...coursesPodstawa,
-  ...coursesRozszerzenie,
-];
+export const allSampleCourses = [...coursesPodstawa];
 
 export function getSampleCourseById(id) {
   if (!id) return null;

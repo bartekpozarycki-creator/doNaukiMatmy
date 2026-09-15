@@ -86,6 +86,7 @@ import {
 } from "@/utils/community-publish";
 import { uploadCommunityQuestionImages } from "@/utils/community-images";
 import { clearCommunityPrefillTask } from "@/utils/community-prefill";
+import { resolveTaskDetailsBackLink } from "@/utils/task-details-nav";
 import {
   bannedContentMessage,
   containsBannedContent,
@@ -136,25 +137,6 @@ function TaskDetailsSkeleton() {
   );
 }
 
-function taskDetailsBackLink(location) {
-  const from = location.state?.from;
-  if (from === "favorites") {
-    return {
-      to: createPageUrl("Favorites"),
-      label: "Powrót do ulubionych",
-    };
-  }
-  if (from === "exam-topic-tasks" && location.state?.backTo) {
-    return {
-      to: location.state.backTo,
-      label: "Powrót do listy zadań",
-    };
-  }
-  return {
-    to: createPageUrl("TaskSets"),
-    label: "Powrót do zbiorów",
-  };
-}
 
 function isReviewSessionPath(pathname = "") {
   return pathname.toLowerCase().includes("reviewsession");
@@ -167,7 +149,7 @@ export default function TaskDetailsPage() {
   const params = new URLSearchParams(search);
   const idParam = params.get("id");
   const isReviewSession = isReviewSessionPath(location.pathname);
-  const backLink = taskDetailsBackLink(location);
+  const backLink = resolveTaskDetailsBackLink(location);
 
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(!!idParam);

@@ -16,6 +16,7 @@ import {
   taskLevelBadgeClassName,
 } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 
 const monthOrder = {
   styczen: 1,
@@ -124,10 +125,10 @@ export default function ExamTopicTasksPage() {
   const openTask = (task, event) => {
     if (event && !shouldNavigateTaskTile(event)) return;
     navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`, {
-      state: {
+      state: buildTaskDetailsNavState({
         from: "exam-topic-tasks",
         backTo: `${createPageUrl("ExamTopicTasks")}?topic=${encodeURIComponent(topicParam)}&level=${encodeURIComponent(levelParam)}`,
-      },
+      }),
     });
   };
 

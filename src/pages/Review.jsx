@@ -22,6 +22,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { createPageUrl } from "@/utils";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { publicSupabase } from "@/supabase-config.js";
 import { mapDbTaskRow } from "@/utils/map-db-task";
 import {
@@ -136,6 +137,70 @@ function ReviewTaskSkeleton() {
   return <TaskListCardSkeleton />;
 }
 
+function CollapsibleReviewSection({
+  title,
+  subtitle = null,
+  info = null,
+  headerExtra = null,
+  open,
+  onOpenChange,
+  children,
+}) {
+  return (
+    <section className={cn(surfaceClass, "overflow-hidden")}>
+      <div className="flex items-start gap-3 px-4 py-4 sm:px-5">
+        <button
+          type="button"
+          onClick={() => onOpenChange(!open)}
+          aria-expanded={open}
+          className="min-w-0 flex-1 text-left transition-colors"
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className={cn("text-lg font-semibold sm:text-xl", headingText)}>
+              {title}
+            </h2>
+            {headerExtra}
+          </div>
+          {subtitle ? (
+            <div className={cn("mt-1 text-sm", mutedText)}>{subtitle}</div>
+          ) : null}
+        </button>
+        {info ? <div className="mt-0.5 shrink-0">{info}</div> : null}
+        <button
+          type="button"
+          onClick={() => onOpenChange(!open)}
+          aria-expanded={open}
+          aria-label={open ? `Zwiń sekcję ${title}` : `Rozwiń sekcję ${title}`}
+          className="mt-0.5 shrink-0 rounded-md p-1 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-700 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+        >
+          <ChevronDown
+            className={cn(
+              "h-5 w-5 transition-transform duration-200",
+              open && "rotate-180",
+            )}
+          />
+        </button>
+      </div>
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            key="section-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="border-t border-slate-100 px-4 pb-5 pt-4 sm:px-5 sm:pb-6 dark:border-slate-700">
+              {children}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </section>
+  );
+}
+
 export default function ReviewPage() {
   const navigate = useNavigate();
   const { userLevel } = useAuth();
@@ -161,6 +226,9 @@ export default function ReviewPage() {
     [filterSteps, sortRuleOrder],
   );
   const [scheduleInfoOpen, setScheduleInfoOpen] = useState(false);
+  const [randomSectionOpen, setRandomSectionOpen] = useState(false);
+  const [flashcardsSectionOpen, setFlashcardsSectionOpen] = useState(false);
+  const [listSectionOpen, setListSectionOpen] = useState(false);
   const [listPage, setListPage] = useState(1);
   const listRef = useRef(null);
   const skipListScrollRef = useRef(true);
@@ -488,40 +556,35 @@ export default function ReviewPage() {
           </div>
         </header>
 
-        <section className={cn(surfaceClass, "p-5 sm:p-6")}>
-          <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h2 className={cn("text-lg font-semibold sm:text-xl", headingText)}>
-                  Losowa sesja powtórek
-                </h2>
-                <SectionInfoButton label="Jak działa losowa sesja">
-                  Losujesz zestaw zadań z wybranej puli i rozwiązujesz je po kolei.
-                  Zakres „Najtrudniejsze” skupia się na trudniejszych statusach,
-                  „Dziś powtórka” — na zadaniach z terminem, a „Losowe” tasuje całą
-                  pulę z preferencją trudniejszych zadań.
-                </SectionInfoButton>
-              </div>
-              <p className={cn("text-sm", mutedText)}>
-                {sessionItems.length} zadań w puli
-              </p>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className={cn("mr-1 text-xs", mutedText)}>Ile:</span>
-              {RANDOM_COUNT_OPTIONS.map((count) => (
-                <button
-                  key={count}
-                  type="button"
-                  onClick={() => setRandomCount(count)}
-                  className={cn(
-                    "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-medium tabular-nums transition",
-                    randomCount === count ? chipActive : chipIdle,
-                  )}
-                >
-                  {count}
-                </button>
-              ))}
-            </div>
+        <CollapsibleReviewSection
+          title="Losowa sesja powtórek"
+          subtitle={`${sessionItems.length} zadań w puli`}
+          open={randomSectionOpen}
+          onOpenChange={setRandomSectionOpen}
+          info={
+            <SectionInfoButton label="Jak działa losowa sesja">
+              Losujesz zestaw zadań z wybranej puli i rozwiązujesz je po kolei.
+              Zakres „Najtrudniejsze” skupia się na trudniejszych statusach,
+              „Dziś powtórka” — na zadaniach z terminem, a „Losowe” tasuje całą
+              pulę z preferencją trudniejszych zadań.
+            </SectionInfoButton>
+          }
+        >
+          <div className="mb-5 flex flex-wrap items-center justify-end gap-1.5">
+            <span className={cn("mr-1 text-xs", mutedText)}>Ile:</span>
+            {RANDOM_COUNT_OPTIONS.map((count) => (
+              <button
+                key={count}
+                type="button"
+                onClick={() => setRandomCount(count)}
+                className={cn(
+                  "inline-flex h-8 w-8 items-center justify-center rounded-md border text-xs font-medium tabular-nums transition",
+                  randomCount === count ? chipActive : chipIdle,
+                )}
+              >
+                {count}
+              </button>
+            ))}
           </div>
 
           <FilterBar columnsClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -561,44 +624,45 @@ export default function ReviewPage() {
             <Shuffle className="mr-2 h-4 w-4" />
             Losuj i rozpocznij
           </Button>
-        </section>
+        </CollapsibleReviewSection>
 
-        <section className={cn(surfaceClass, "p-5 sm:p-6")}>
-          <div className="mb-5 space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className={cn("text-lg font-semibold sm:text-xl", headingText)}>
-                Fiszki
-              </h2>
-              <SectionInfoButton label="Jak działają fiszki">
-                Szybka powtórka bez wpisywania odpowiedzi: najpierw widzisz pytanie,
-                potem odwracasz kartę i sprawdzasz rozwiązanie. Spróbuj najpierw
-                rozwiązać zadanie w głowie, a dopiero potem sprawdź odpowiedź.
-              </SectionInfoButton>
-            </div>
-            <p className={cn("text-sm font-medium text-slate-600 dark:text-slate-300")}>
-              Spróbuj zrobić w głowie — potem odwróć kartę
-            </p>
-          </div>
+        <CollapsibleReviewSection
+          title="Fiszki"
+          subtitle="Spróbuj zrobić w głowie — potem odwróć kartę"
+          open={flashcardsSectionOpen}
+          onOpenChange={setFlashcardsSectionOpen}
+          info={
+            <SectionInfoButton label="Jak działają fiszki">
+              Szybka powtórka bez wpisywania odpowiedzi: najpierw widzisz pytanie,
+              potem odwracasz kartę i sprawdzasz rozwiązanie. Spróbuj najpierw
+              rozwiązać zadanie w głowie, a dopiero potem sprawdź odpowiedź.
+            </SectionInfoButton>
+          }
+        >
           <ReviewFlashcards
             items={allPracticedItems}
             loading={loading}
             enforcedLevel={enforcedLevel}
           />
-        </section>
+        </CollapsibleReviewSection>
 
-        <section className={cn(surfaceClass, "overflow-hidden")}>
-          <div className="border-b border-slate-100 px-4 py-4 sm:px-5 dark:border-slate-700">
+        <CollapsibleReviewSection
+          title="Lista zadań"
+          subtitle={
+            !loading ? `${reviewItems.length} ${reviewItems.length === 1 ? "zadanie" : "zadań"}` : null
+          }
+          open={listSectionOpen}
+          onOpenChange={setListSectionOpen}
+          headerExtra={
+            !loading ? (
+              <span className="inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                {reviewItems.length}
+              </span>
+            ) : null
+          }
+        >
+          <div className="space-y-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5">
-                <h2 className={cn("text-base font-semibold sm:text-lg", headingText)}>
-                  Lista zadań
-                </h2>
-                {!loading ? (
-                  <span className="inline-flex min-w-[1.75rem] items-center justify-center rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium tabular-nums text-slate-600 dark:bg-slate-700 dark:text-slate-300">
-                    {reviewItems.length}
-                  </span>
-                ) : null}
-              </div>
               <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-1.5 dark:border-slate-600 dark:bg-slate-800/60">
                 <Switch
                   checked={onlyDueToday}
@@ -611,7 +675,7 @@ export default function ReviewPage() {
               </label>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className={cn("text-xs font-medium", mutedText)}>Sortuj</span>
               {REVIEW_SORT_OPTIONS.map((option) => {
                 const step = filterSteps[option.id] ?? SORT_CYCLE_OFF;
@@ -637,13 +701,14 @@ export default function ReviewPage() {
             </div>
 
             {recentItems.length > 0 ? (
-              <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-3 text-xs dark:border-slate-700">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1 border-t border-slate-100 pt-3 text-xs dark:border-slate-700">
                 <span className={mutedText}>Ostatnio:</span>
                 {recentItems.map((item, index) => (
                   <span key={item.task.id} className="inline-flex items-center gap-2">
                     {index > 0 ? <span className={mutedText}>·</span> : null}
                     <Link
                       to={`${createPageUrl("TaskDetails")}?id=${item.task.id}`}
+                      state={buildTaskDetailsNavState({ from: "review" })}
                       className="font-medium text-slate-700 hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-400"
                     >
                       {item.task.topic || "Zadanie"}
@@ -654,7 +719,7 @@ export default function ReviewPage() {
             ) : null}
 
             {!loading && reviewItems.length > 0 ? (
-              <p className={cn("mt-3 border-t border-slate-100 pt-3 text-xs dark:border-slate-700", mutedText)}>
+              <p className={cn("border-t border-slate-100 pt-3 text-xs dark:border-slate-700", mutedText)}>
                 {reviewItems.length}{" "}
                 {reviewItems.length === 1 ? "zadanie" : "zadań"}
                 {totalListPages > 1 ? (
@@ -675,72 +740,72 @@ export default function ReviewPage() {
                 ) : null}
               </p>
             ) : null}
-          </div>
 
-          <div ref={listRef} className="scroll-mt-24 space-y-3 p-4 sm:p-5">
-            {loading ? (
-              <>
-                {Array.from({ length: 3 }, (_, i) => (
-                  <ReviewTaskSkeleton key={`review-skel-${i}`} />
-                ))}
-              </>
-            ) : reviewItems.length === 0 ? (
-              <div className="px-2 py-10 text-center">
-                <RotateCw className={cn("mx-auto mb-3 h-8 w-8", mutedText)} />
-                <h3 className={cn("mb-1 text-base font-medium", headingText)}>
-                  {onlyDueToday
-                    ? "Brak powtórek zaplanowanych na dziś"
-                    : "Brak rozwiązanych zadań"}
-                </h3>
-                <p className={cn("mx-auto mb-5 max-w-sm text-sm", mutedText)}>
-                  {onlyDueToday
-                    ? "Wyłącz filtr, aby zobaczyć wszystkie ćwiczone zadania."
-                    : "Rozwiąż zadania w zbiorach — pojawią się tutaj po sprawdzeniu odpowiedzi."}
-                </p>
-                <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
-                  {onlyDueToday ? (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setOnlyDueToday(false)}
-                      className="dark:border-slate-600"
-                    >
-                      Pokaż wszystkie
-                    </Button>
-                  ) : null}
-                  <Button asChild className={accentBtn}>
-                    <Link to={createPageUrl("TaskSets")}>
-                      Przejdź do zbiorów
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-3 [overflow-anchor:none]">
-                  {paginatedReviewItems.map((item) => (
-                    <ReviewTaskCard
-                      key={item.task.id}
-                      task={item.task}
-                      nextReviewAt={item.nextReviewAt}
-                      intervalDays={item.intervalDays}
-                    />
+            <div ref={listRef} className="scroll-mt-24 space-y-3">
+              {loading ? (
+                <>
+                  {Array.from({ length: 3 }, (_, i) => (
+                    <ReviewTaskSkeleton key={`review-skel-${i}`} />
                   ))}
+                </>
+              ) : reviewItems.length === 0 ? (
+                <div className="px-2 py-10 text-center">
+                  <RotateCw className={cn("mx-auto mb-3 h-8 w-8", mutedText)} />
+                  <h3 className={cn("mb-1 text-base font-medium", headingText)}>
+                    {onlyDueToday
+                      ? "Brak powtórek zaplanowanych na dziś"
+                      : "Brak rozwiązanych zadań"}
+                  </h3>
+                  <p className={cn("mx-auto mb-5 max-w-sm text-sm", mutedText)}>
+                    {onlyDueToday
+                      ? "Wyłącz filtr, aby zobaczyć wszystkie ćwiczone zadania."
+                      : "Rozwiąż zadania w zbiorach — pojawią się tutaj po sprawdzeniu odpowiedzi."}
+                  </p>
+                  <div className="flex flex-col items-center justify-center gap-2 sm:flex-row">
+                    {onlyDueToday ? (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setOnlyDueToday(false)}
+                        className="dark:border-slate-600"
+                      >
+                        Pokaż wszystkie
+                      </Button>
+                    ) : null}
+                    <Button asChild className={accentBtn}>
+                      <Link to={createPageUrl("TaskSets")}>
+                        Przejdź do zbiorów
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  <div className="space-y-3 [overflow-anchor:none]">
+                    {paginatedReviewItems.map((item) => (
+                      <ReviewTaskCard
+                        key={item.task.id}
+                        task={item.task}
+                        nextReviewAt={item.nextReviewAt}
+                        intervalDays={item.intervalDays}
+                      />
+                    ))}
+                  </div>
 
-                {reviewItems.length > TASKS_PER_SECTION ? (
-                  <TaskListPagination
-                    currentPage={safeListPage}
-                    totalPages={totalListPages}
-                    onPageChange={setListPage}
-                    ariaLabel="Paginacja listy powtórek"
-                  />
-                ) : null}
-              </>
-            )}
+                  {reviewItems.length > TASKS_PER_SECTION ? (
+                    <TaskListPagination
+                      currentPage={safeListPage}
+                      totalPages={totalListPages}
+                      onPageChange={setListPage}
+                      ariaLabel="Paginacja listy powtórek"
+                    />
+                  ) : null}
+                </>
+              )}
+            </div>
           </div>
-        </section>
+        </CollapsibleReviewSection>
       </div>
     </div>
   );

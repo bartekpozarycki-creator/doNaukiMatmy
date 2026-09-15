@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { motion } from "framer-motion";
 import tasks from "@/data/tasksets.json";
@@ -82,7 +83,11 @@ export default function UnfinishedPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3, delay: idx * 0.05 }}
                 >
-                  <Link to={`${createPageUrl("TaskDetails")}?id=${t.id}`} className="block">
+                  <Link
+                    to={`${createPageUrl("TaskDetails")}?id=${t.id}`}
+                    state={buildTaskDetailsNavState({ from: "unfinished" })}
+                    className="block"
+                  >
                     <Card className="bg-white dark:bg-slate-800 border-0 shadow hover:shadow-xl transform hover:-translate-y-0.5 transition duration-300">
                       <CardContent className="p-5">
                         <div className="flex items-start justify-between gap-4">

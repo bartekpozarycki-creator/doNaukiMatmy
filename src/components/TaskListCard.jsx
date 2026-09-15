@@ -76,21 +76,36 @@ export default function TaskListCard({
   const subtopicLabel = task.subtopic?.trim() || null;
   const difficultyLabel =
     !isMastered ? formatTaskDifficultyLabel(userDifficulty.raw) : null;
+  const topicDisplay = task.topic
+    ? `${task.topic.charAt(0).toUpperCase()}${task.topic.slice(1)}`
+    : task.topic;
 
   return (
     <Card className={cn(taskListCardLayoutClass, className)}>
       <div className="flex min-h-0 flex-1">
         <div
           className={cn(
-            "flex w-8 shrink-0 items-center justify-center py-4",
+            "relative flex w-8 shrink-0 items-center justify-center py-4",
             barSolid,
             contentDimClass,
           )}
           aria-hidden
         >
-          <span className="select-none text-[10px] font-semibold uppercase leading-tight tracking-wide text-white [writing-mode:vertical-rl] rotate-180">
+          <span
+            className={cn(
+              "select-none text-[10px] font-semibold uppercase leading-tight tracking-wide text-white [writing-mode:vertical-rl] rotate-180 transition-opacity duration-200",
+              isUnattempted && "group-hover/tile:opacity-0",
+            )}
+          >
             {levelLabel}
           </span>
+          {isUnattempted ? (
+            <span className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 group-hover/tile:opacity-100">
+              <span className="select-none text-[10px] font-semibold uppercase leading-tight tracking-wide text-white [writing-mode:vertical-rl] rotate-180">
+                nigdy nie robione
+              </span>
+            </span>
+          ) : null}
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col">
@@ -151,31 +166,12 @@ export default function TaskListCard({
                       Opanowane
                     </span>
                   ) : null}
-                  {isUnattempted && !isMastered ? (
-                    <span className="shrink-0 rounded-full border border-dashed border-slate-300 px-2.5 py-1 text-xs font-medium text-slate-500 dark:border-slate-600 dark:text-slate-400">
-                      Nigdy nie robione
-                    </span>
-                  ) : null}
                   <div
                     className={cn(
                       "flex items-center gap-2",
                       contentDimClass,
                     )}
                   >
-                    <span
-                      className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700/80 dark:text-slate-200"
-                      title={task.topic}
-                    >
-                      {task.topic}
-                    </span>
-                    {subtopicLabel ? (
-                      <span
-                        className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500 dark:bg-slate-700/80 dark:text-slate-400"
-                        title={subtopicLabel}
-                      >
-                        {subtopicLabel}
-                      </span>
-                    ) : null}
                     {difficultyLabel ? (
                       <span
                         className={cn(
@@ -191,6 +187,20 @@ export default function TaskListCard({
                         {difficultyLabel}
                       </span>
                     ) : null}
+                    <span
+                      className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700/80 dark:text-slate-200"
+                      title={
+                        subtopicLabel ? `${task.topic}: ${subtopicLabel}` : task.topic
+                      }
+                    >
+                      {topicDisplay}
+                      {subtopicLabel ? (
+                        <>
+                          :{" "}
+                          <span className="font-semibold">{subtopicLabel}</span>
+                        </>
+                      ) : null}
+                    </span>
                   </div>
                 </div>
               </div>

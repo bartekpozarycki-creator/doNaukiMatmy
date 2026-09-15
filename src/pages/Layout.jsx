@@ -109,7 +109,8 @@ export default function Layout({ children, currentPageName }) {
   const showFab =
     currentPageName === "WorksheetDetails" ||
     currentPageName === "TaskDetails" ||
-    currentPageName === "ReviewSession";
+    currentPageName === "ReviewSession" ||
+    currentPageName === "ArticleView";
   const visibleDrawerNavigationItems = isAdmin
     ? [
         ...drawerNavigationItems,
@@ -189,7 +190,10 @@ export default function Layout({ children, currentPageName }) {
                 const isActive =
                   location.pathname === item.url ||
                   (item.url === createPageUrl("Review") &&
-                    currentPageName === "ReviewSession");
+                    currentPageName === "ReviewSession") ||
+                  (item.url === createPageUrl("Course") &&
+                    (currentPageName === "CourseOverview" ||
+                      currentPageName === "ArticleView"));
                 return (
                   <Link
                     key={item.title}
@@ -317,7 +321,10 @@ export default function Layout({ children, currentPageName }) {
                 const isActive =
                   location.pathname === item.url ||
                   (item.url === createPageUrl("Review") &&
-                    currentPageName === "ReviewSession");
+                    currentPageName === "ReviewSession") ||
+                  (item.url === createPageUrl("Course") &&
+                    (currentPageName === "CourseOverview" ||
+                      currentPageName === "ArticleView"));
                 return (
                   <Link
                     key={item.title}

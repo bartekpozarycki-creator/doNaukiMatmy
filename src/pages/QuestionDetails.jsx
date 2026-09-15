@@ -38,6 +38,7 @@ import {
   formatCommunityInteractionError,
 } from "@/utils/community-interactions";
 import { getValidSession } from "@/utils/community-publish";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 
 const topicNames = {
   algebra: "Algebra",
@@ -324,6 +325,10 @@ export default function QuestionDetailsPage() {
                 <div className="mt-2">
                   <Link
                     to={`${createPageUrl("TaskDetails")}?id=${question.attached_task.id}`}
+                    state={buildTaskDetailsNavState({
+                      from: "question-details",
+                      backTo: `${createPageUrl("QuestionDetails")}?id=${encodeURIComponent(question.id)}`,
+                    })}
                     className="text-xs text-blue-600 dark:text-blue-300 hover:underline"
                   >
                     Otwórz zadanie

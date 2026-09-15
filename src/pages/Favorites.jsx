@@ -8,6 +8,7 @@ import { useFavorites } from "@/contexts/FavoritesContext";
 import { publicSupabase } from "@/supabase-config.js";
 import { mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import TaskListCard, {
   TaskListCardSkeleton,
   taskMasonryTileClass,
@@ -31,7 +32,7 @@ function FavoriteTaskCard({ task }) {
   const goToTask = (event) => {
     if (event && !shouldNavigateTaskTile(event)) return;
     navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`, {
-      state: { from: "favorites" },
+      state: buildTaskDetailsNavState({ from: "favorites" }),
     });
   };
 

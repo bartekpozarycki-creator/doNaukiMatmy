@@ -90,22 +90,6 @@ export default function TaskRepetitionPanel({
                   </span>
                 </div>
               ) : null}
-              {showStatus ? (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    Status
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex shrink-0 items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
-                      getReviewStatusBadgeClass(statusMeta.id),
-                    )}
-                    title="Status trudności tego zadania"
-                  >
-                    {statusMeta.label}
-                  </span>
-                </div>
-              ) : null}
             </div>
           </div>
         </div>

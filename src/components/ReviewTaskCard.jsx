@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import TaskListCard from "@/components/TaskListCard";
 import { createPageUrl } from "@/utils";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import {
   formatReviewScheduleDetail,
   getScheduleBadgeClass,
@@ -15,7 +16,7 @@ export default function ReviewTaskCard({
   task,
   nextReviewAt,
   intervalDays,
-  reviewLinkState,
+  reviewLinkState = buildTaskDetailsNavState({ from: "review" }),
 }) {
   const navigate = useNavigate();
   const scheduleInfo = formatReviewScheduleDetail(nextReviewAt, intervalDays);

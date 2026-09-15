@@ -22,6 +22,7 @@ import { getNotebookPageStyle } from "@/utils/notebook-page-style";
 import { publicSupabase } from "@/supabase-config.js";
 import { mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
+import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 
 const TASKS_PER_PAGE = 8;
 const INITIAL_SKELETON_COUNT = TASKS_PER_PAGE;
@@ -75,13 +76,17 @@ function TaskSetGridTile({ task, showMask }) {
           tabIndex={0}
           onClick={(event) => {
             if (!shouldNavigateTaskTile(event)) return;
-            navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`);
+            navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`, {
+              state: buildTaskDetailsNavState({ from: "task-sets" }),
+            });
           }}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               if (!shouldNavigateTaskTile(e)) return;
-              navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`);
+              navigate(`${createPageUrl("TaskDetails")}?id=${task.id}`, {
+                state: buildTaskDetailsNavState({ from: "task-sets" }),
+              });
             }
           }}
           className="group/tile block cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900"

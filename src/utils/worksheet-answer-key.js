@@ -62,14 +62,6 @@ export function answerKeyPdfUrlWithPage(baseUrl, page) {
   return `${base}#page=${pageNum}`;
 }
 
-export function resolveAnswerKeyPage(question) {
-  const keyPage = Number(question?.key_nr ?? question?.keyNr);
-  if (Number.isFinite(keyPage) && keyPage > 0) {
-    return Math.floor(keyPage);
-  }
-  const fallback = Number(question?.nr ?? question?.question_number);
-  if (Number.isFinite(fallback) && fallback > 0) {
-    return Math.floor(fallback);
-  }
+export function resolveAnswerKeyPage() {
   return 1;
 }
