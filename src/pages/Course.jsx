@@ -104,7 +104,7 @@ function ComingSoonCourseCard({ level }) {
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          Kursy są w przygotowaniu. Wróć tu wkrótce — tymczasem zajrzyj do artykułów poniżej.
+          Kursy są w przygotowaniu. Wróć tu wkrótce — tymczasem zajrzyj do notatek poniżej.
         </p>
         <div className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${theme.soft} ${theme.text}`}>
           W trakcie tworzenia
@@ -193,7 +193,7 @@ function ArticleCard({ item, onOpen }) {
               variant="outline"
               className="border-sky-400 text-sky-700 dark:border-sky-600 dark:text-sky-300"
             >
-              Artykuł
+              Notatka
             </Badge>
             <CardTitle className="text-lg leading-tight text-slate-900 dark:text-white">
               {item.title}
@@ -205,9 +205,11 @@ function ArticleCard({ item, onOpen }) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <p className="line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          {item.description}
-        </p>
+        {item.description ? (
+          <p className="line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+            {item.description}
+          </p>
+        ) : null}
         <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
           <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
             {item.topic}
@@ -256,7 +258,7 @@ function ArticleCard({ item, onOpen }) {
             openArticle();
           }}
         >
-          Otwórz artykuł
+          Otwórz notatkę
         </Button>
       </CardContent>
     </Card>
@@ -410,7 +412,7 @@ export default function CoursePage() {
         <section className="mt-14 space-y-6">
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white sm:text-3xl">
-              Artykuły
+              Notatki
             </h2>
             <p className="mt-2 text-base text-slate-600 dark:text-slate-300">
               Krótkie materiały dydaktyczne do szybkiego powtórzenia i utrwalenia
@@ -423,7 +425,7 @@ export default function CoursePage() {
                 columnsClassName="grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
                 search={
                   <FilterSearchField
-                    placeholder="Szukaj artykułów..."
+                    placeholder="Szukaj notatek..."
                     value={articleSearch}
                     onChange={(event) => setArticleSearch(event.target.value)}
                   />
@@ -470,7 +472,7 @@ export default function CoursePage() {
           ) : (
             <Card className="border-0 bg-white shadow-lg dark:bg-slate-800">
               <CardContent className="p-8 text-center text-slate-600 dark:text-slate-300">
-                Brak artykułów dla wybranych filtrów.
+                Brak notatek dla wybranych filtrów.
               </CardContent>
             </Card>
           )}

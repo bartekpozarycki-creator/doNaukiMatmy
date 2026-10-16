@@ -51,7 +51,7 @@ const platformModules = [
   {
     icon: Users,
     title: "Społeczność",
-    description: "Zadawaj pytania i pomagaj innym uczniom.",
+    description: "Chwilowo nieaktywne - wkrótce wróci.",
     link: "Community",
   },
   {
@@ -81,7 +81,7 @@ const howItWorksSteps = [
   {
     icon: Users,
     title: "Pytaj społeczność",
-    description: "Gdy utkniesz - zapytaj innych uczniów.",
+    description: "Chwilowo nieaktywne - wkrótce znów będzie można pytać.",
   },
 ];
 

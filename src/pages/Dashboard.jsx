@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,12 +6,11 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText, Trophy, CheckCircle, TrendingUp, Flame, 
-  Award, BookOpen, ArrowRight, AlertCircle, Calendar
+  Award, BookOpen, ArrowRight, AlertCircle
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { format } from "date-fns";
-import { pl } from "date-fns/locale";
 
 export default function DashboardPage() {
   const [user, setUser] = useState(null);
@@ -371,10 +370,10 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex-1">
                     <h4 className="font-semibold text-slate-900 dark:text-white">
-                      Zadaj pytanie
+                      Społeczność
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-slate-400">
-                      Poproś społeczność o pomoc
+                      Chwilowo nieaktywne
                     </p>
                   </div>
                   <ArrowRight className="w-5 h-5 text-gray-400" />

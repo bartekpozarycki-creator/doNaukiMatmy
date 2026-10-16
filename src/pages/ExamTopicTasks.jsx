@@ -12,6 +12,7 @@ import { createPageUrl } from "@/utils";
 import { publicSupabase } from "@/supabase-config.js";
 import {
   isMaturalneTask,
+  isStemTask,
   mapDbTaskRow,
   taskLevelBadgeClassName,
 } from "@/utils/map-db-task";

@@ -24,7 +24,7 @@ import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { createPageUrl } from "@/utils";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { publicSupabase } from "@/supabase-config.js";
-import { mapDbTaskRow } from "@/utils/map-db-task";
+import { isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import {
   filterReviewSessionItems,
   pickRandomReviewTaskIds,

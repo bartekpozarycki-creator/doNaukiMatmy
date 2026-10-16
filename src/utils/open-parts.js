@@ -32,7 +32,7 @@ export function parseOpenParts(raw) {
         placeholder:
           typeof item.placeholder === "string" && item.placeholder.trim() !== ""
             ? item.placeholder.trim()
-            : "np. [-4, 4)",
+            : "Wpisz przedział",
         expected: expected.trim(),
       };
     })

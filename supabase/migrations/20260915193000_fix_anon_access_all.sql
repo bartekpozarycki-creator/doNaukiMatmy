@@ -309,6 +309,7 @@ VALUES
   ('rozszerzenie', 'rozszerzenie', true),
   ('osmaKlasa', 'osmaKlasa', true),
   ('tasks_images', 'tasks_images', true),
+  ('task_images', 'task_images', true),
   ('karty', 'karty', true),
   ('community_images', 'community_images', true)
 ON CONFLICT (id) DO UPDATE
@@ -329,6 +330,7 @@ BEGIN
         OR policyname ILIKE '%rozszerzenie%'
         OR policyname ILIKE '%osmaKlasa%'
         OR policyname ILIKE '%tasks_images%'
+        OR policyname ILIKE '%task_images%'
         OR policyname ILIKE '%karty%'
         OR policyname ILIKE '%community_images%'
         OR policyname ILIKE '%public read storage%'
@@ -354,6 +356,7 @@ CREATE POLICY "mauka_public_storage_select"
       'rozszerzenie',
       'osmaKlasa',
       'tasks_images',
+      'task_images',
       'karty',
       'community_images'
     )

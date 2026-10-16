@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { publicSupabase } from "@/supabase-config.js";
-import { isMaturalneTask, mapDbTaskRow } from "@/utils/map-db-task";
+import { isMaturalneTask, isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import dowodzenieCover from "@/okladki/dowodzenie.png";
 import geometriaCover from "@/okladki/geometria.png";
@@ -114,7 +114,10 @@ export default function ExamCollectionPage() {
       setTasks(
         (data ?? [])
           .map(mapDbTaskRow)
-          .filter((task) => task && task.question && isMaturalneTask(task)),
+          .filter(
+            (task) =>
+              task && task.question && !isStemTask(task) && isMaturalneTask(task),
+          ),
       );
       setLoading(false);
     };

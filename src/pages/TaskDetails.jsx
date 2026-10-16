@@ -48,6 +48,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MathText from "@/components/MathText";
 import MathInsertToolbar from "@/components/MathInsertToolbar";
 import TaskQuestionBody from "@/components/TaskQuestionBody";
+import PreviousStemSubtasks from "@/components/PreviousStemSubtasks";
 import MaturaArkuszLink from "@/components/MaturaArkuszLink";
 import FavoriteTaskActions from "@/components/FavoriteTaskActions";
 import FavoriteTaskNoteSection from "@/components/FavoriteTaskNoteSection";
@@ -62,7 +63,12 @@ import AttachFavoriteTaskPicker, {
 import { createPageUrl } from "@/utils";
 import { publicSupabase, supabase } from "@/supabase-config.js";
 import {
+  formatStemSubtaskTitle,
+  formatTaskNr,
+  getPreviousStemSiblings,
+  isStemTask,
   mapDbTaskRow,
+  sortTasksByNr,
   TASK_LEVEL_BAR_GRADIENT,
   TASK_MASTERED_DIFFICULTY_BADGE_CLASS,
   formatTaskDifficultyLabel,
@@ -152,6 +158,8 @@ export default function TaskDetailsPage() {
   const backLink = resolveTaskDetailsBackLink(location);
 
   const [task, setTask] = useState(null);
+  const [stemParent, setStemParent] = useState(null);
+  const [previousSubtasks, setPreviousSubtasks] = useState([]);
   const [loading, setLoading] = useState(!!idParam);
   const [loadError, setLoadError] = useState(null);
 
@@ -218,6 +226,8 @@ export default function TaskDetailsPage() {
     let cancelled = false;
     setLoading(true);
     setLoadError(null);
+    setStemParent(null);
+    setPreviousSubtasks([]);
     setChosen(null);
     setOpenAnswers({});
     setOpenChecked(false);
@@ -246,12 +256,41 @@ export default function TaskDetailsPage() {
         console.error("[TaskDetails]", error);
         setLoadError(error.message);
         setTask(null);
+        setStemParent(null);
+        setPreviousSubtasks([]);
         setLoading(false);
         return;
       }
 
-      setTask(mapDbTaskRow(data));
-      setLoading(false);
+      const mapped = mapDbTaskRow(data);
+      setTask(mapped);
+
+      if (mapped?.parentId) {
+        const [{ data: parentRow }, { data: siblingRows }] = await Promise.all([
+          publicSupabase
+            .from("tasks")
+            .select("*")
+            .eq("id", mapped.parentId)
+            .maybeSingle(),
+          publicSupabase
+            .from("tasks")
+            .select("*")
+            .eq("parent_id", mapped.parentId),
+        ]);
+        if (!cancelled) {
+          const parent = mapDbTaskRow(parentRow);
+          setStemParent(parent && isStemTask(parent) ? parent : null);
+          const siblings = sortTasksByNr(
+            (siblingRows ?? []).map(mapDbTaskRow).filter(Boolean),
+          );
+          setPreviousSubtasks(getPreviousStemSiblings(siblings, mapped));
+        }
+      } else if (!cancelled) {
+        setStemParent(null);
+        setPreviousSubtasks([]);
+      }
+
+      if (!cancelled) setLoading(false);
     })();
 
     return () => {
@@ -353,16 +392,7 @@ export default function TaskDetailsPage() {
   };
 
   const openCommunityForm = () => {
-    if (!user) {
-      setCommunityLoginOpen(true);
-      return;
-    }
-    const payload = taskToAttachedPayload(task);
-    setCommunityAttachedTask(payload);
-    setCommunityTitle("");
-    setCommunityDescription("");
-    setCommunityTopic(communityTopicFromTaskTopic(task.topic));
-    setCommunityFormOpen(true);
+    toast.info("Społeczność jest chwilowo nieaktywna. Wróć tu wkrótce.");
   };
 
   const handleCommunityDialogOpenChange = (open) => {
@@ -795,8 +825,28 @@ export default function TaskDetailsPage() {
             ) : null}
             <div className="rounded-2xl border border-blue-100 bg-blue-50/70 p-5 shadow-sm dark:border-blue-900/50 dark:bg-blue-950/20">
               <p className="mb-3 text-xs font-bold uppercase tracking-wide text-blue-700 dark:text-blue-300">
-                Treść zadania
+                {isStemTask(task)
+                  ? `Zadanie ${formatTaskNr(task.nr)} — wstęp`
+                  : stemParent
+                    ? formatStemSubtaskTitle(stemParent.nr, task.nr)
+                    : task.nr != null
+                      ? `Zadanie ${formatTaskNr(task.nr)}`
+                      : "Treść pytania"}
               </p>
+              {stemParent ? (
+                <div className="mb-4 rounded-xl border border-slate-200/80 bg-white/70 p-4 dark:border-slate-700 dark:bg-slate-900/40">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                    Informacja źródłowa — zadanie {formatTaskNr(stemParent.nr)}
+                  </p>
+                  <TaskQuestionBody
+                    task={stemParent}
+                    className="[&>div]:text-xl sm:[&>div]:text-2xl"
+                  />
+                </div>
+              ) : null}
+              {previousSubtasks.length > 0 ? (
+                <PreviousStemSubtasks items={previousSubtasks} className="mb-4" />
+              ) : null}
               <CardTitle className="font-normal text-slate-950 dark:text-white">
                 <TaskQuestionBody
                   task={task}
@@ -832,9 +882,15 @@ export default function TaskDetailsPage() {
               ) : null}
             </div>
 
-            <section className="space-y-4">
-              {task.type === "closed" ? renderClosed() : renderOpen()}
-            </section>
+            {isStemTask(task) ? (
+              <p className="rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-600 dark:bg-slate-900/40 dark:text-slate-300">
+                To wspólny wstęp do podpunktów (np. 12.1, 12.2). Rozwiązuj podpunkty osobno.
+              </p>
+            ) : (
+              <section className="space-y-4">
+                {task.type === "closed" ? renderClosed() : renderOpen()}
+              </section>
+            )}
 
             {taskVideoUrl ? (
               <Accordion type="single" collapsible className="w-full">

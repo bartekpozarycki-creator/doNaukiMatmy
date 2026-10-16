@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
   FileText,
@@ -55,6 +54,7 @@ import {
   parseArkuszWorksheetFilters,
 } from "@/utils/worksheet-arkusz";
 import {
+  attachWorksheetStemContext,
   mapDbTaskRow,
   mapDbTaskToWorksheetQuestion,
   sortTasksByNr,
@@ -378,12 +378,16 @@ function WorksheetCard({
       }
 
       const mapped = {};
-      sortTasksByNr((data || []).map(mapDbTaskRow)).forEach((task, index) => {
-        const question = mapDbTaskToWorksheetQuestion(
-          task,
-          worksheet.id,
-          index + 1,
-        );
+      const questions = attachWorksheetStemContext(
+        sortTasksByNr(
+          (data || []).map(mapDbTaskRow).filter((t) => t && t.question),
+        )
+          .map((task, index) =>
+            mapDbTaskToWorksheetQuestion(task, worksheet.id, index + 1),
+          )
+          .filter(Boolean),
+      );
+      questions.forEach((question) => {
         if (question?.id) {
           mapped[String(question.id)] = question;
         }

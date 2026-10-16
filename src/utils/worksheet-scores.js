@@ -5,17 +5,24 @@ import {
   isOpenPartAnswerCorrect,
 } from "@/utils/open-parts";
 
+export const isStemWorksheetQuestion = (question) =>
+  question?.question_type === "stem" || question?.type === "stem";
+
 export const isOpenWorksheetQuestion = (question) =>
   question?.question_type === "open";
 
 export const isSimpleOpenQuestion = (question) =>
   isOpenWorksheetQuestion(question) && !hasOpenParts(question);
 
-export const getQuestionMaxPoints = (question) =>
-  question?.points ?? question?.punktacja ?? 1;
+export const getQuestionMaxPoints = (question) => {
+  if (isStemWorksheetQuestion(question)) return 0;
+  return question?.points ?? question?.punktacja ?? 1;
+};
 
 export const getWorksheetTotalPoints = (questions) =>
-  (questions ?? []).reduce((sum, q) => sum + getQuestionMaxPoints(q), 0);
+  (questions ?? [])
+    .filter((q) => !isStemWorksheetQuestion(q))
+    .reduce((sum, q) => sum + getQuestionMaxPoints(q), 0);
 
 export function getStoredAnswerValue(question, answersMap) {
   if (!question?.id || !answersMap) return "";
@@ -120,6 +127,8 @@ export function buildWorksheetQuestionScores({
 }) {
   const scores = {};
   questions.forEach((q) => {
+    if (isStemWorksheetQuestion(q)) return;
+
     const max = getQuestionMaxPoints(q);
     const graded =
       countUngradedAsZero || isQuestionGraded(q, checkedIds, selfPoints);

@@ -30,7 +30,7 @@ const BACK_PRESETS = {
     label: "Powrót do strony głównej",
   },
   article: {
-    label: "Powrót do artykułu",
+    label: "Powrót do notatki",
   },
   "exam-topic-tasks": {
     label: "Powrót do listy zadań",

@@ -41,6 +41,10 @@ import WorksheetOpenParts from "@/components/WorksheetOpenParts";
 import { useWorksheetScores } from "@/hooks/use-worksheet-scores";
 import { publicSupabase } from "@/supabase-config.js";
 import {
+  attachWorksheetStemContext,
+  formatStemSubtaskTitle,
+  formatTaskNr,
+  groupWorksheetQuestionsByStem,
   mapDbTaskRow,
   mapDbTaskToWorksheetQuestion,
   sortTasksByNr,
@@ -498,11 +502,13 @@ export default function WorksheetDetailsPage() {
       const sorted = sortTasksByNr(
         (data ?? []).map(mapDbTaskRow).filter((t) => t && t.question),
       );
-      const mapped = sorted
-        .map((task, index) =>
-          mapDbTaskToWorksheetQuestion(task, worksheetId, index + 1),
-        )
-        .filter(Boolean);
+      const mapped = attachWorksheetStemContext(
+        sorted
+          .map((task, index) =>
+            mapDbTaskToWorksheetQuestion(task, worksheetId, index + 1),
+          )
+          .filter(Boolean),
+      );
 
       if (rawRowCount === 0) {
         console.warn(
@@ -1373,22 +1379,65 @@ export default function WorksheetDetailsPage() {
     );
   };
 
-  const renderExamQuestion = (question) => {
+  const renderStemIntro = (stem) => {
+    if (!stem) return null;
+    const stemNr = formatTaskNr(stem.question_number ?? stem.nr);
+    return (
+      <div className="mb-6 space-y-4 rounded-xl border border-slate-200 bg-slate-50/80 p-5 dark:border-slate-700 dark:bg-slate-900/40">
+        {stemNr ? (
+          <p className={`text-sm font-bold uppercase tracking-wide ${examTheme.accentText}`}>
+            Informacja źródłowa — zadanie {stemNr}
+          </p>
+        ) : null}
+        {stem.question_text?.trim() ? (
+          <div className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            <MathText
+              text={stem.question_text}
+              className="math-text-ui--flow font-normal"
+            />
+          </div>
+        ) : null}
+        {stem.image_url ? (
+          <img
+            src={stem.image_url}
+            alt="Ilustracja do pytania"
+            className="mx-auto w-full max-w-md rounded-lg border border-slate-200 dark:border-slate-700"
+          />
+        ) : null}
+        {stem.question_text_po_obrazku?.trim() ? (
+          <div className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            <MathText
+              text={stem.question_text_po_obrazku.trim()}
+              className="math-text-ui--flow font-normal"
+            />
+          </div>
+        ) : null}
+      </div>
+    );
+  };
+
+  const renderExamQuestion = (question, { showStem = true } = {}) => {
     const scoreEntry = scoring.questionScores[question.id];
     const maxPts = getQuestionMaxPoints(question);
     const isGraded = scoreEntry?.graded && scoreEntry.earned != null;
     const pointsLabel = isGraded
       ? `${scoreEntry.earned}/${maxPts} pkt`
       : `0–${maxPts} pkt`;
+    const displayNr = formatTaskNr(question.question_number);
+    const headerTitle = question.stem
+      ? `${formatStemSubtaskTitle(question.stem.question_number ?? question.stem.nr, question.question_number)}. (${pointsLabel})`
+      : `Zadanie ${displayNr}. (${pointsLabel})`;
 
     return (
-      <Card key={question.id} className="mb-6 overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+      <div key={question.id} className="mb-6">
+        {showStem ? renderStemIntro(question.stem) : null}
+      <Card className="overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
         <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-3 shadow-sm`}>
           <h2
             className={`flex flex-wrap items-center gap-2 text-xl font-extrabold ${examTheme.headerText}`}
           >
             <span className="tabular-nums">
-              Zadanie {question.question_number}. ({pointsLabel})
+              {headerTitle}
             </span>
             {answerKeyUrl && !showResults ? (
               <button
@@ -1396,8 +1445,8 @@ export default function WorksheetDetailsPage() {
                 onClick={() => openAnswerKeyAtQuestion(question)}
                 disabled={answerKeyLoading}
                 className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50"
-                title={`Klucz CKE — zadanie ${question.question_number}`}
-                aria-label={`Pokaż klucz CKE dla zadania ${question.question_number}`}
+                title={`Klucz CKE — zadanie ${displayNr}`}
+                aria-label={`Pokaż klucz CKE dla pytania ${displayNr}`}
               >
                 <KeyRound className="h-4 w-4" />
               </button>
@@ -1427,12 +1476,31 @@ export default function WorksheetDetailsPage() {
         ) : null}
 
         {question.question_text_po_obrazku?.trim() ? (
-          <p className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
-            <MathText
-              text={question.question_text_po_obrazku}
-              className="math-text-ui--flow"
-            />
-          </p>
+          <div className="worksheet-question-prompt space-y-1 text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            {(() => {
+              const raw = question.question_text_po_obrazku.trim();
+              const breakIndex = raw.search(/\n\s*\n/);
+              if (breakIndex === -1) {
+                return (
+                  <div className="font-bold leading-snug">
+                    <MathText text={raw} className="math-text-ui--flow" />
+                  </div>
+                );
+              }
+              const instruction = raw.slice(0, breakIndex).trim();
+              const body = raw.slice(breakIndex).trim();
+              return (
+                <>
+                  <div className="font-bold leading-snug">
+                    <MathText text={instruction} className="math-text-ui--flow" />
+                  </div>
+                  <div className="font-normal leading-normal">
+                    <MathText text={body} className="math-text-ui--flow" />
+                  </div>
+                </>
+              );
+            })()}
+          </div>
         ) : null}
 
         {hasOpenParts(question) ? (
@@ -1604,8 +1672,14 @@ export default function WorksheetDetailsPage() {
 
         </CardContent>
       </Card>
+      </div>
     );
   };
+
+  const visibleQuestionGroups = useMemo(
+    () => groupWorksheetQuestionsByStem(visibleQuestions),
+    [visibleQuestions],
+  );
 
   const pageIsDark = document.documentElement.classList.contains("dark");
 
@@ -2231,7 +2305,14 @@ export default function WorksheetDetailsPage() {
                 </CardContent>
               </Card>
             ) : (
-              visibleQuestions.map((q) => renderExamQuestion(q))
+              visibleQuestionGroups.map((group) => (
+                <div key={group.stemId ?? group.items[0]?.id} className="mb-2">
+                  {group.stem ? renderStemIntro(group.stem) : null}
+                  {group.items.map((q) =>
+                    renderExamQuestion(q, { showStem: false }),
+                  )}
+                </div>
+              ))
             )}
             {!reviewMode && canPauseOrFinish && (
               <div className="flex justify-end">

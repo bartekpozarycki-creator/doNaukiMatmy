@@ -100,6 +100,27 @@
     vertical-align: baseline;
   }
 
+  .mcq-option .math-text-ui--mcq {
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.2;
+  }
+
+  .mcq-option .math-text-ui--mcq .math-text-ui__math-inline,
+  .mcq-option .math-text-ui--mcq .math-text-ui__math-display {
+    display: inline-flex;
+    align-items: center;
+    margin: 0;
+    vertical-align: middle;
+  }
+
+  .mcq-option .math-text-ui--mcq .katex {
+    display: inline-block;
+    vertical-align: middle;
+    line-height: 1.2;
+    padding: 0;
+  }
+
   .worksheet-question-prompt .math-text-ui--flow .katex {
     vertical-align: baseline;
     font-size: 1em;

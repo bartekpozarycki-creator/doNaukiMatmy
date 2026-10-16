@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createPageUrl } from "@/utils";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { publicSupabase } from "@/supabase-config.js";
-import { mapDbTaskRow } from "@/utils/map-db-task";
+import { isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import TaskListCard, {

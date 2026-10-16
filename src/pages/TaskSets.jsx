@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Layers, ChevronRight, BookOpenCheck } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { createPageUrl } from "@/utils";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,7 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { getNotebookPageStyle } from "@/utils/notebook-page-style";
 import { publicSupabase } from "@/supabase-config.js";
-import { mapDbTaskRow } from "@/utils/map-db-task";
+import { isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 
@@ -209,7 +208,7 @@ export default function TaskSetsPage() {
 
       const mapped = (data ?? [])
         .map(mapDbTaskRow)
-        .filter((t) => t && t.question);
+        .filter((t) => t && t.question && !isStemTask(t));
 
       if (!cancelled && mapped.length === 0 && (data?.length ?? 0) === 0) {
         console.warn(

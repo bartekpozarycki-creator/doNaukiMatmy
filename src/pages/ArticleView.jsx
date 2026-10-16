@@ -15,18 +15,12 @@ import {
   ArrowLeft,
   BookOpen,
   Brain,
+  ChevronDown,
   Clock,
   Lightbulb,
   Loader2,
-  Sigma,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import MathText from "@/components/MathText";
 import TaskListCard from "@/components/TaskListCard";
 import { createPageUrl } from "@/utils";
@@ -37,58 +31,62 @@ import {
   parseArticleContentModesParam,
 } from "@/utils/sample-articles";
 import { publicSupabase } from "@/supabase-config.js";
-import { isMaturalneTask, mapDbTaskRow } from "@/utils/map-db-task";
+import { isMaturalneTask, isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { cn } from "@/lib/utils";
 
-const calloutStyles = {
-  insight: {
-    wrap: "border-emerald-200 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40",
-    title: "text-emerald-800 dark:text-emerald-200",
-    body: "text-emerald-900/85 dark:text-emerald-100/85",
-    icon: Lightbulb,
+const noteColors = {
+  accent: {
+    border: "border-blue-200 dark:border-blue-800",
+    borderStrong: "border-l-blue-500 dark:border-l-blue-400",
+    bg: "bg-blue-50/70 dark:bg-blue-950/30",
+    bgSoft: "bg-blue-50/50 dark:bg-blue-950/20",
+    text: "text-blue-700 dark:text-blue-300",
+    textStrong: "text-blue-900 dark:text-blue-100",
+    chip: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    solid: "bg-blue-600 text-white dark:bg-blue-500",
   },
-  pitfall: {
+  warn: {
     wrap: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40",
     title: "text-rose-800 dark:text-rose-200",
-    body: "text-rose-900/85 dark:text-rose-100/85",
-    icon: AlertTriangle,
+    body: "text-rose-900/90 dark:text-rose-100/90",
   },
-  example: {
-    wrap: "border-sky-200 bg-sky-50/80 dark:border-sky-800 dark:bg-sky-950/40",
-    title: "text-sky-800 dark:text-sky-200",
-    body: "text-sky-900/85 dark:text-sky-100/85",
+  frame:
+    "rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
+};
+
+const calloutStyles = {
+  insight: {
+    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+    title: noteColors.accent.text,
+    body: "text-slate-700 dark:text-slate-200",
+    icon: Lightbulb,
+  },
+  definition: {
+    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+    title: noteColors.accent.text,
+    body: "text-slate-700 dark:text-slate-200",
     icon: BookOpen,
   },
   why: {
-    wrap: "border-indigo-200 bg-indigo-50/80 dark:border-indigo-800 dark:bg-indigo-950/40",
-    title: "text-indigo-800 dark:text-indigo-200",
-    body: "text-indigo-900/85 dark:text-indigo-100/85",
+    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+    title: noteColors.accent.text,
+    body: "text-slate-700 dark:text-slate-200",
     icon: Brain,
+  },
+  pitfall: {
+    wrap: cn("border px-4 py-3", noteColors.warn.wrap),
+    title: noteColors.warn.title,
+    body: noteColors.warn.body,
+    icon: AlertTriangle,
   },
 };
 
 const formulaAccents = {
   blue: {
-    shell: "border-blue-400 bg-blue-50/70 dark:border-blue-500 dark:bg-blue-950/35",
-    panel: "border-blue-200/80 bg-white/70 dark:border-blue-800/60 dark:bg-slate-900/40",
-    chip: "text-blue-700 dark:text-blue-300",
-  },
-  teal: {
-    shell: "border-teal-400 bg-teal-50/70 dark:border-teal-500 dark:bg-teal-950/35",
-    panel: "border-teal-200/80 bg-white/70 dark:border-teal-800/60 dark:bg-slate-900/40",
-    chip: "text-teal-700 dark:text-teal-300",
-  },
-  violet: {
-    shell: "border-violet-400 bg-violet-50/70 dark:border-violet-500 dark:bg-violet-950/35",
-    panel: "border-violet-200/80 bg-white/70 dark:border-violet-800/60 dark:bg-slate-900/40",
-    chip: "text-violet-700 dark:text-violet-300",
-  },
-  rose: {
-    shell: "border-rose-400 bg-rose-50/70 dark:border-rose-500 dark:bg-rose-950/35",
-    panel: "border-rose-200/80 bg-white/70 dark:border-rose-800/60 dark:bg-slate-900/40",
-    chip: "text-rose-700 dark:text-rose-300",
+    shell: cn("border-l-4", noteColors.accent.borderStrong, noteColors.accent.bg),
+    chip: noteColors.accent.text,
   },
 };
 
@@ -97,17 +95,9 @@ const FormulaPreviewContext = createContext(null);
 function collectArticleFormulas(article) {
   const map = new Map();
   for (const section of article?.sections || []) {
-    const blocks =
-      section.blocks ||
-      (section.paragraphs || []).map((content) => ({ type: "text", content }));
-    for (const block of blocks) {
-      const items =
-        block.type === "formula-list"
-          ? block.items || []
-          : block.type === "formula"
-            ? [block]
-            : [];
-      for (const item of items) {
+    for (const block of section.blocks || []) {
+      if (block.type !== "formula-list") continue;
+      for (const item of block.items || []) {
         if (item?.label) {
           map.set(item.label, item);
         }
@@ -121,56 +111,75 @@ function formulaDomId(label) {
   return `formula-ref-${String(label || "").replace(/[^\w-]+/g, "")}`;
 }
 
+function FormulaRefChip({ label }) {
+  const preview = useContext(FormulaPreviewContext);
+
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      className={cn(
+        "mx-0.5 inline-flex -translate-y-[0.12em] cursor-pointer items-center rounded-md border px-1.5 py-0.5 align-middle font-mono text-[0.85em] font-semibold leading-none transition",
+        "border-blue-200 bg-blue-50 text-blue-700 hover:shadow-sm dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+      )}
+      onMouseEnter={() => preview?.showFormula(label)}
+      onMouseLeave={() => preview?.hideFormula()}
+      onFocus={() => preview?.showFormula(label)}
+      onBlur={() => preview?.hideFormula()}
+      onPointerDown={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        preview?.focusFormula?.(label);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          event.stopPropagation();
+          preview?.focusFormula?.(label);
+        }
+      }}
+    >
+      {label}
+    </span>
+  );
+}
+
+function renderRichSegment(text, keyPrefix, formulas) {
+  const parts = String(text ?? "").split(/(\*\*[^*]+\*\*|\(\d+\))/g);
+
+  return parts.map((part, index) => {
+    if (!part) return null;
+    const key = `${keyPrefix}-${index}`;
+
+    if (part.startsWith("**") && part.endsWith("**")) {
+      const inner = part.slice(2, -2);
+      return (
+        <strong key={key} className="font-semibold text-slate-900 dark:text-white">
+          {renderRichSegment(inner, `${key}-b`, formulas)}
+        </strong>
+      );
+    }
+
+    const formula = formulas?.get?.(part);
+    if (formula) {
+      return <FormulaRefChip key={key} label={part} />;
+    }
+
+    return <MathText key={key} text={part} />;
+  });
+}
+
 function ArticleRichText({ text, className = "" }) {
   const preview = useContext(FormulaPreviewContext);
   const formulas = preview?.formulas;
-  const parts = String(text ?? "").split(/(\(\d+\))/g);
-
-  if (!formulas?.size) {
-    return <MathText text={text} className={className} />;
-  }
 
   return (
     <span className={cn("math-text-ui", className)}>
-      {parts.map((part, index) => {
-        if (!part) return null;
-        const formula = formulas.get(part);
-        if (formula) {
-          const accent = formulaAccents[formula.accent] || formulaAccents.blue;
-          return (
-            <span
-              key={`ref-${index}-${part}`}
-              role="button"
-              tabIndex={0}
-              className={cn(
-                "mx-0.5 inline-flex -translate-y-[0.12em] cursor-pointer items-center rounded-md border px-1.5 py-0.5 align-middle font-mono text-[0.85em] font-semibold leading-none transition",
-                accent.shell,
-                accent.chip,
-                "hover:shadow-sm",
-              )}
-              onMouseEnter={() => preview.showFormula(part)}
-              onMouseLeave={() => preview.hideFormula()}
-              onFocus={() => preview.showFormula(part)}
-              onBlur={() => preview.hideFormula()}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                preview.focusFormula?.(part);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Enter" || event.key === " ") {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  preview.focusFormula?.(part);
-                }
-              }}
-            >
-              {part}
-            </span>
-          );
-        }
-        return <MathText key={`txt-${index}`} text={part} />;
-      })}
+      {renderRichSegment(text, "rt", formulas)}
     </span>
   );
 }
@@ -228,18 +237,15 @@ function FormulaPreviewToast({ formula }) {
 function FormulaBlock({ block }) {
   const preview = useContext(FormulaPreviewContext);
   const [open, setOpen] = useState(false);
-  const [derivationOpen, setDerivationOpen] = useState(false);
   const accent = formulaAccents[block.accent] || formulaAccents.blue;
-  const hasDerivation = Boolean(block.derivation?.length);
   const hasExample = Boolean(block.example);
-  const expandable = hasDerivation || hasExample;
   const domId = formulaDomId(block.label);
 
   useEffect(() => {
-    if (!expandable || !block.label) return;
+    if (!hasExample || !block.label) return;
     if (preview?.focusedLabel !== block.label) return;
     setOpen(true);
-  }, [preview?.focusedLabel, preview?.focusNonce, block.label, expandable]);
+  }, [preview?.focusedLabel, preview?.focusNonce, block.label, hasExample]);
 
   return (
     <div
@@ -250,29 +256,23 @@ function FormulaBlock({ block }) {
       )}
     >
       <div
-        role={expandable ? "button" : undefined}
-        tabIndex={expandable ? 0 : undefined}
-        aria-expanded={expandable ? open : undefined}
+        role={hasExample ? "button" : undefined}
+        tabIndex={hasExample ? 0 : undefined}
+        aria-expanded={hasExample ? open : undefined}
         onClick={() => {
-          if (!expandable) return;
-          setOpen((value) => {
-            if (value) setDerivationOpen(false);
-            return !value;
-          });
+          if (!hasExample) return;
+          setOpen((value) => !value);
         }}
         onKeyDown={(event) => {
-          if (!expandable) return;
+          if (!hasExample) return;
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            setOpen((value) => {
-              if (value) setDerivationOpen(false);
-              return !value;
-            });
+            setOpen((value) => !value);
           }
         }}
         className={cn(
           "space-y-2 px-4 py-3 sm:px-5",
-          expandable ? "cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]" : "cursor-default",
+          hasExample ? "cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]" : "cursor-default",
         )}
       >
         <div className="flex items-start justify-between gap-3">
@@ -292,7 +292,7 @@ function FormulaBlock({ block }) {
           </p>
         ) : null}
 
-        {expandable ? (
+        {hasExample ? (
           <p className={cn("text-center text-[11px] font-semibold uppercase tracking-wide", accent.chip)}>
             {open ? "Kliknij, aby zwinąć" : "Kliknij, aby rozwinąć"}
           </p>
@@ -300,7 +300,7 @@ function FormulaBlock({ block }) {
       </div>
 
       <AnimatePresence initial={false}>
-        {open && expandable ? (
+        {open && hasExample ? (
           <motion.div
             key="formula-details"
             initial={{ height: 0, opacity: 0 }}
@@ -309,20 +309,18 @@ function FormulaBlock({ block }) {
             transition={{ duration: 0.28, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-black/5 px-4 pb-4 pt-3 dark:border-white/10 sm:px-5">
+            <div className="space-y-3 border-t border-slate-200/80 px-4 pb-4 pt-3 dark:border-slate-700 sm:px-5">
               {hasExample ? (
-                <div className="rounded-lg border border-sky-200 bg-sky-50/80 px-3 py-3 dark:border-sky-800 dark:bg-sky-950/35">
+                <div className={cn("px-3 py-3", noteColors.frame, noteColors.accent.bgSoft)}>
                   <div className="mb-1.5 flex flex-wrap items-center gap-2">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+                    <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
                       Przykład
                     </p>
                     {block.example.level ? (
                       <span
                         className={cn(
-                          "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                          block.example.level === "rozszerzony"
-                            ? "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"
-                            : "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+                          "rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          noteColors.accent.chip,
                         )}
                       >
                         {block.example.level === "rozszerzony" ? "Rozszerzenie" : "Podstawa"}
@@ -330,7 +328,7 @@ function FormulaBlock({ block }) {
                     ) : null}
                   </div>
                   {block.example.prompt ? (
-                    <p className="mb-2 text-sm font-medium text-sky-900 dark:text-sky-100">
+                    <p className="mb-2 text-sm font-medium leading-[1.6] text-slate-800 dark:text-slate-100">
                       <ArticleRichText text={block.example.prompt} />
                     </p>
                   ) : null}
@@ -339,9 +337,9 @@ function FormulaBlock({ block }) {
                       {block.example.steps.map((step, index) => (
                         <li
                           key={`${block.label}-e-${index}`}
-                          className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2 text-sm leading-6 text-sky-900/90 dark:text-sky-100/90"
+                          className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-x-2 text-sm leading-[1.6] text-slate-700 dark:text-slate-200"
                         >
-                          <span className="font-semibold text-sky-700 dark:text-sky-300">
+                          <span className={cn("font-semibold", noteColors.accent.text)}>
                             {index + 1}.
                           </span>
                           <span className="min-w-0">
@@ -352,63 +350,10 @@ function FormulaBlock({ block }) {
                     </ol>
                   ) : null}
                   {block.example.result ? (
-                    <p className="mt-2 border-t border-sky-200/80 pt-2 text-sm font-semibold text-sky-900 dark:border-sky-800 dark:text-sky-100">
+                    <p className="mt-2 border-t border-blue-200/80 pt-2 text-sm font-semibold text-slate-900 dark:border-blue-800 dark:text-slate-100">
                       <ArticleRichText text={block.example.result} />
                     </p>
                   ) : null}
-                </div>
-              ) : null}
-
-              {hasDerivation ? (
-                <div className={cn("overflow-hidden rounded-lg border", accent.panel)}>
-                  <button
-                    type="button"
-                    className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      setDerivationOpen((value) => !value);
-                    }}
-                  >
-                    <span className={cn("text-xs font-semibold uppercase tracking-wide", accent.chip)}>
-                      Wyprowadzenie
-                    </span>
-                    <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                      {derivationOpen ? "Zwiń" : "Rozwiń"}
-                    </span>
-                  </button>
-                  <AnimatePresence initial={false}>
-                    {derivationOpen ? (
-                      <motion.div
-                        key="derivation"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: "auto", opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: "easeInOut" }}
-                        className="overflow-hidden"
-                      >
-                        <div className="space-y-3 border-t border-black/5 px-3 pb-3 pt-2 dark:border-white/10">
-                          <p className="text-[11px] leading-5 text-slate-500 dark:text-slate-400">
-                            Na maturze nie trzeba znać tych wyprowadzeń - to jest tu tylko w formie ciekawostki.
-                          </p>
-                          <ol className="space-y-2">
-                            {block.derivation.map((step, index) => (
-                              <li
-                                key={`${block.label}-d-${index}`}
-                                className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-center gap-x-2.5 text-sm leading-6 text-slate-700 dark:text-slate-300"
-                              >
-                                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white dark:bg-slate-100 dark:text-slate-900">
-                                  {index + 1}
-                                </span>
-                                <span className="min-w-0">
-                                  <ArticleRichText text={step} />
-                                </span>
-                              </li>
-                            ))}
-                          </ol>
-                        </div>
-                      </motion.div>
-                    ) : null}
-                  </AnimatePresence>
                 </div>
               ) : null}
             </div>
@@ -419,17 +364,157 @@ function FormulaBlock({ block }) {
   );
 }
 
+function CalloutBlock({ block }) {
+  const [exampleOpen, setExampleOpen] = useState(false);
+  const [contentOpen, setContentOpen] = useState(false);
+  const style = calloutStyles[block.variant] || calloutStyles.insight;
+  const Icon = style.icon;
+  const collapsible = Boolean(block.collapsible);
+  const example = block.example;
+  const hasExample = Boolean(
+    example && (example.wrong || example.right || example.note || example.prompt),
+  );
+  const showBody = !collapsible || contentOpen;
+
+  return (
+    <aside className={cn("rounded-lg", style.wrap)}>
+      {collapsible ? (
+        <button
+          type="button"
+          onClick={() => setContentOpen((value) => !value)}
+          aria-expanded={contentOpen}
+          className={cn(
+            "flex w-full items-center gap-2 text-left text-sm font-semibold",
+            style.title,
+          )}
+        >
+          <Icon className="h-4 w-4 shrink-0" />
+          <span className="min-w-0 flex-1">
+            <ArticleRichText text={block.title} />
+          </span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 transition-transform duration-200",
+              contentOpen ? "rotate-180" : "rotate-0",
+            )}
+          />
+        </button>
+      ) : (
+        <div className={cn("mb-1.5 flex items-center gap-2 text-sm font-semibold", style.title)}>
+          <Icon className="h-4 w-4 shrink-0" />
+          <ArticleRichText text={block.title} />
+        </div>
+      )}
+
+      <AnimatePresence initial={false}>
+        {showBody ? (
+          <motion.div
+            key="callout-body"
+            initial={collapsible ? { height: 0, opacity: 0 } : false}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={collapsible ? { height: 0, opacity: 0 } : undefined}
+            transition={{ duration: 0.22, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className={cn("text-sm leading-[1.6]", style.body, collapsible ? "mt-1.5" : null)}>
+              <ArticleRichText text={block.content} />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+
+      {hasExample ? (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setExampleOpen((value) => !value)}
+            aria-expanded={exampleOpen}
+            className={cn(
+              "text-[11px] font-semibold uppercase tracking-wide transition",
+              style.title,
+              "opacity-80 hover:opacity-100",
+            )}
+          >
+            {exampleOpen ? "Zwiń przykład" : "Pokaż przykład"}
+          </button>
+
+          <AnimatePresence initial={false}>
+            {exampleOpen ? (
+              <motion.div
+                key="callout-example"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.22, ease: "easeInOut" }}
+                className="overflow-hidden"
+              >
+                <div className={cn("mt-2 space-y-2 px-3 py-3", noteColors.frame)}>
+                  {example.prompt ? (
+                    <p className={cn("text-sm font-medium leading-[1.6]", style.body)}>
+                      <span className="mr-1 font-semibold">Przykład:</span>
+                      <ArticleRichText text={example.prompt} />
+                    </p>
+                  ) : null}
+
+                  {example.wrong ? (
+                    <div className="rounded-md border border-rose-200 bg-rose-50/90 px-3 py-2 text-sm leading-[1.6] text-rose-900 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100">
+                      <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-rose-700 dark:text-rose-300">
+                        Błędnie
+                      </p>
+                      <ArticleRichText text={example.wrong} />
+                    </div>
+                  ) : null}
+
+                  {example.right ? (
+                    <div className={cn("rounded-md border px-3 py-2 text-sm leading-[1.6]", noteColors.accent.border, noteColors.accent.bg, "text-slate-800 dark:text-slate-100")}>
+                      <p className={cn("mb-1 text-[11px] font-semibold uppercase tracking-wide", noteColors.accent.text)}>
+                        Poprawnie
+                      </p>
+                      <ArticleRichText text={example.right} />
+                    </div>
+                  ) : null}
+
+                  {example.note ? (
+                    <p className={cn("text-sm leading-[1.6]", style.body)}>
+                      <ArticleRichText text={example.note} />
+                    </p>
+                  ) : null}
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+      ) : null}
+    </aside>
+  );
+}
+
 function ArticleBlock({ block, articleId, relatedTasks }) {
   if (block.type === "text") {
     return (
-      <p className="text-base font-semibold leading-7 text-slate-900 dark:text-white sm:text-[17px] sm:leading-8">
+      <p className="text-base leading-[1.6] text-slate-700 dark:text-slate-200 sm:text-[17px]">
         <ArticleRichText text={block.content} />
       </p>
     );
   }
 
-  if (block.type === "formula") {
-    return <FormulaBlock block={block} />;
+  if (block.type === "list") {
+    const ordered = block.ordered === true;
+    const ListTag = ordered ? "ol" : "ul";
+    return (
+      <ListTag
+        className={cn(
+          "space-y-2 pl-5 text-base leading-[1.6] text-slate-700 dark:text-slate-200 sm:text-[17px]",
+          ordered ? "list-decimal" : "list-disc",
+        )}
+      >
+        {(block.items || []).map((item, index) => (
+          <li key={`${index}-${typeof item === "string" ? item.slice(0, 24) : index}`} className="pl-1">
+            <ArticleRichText text={item} />
+          </li>
+        ))}
+      </ListTag>
+    );
   }
 
   if (block.type === "formula-list") {
@@ -443,68 +528,33 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
   }
 
   if (block.type === "callout") {
-    const style = calloutStyles[block.variant] || calloutStyles.insight;
-    const Icon = style.icon;
-    return (
-      <aside className={cn("rounded-lg border px-4 py-3", style.wrap)}>
-        <div className={cn("mb-1.5 flex items-center gap-2 text-sm font-semibold", style.title)}>
-          <Icon className="h-4 w-4 shrink-0" />
-          {block.title}
-        </div>
-        <div className={cn("text-sm leading-6", style.body)}>
-          <ArticleRichText text={block.content} />
-        </div>
-      </aside>
-    );
+    return <CalloutBlock block={block} />;
   }
 
   if (block.type === "steps") {
-    const isNotebook = block.variant === "notebook";
-    const list = (
-      <ol className="space-y-3">
-        {(block.items || []).map((item, index) => (
-          <li
-            key={`${index}-${item}`}
-            className={cn(
-              "grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-3 text-[15px] leading-7",
-              isNotebook
-                ? "text-slate-700"
-                : "text-slate-700 dark:text-slate-200",
-            )}
-          >
-            <span
-              className={cn(
-                "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-                isNotebook
-                  ? "bg-slate-900 text-white"
-                  : "bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900",
-              )}
-            >
-              {index + 1}
-            </span>
-            <span className="min-w-0">
-              <ArticleRichText text={item} />
-            </span>
-          </li>
-        ))}
-      </ol>
-    );
-
-    if (!isNotebook) return list;
-
     return (
-      <div className="rounded-xl border border-slate-200 bg-white px-4 py-4 shadow-sm dark:border-slate-700 dark:bg-white sm:px-5 sm:py-5">
-        {list}
+      <div className={cn("px-4 py-4 sm:px-5 sm:py-5", noteColors.frame)}>
+        <ol className="space-y-3">
+          {(block.items || []).map((item, index) => (
+            <li
+              key={`${index}-${item}`}
+              className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-x-3 text-[15px] leading-[1.6] text-slate-700 dark:text-slate-200"
+            >
+              <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
+                {index + 1}
+              </span>
+              <span className="min-w-0 pt-0.5">
+                <ArticleRichText text={item} />
+              </span>
+            </li>
+          ))}
+        </ol>
       </div>
     );
   }
 
   if (block.type === "guided-example") {
     return <GuidedExampleBlock block={block} />;
-  }
-
-  if (block.type === "exercise") {
-    return <ExerciseBlock block={block} />;
   }
 
   if (block.type === "exercise-group") {
@@ -518,9 +568,8 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
   if (block.type === "related-matura-tasks") {
     return (
       <RelatedMaturaTasks
-        filter={block.filter || relatedTasks}
+        filter={relatedTasks}
         articleId={articleId}
-        embedded
       />
     );
   }
@@ -575,25 +624,28 @@ function CleanSolutionPanel({ lines, idKey = "clean" }) {
   );
 }
 
-function GuidedExampleBlock({ block }) {
-  const isNotebook = block.variant === "notebook";
-
+function ExampleResult({ text }) {
+  if (!text) return null;
   return (
-    <div
-      className={cn(
-        "overflow-hidden rounded-xl border shadow-sm",
-        isNotebook
-          ? "border-slate-200 bg-white dark:border-slate-700 dark:bg-white"
-          : "border-sky-200/80 bg-sky-50/80 dark:border-sky-800/50 dark:bg-sky-950/30",
-      )}
-    >
+    <div className={cn("rounded-lg border px-3 py-2.5 text-sm font-semibold leading-[1.6] text-slate-900 dark:text-slate-100", noteColors.accent.border, noteColors.accent.bg)}>
+      <span className={cn("mr-1 font-semibold", noteColors.accent.text)}>
+        Wynik:
+      </span>
+      <ArticleRichText text={text} />
+    </div>
+  );
+}
+
+function GuidedExampleBlock({ block }) {
+  return (
+    <div className={cn("overflow-hidden", noteColors.frame)}>
       <div className="space-y-4 px-4 py-4 sm:px-5 sm:py-5">
         <div className="space-y-1.5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-600">
-            {block.title || "Przykład prowadzony"}
+          <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
+            {block.title || "Przykład"}
           </p>
           {block.prompt ? (
-            <p className="text-base font-semibold leading-7 text-slate-900 sm:text-[17px]">
+            <p className="text-base font-semibold leading-[1.6] text-slate-900 dark:text-white sm:text-[17px]">
               <ArticleRichText text={block.prompt} />
             </p>
           ) : null}
@@ -603,26 +655,19 @@ function GuidedExampleBlock({ block }) {
           {(block.steps || []).map((step, index) => (
             <li
               key={`${block.title}-${index}`}
-              className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-center gap-x-3 text-[15px] leading-7 text-slate-700"
+              className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-x-3 text-[15px] leading-[1.6] text-slate-700 dark:text-slate-200"
             >
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">
+              <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
                 {index + 1}
               </span>
-              <span className="min-w-0">
+              <span className="min-w-0 pt-0.5">
                 <ArticleRichText text={step} />
               </span>
             </li>
           ))}
         </ol>
 
-        {block.result ? (
-          <div className="rounded-lg border border-emerald-200/90 bg-emerald-50/95 px-3 py-2.5 text-sm font-semibold text-emerald-900">
-            <span className="mr-1 font-semibold text-emerald-700">
-              Wynik:
-            </span>
-            <ArticleRichText text={block.result} />
-          </div>
-        ) : null}
+        <ExampleResult text={block.result} />
 
         <CleanSolutionPanel
           lines={block.cleanSolution}
@@ -638,25 +683,26 @@ function WorkedExampleBlock({ block }) {
   const isRozszerzony = block.level === "rozszerzony";
 
   return (
-    <div className="overflow-hidden rounded-xl border border-sky-200/80 bg-gradient-to-br from-sky-50/90 via-white to-blue-50/50 shadow-sm shadow-sky-100/40 dark:border-sky-800/50 dark:from-sky-950/30 dark:via-slate-900/60 dark:to-slate-900/40 dark:shadow-none">
+    <div className={cn("overflow-hidden", noteColors.frame)}>
       <button
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-sky-50/60 dark:hover:bg-sky-950/20 sm:px-5"
+        className={cn(
+          "flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left transition sm:px-5",
+          "hover:bg-blue-50/40 dark:hover:bg-blue-950/20",
+        )}
       >
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-300">
+            <span className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
               {block.title || "Przykład"}
             </span>
             {block.level ? (
               <span
                 className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                  isRozszerzony
-                    ? "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"
-                    : "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+                  "rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                  noteColors.accent.chip,
                 )}
               >
                 {isRozszerzony ? "Rozszerzenie" : "Podstawa"}
@@ -664,11 +710,11 @@ function WorkedExampleBlock({ block }) {
             ) : null}
           </div>
           {block.prompt ? (
-            <p className="text-base font-semibold leading-7 text-slate-900 dark:text-white sm:text-[17px]">
+            <p className="text-base font-semibold leading-[1.6] text-slate-900 dark:text-white sm:text-[17px]">
               <ArticleRichText text={block.prompt} />
             </p>
           ) : null}
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-sky-600/80 dark:text-sky-400/80">
+          <p className={cn("text-[11px] font-semibold uppercase tracking-wide opacity-80", noteColors.accent.text)}>
             {open ? "Kliknij, aby zwinąć rozwiązanie" : "Kliknij, aby zobaczyć rozwiązanie"}
           </p>
         </div>
@@ -684,32 +730,25 @@ function WorkedExampleBlock({ block }) {
             transition={{ duration: 0.28, ease: "easeInOut" }}
             className="overflow-hidden"
           >
-            <div className="space-y-3 border-t border-sky-200/70 px-4 pb-4 pt-3 dark:border-sky-800/40 sm:px-5">
+            <div className="space-y-3 border-t border-slate-200 px-4 pb-4 pt-3 dark:border-slate-700 sm:px-5">
               {block.steps?.length ? (
                 <ol className="space-y-2">
                   {block.steps.map((step, index) => (
                     <li
                       key={`${block.title}-${index}`}
-                      className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-center gap-x-2.5 text-sm leading-6 text-slate-700 dark:text-slate-300"
+                      className="grid grid-cols-[1.5rem_minmax(0,1fr)] items-start gap-x-2.5 text-sm leading-[1.6] text-slate-700 dark:text-slate-200"
                     >
-                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-sky-600 text-[10px] font-bold text-white dark:bg-sky-500">
+                      <span className={cn("flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold", noteColors.accent.solid)}>
                         {index + 1}
                       </span>
-                      <span className="min-w-0">
+                      <span className="min-w-0 pt-0.5">
                         <ArticleRichText text={step} />
                       </span>
                     </li>
                   ))}
                 </ol>
               ) : null}
-              {block.result ? (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50/90 px-3 py-2.5 text-sm font-semibold text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-100">
-                  <span className="mr-1 font-semibold text-emerald-700 dark:text-emerald-300">
-                    Wynik:
-                  </span>
-                  <ArticleRichText text={block.result} />
-                </div>
-              ) : null}
+              <ExampleResult text={block.result} />
               <CleanSolutionPanel
                 lines={block.cleanSolution}
                 idKey={block.title || "worked"}
@@ -723,38 +762,79 @@ function WorkedExampleBlock({ block }) {
 }
 
 function ExerciseGroupBlock({ block }) {
+  const [open, setOpen] = useState(false);
   const exercises = block.exercises || [];
-  const value = block.id || block.formulaLabel || block.title || "group";
+  const value = block.formulaLabel || block.title || "group";
 
   return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem
-        value={value}
-        className="overflow-hidden rounded-lg border border-blue-200/70 bg-white/80 dark:border-blue-800/50 dark:bg-slate-900/50"
+    <div className={cn("overflow-hidden", noteColors.frame)}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={`exercise-group-${value}`}
+        onClick={() => setOpen((current) => !current)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-base font-semibold text-slate-900 transition hover:bg-blue-50/40 dark:text-white dark:hover:bg-blue-950/20 sm:px-5"
       >
-        <AccordionTrigger className="px-4 py-3 text-left text-base font-semibold text-slate-900 hover:no-underline dark:text-white sm:px-5">
-          <span className="flex min-w-0 flex-wrap items-center gap-2">
-            <span>
-              <ArticleRichText text={block.title} />
-            </span>
-            <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
-              {exercises.length}{" "}
-              {exercises.length === 1 ? "zadanie" : exercises.length < 5 ? "zadania" : "zadań"}
-            </span>
+        <span className="flex min-w-0 flex-wrap items-center gap-2">
+          <span>
+            <ArticleRichText text={block.title} />
           </span>
-        </AccordionTrigger>
-        <AccordionContent className="px-4 pb-4 pt-0 sm:px-5">
-          <div className="space-y-3">
-            {exercises.map((exercise) => (
-              <ExerciseBlock
-                key={exercise.number || exercise.prompt}
-                block={exercise}
-              />
-            ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+          <span className={cn("rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide", noteColors.accent.chip)}>
+            {exercises.length}{" "}
+            {exercises.length === 1 ? "zadanie" : exercises.length < 5 ? "zadania" : "zadań"}
+          </span>
+        </span>
+        <motion.span
+          animate={{ rotate: open ? 180 : 0 }}
+          transition={{ duration: 0.22, ease: "easeInOut" }}
+          className="inline-flex shrink-0"
+        >
+          <ChevronDown className="h-4 w-4 text-slate-400" />
+        </motion.span>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            id={`exercise-group-${value}`}
+            key={`exercise-group-panel-${value}`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.32, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <motion.div
+              initial="closed"
+              animate="open"
+              exit="closed"
+              variants={{
+                open: {
+                  transition: { staggerChildren: 0.045, delayChildren: 0.04 },
+                },
+                closed: {
+                  transition: { staggerChildren: 0.02, staggerDirection: -1 },
+                },
+              }}
+              className="space-y-3 border-t border-slate-200 px-4 pb-4 pt-3 dark:border-slate-700 sm:px-5"
+            >
+              {exercises.map((exercise) => (
+                <motion.div
+                  key={exercise.number || exercise.prompt}
+                  variants={{
+                    open: { opacity: 1, y: 0 },
+                    closed: { opacity: 0, y: 8 },
+                  }}
+                  transition={{ duration: 0.22, ease: "easeOut" }}
+                >
+                  <ExerciseBlock block={exercise} />
+                </motion.div>
+              ))}
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -804,24 +884,15 @@ function ExerciseBlock({ block }) {
           <div className="min-w-0 flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
               {block.number ? (
-                <span
-                  className={cn(
-                    "font-mono text-xs font-semibold",
-                    isRozszerzony
-                      ? "text-violet-600 dark:text-violet-400"
-                      : "text-blue-600 dark:text-blue-400",
-                  )}
-                >
+                <span className={cn("font-mono text-xs font-semibold", noteColors.accent.text)}>
                   {block.number}
                 </span>
               ) : null}
               {block.level ? (
                 <span
                   className={cn(
-                    "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-                    isRozszerzony
-                      ? "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"
-                      : "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+                    "rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                    noteColors.accent.chip,
                   )}
                 >
                   {isRozszerzony ? "Rozszerzenie" : "Podstawa"}
@@ -829,11 +900,11 @@ function ExerciseBlock({ block }) {
               ) : null}
             </div>
 
-            <div className="rounded-lg border border-slate-200/90 bg-slate-50/90 px-3 py-3 dark:border-slate-600 dark:bg-slate-900/45">
+            <div className={cn("px-3 py-3", noteColors.frame, "bg-slate-50/90 dark:bg-slate-900/45")}>
               <p className="mb-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                 Polecenie
               </p>
-              <p className="text-base font-semibold leading-7 text-slate-900 dark:text-white sm:text-[17px] sm:leading-8">
+              <p className="text-base font-semibold leading-[1.6] text-slate-900 dark:text-white sm:text-[17px]">
                 <ArticleRichText text={block.prompt} />
               </p>
             </div>
@@ -843,13 +914,13 @@ function ExerciseBlock({ block }) {
                 {block.options.map((option) => (
                   <div
                     key={`${block.number}-${option.key}`}
-                    className="flex min-w-0 items-baseline gap-2 overflow-x-auto rounded-md border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-200"
+                    className="mcq-option flex h-full min-h-[2.75rem] min-w-0 items-center gap-2 overflow-x-auto rounded-md border border-slate-200 bg-white px-2.5 py-2 text-sm text-slate-700 dark:border-slate-600 dark:bg-slate-800/80 dark:text-slate-200"
                   >
-                    <span className="shrink-0 font-semibold text-slate-500 dark:text-slate-400">
+                    <span className="flex h-7 w-5 shrink-0 items-center justify-start font-semibold leading-none text-slate-500 dark:text-slate-400">
                       {option.key}.
                     </span>
-                    <span className="min-w-0">
-                      <ArticleRichText text={option.text} />
+                    <span className="flex min-h-7 min-w-0 flex-1 items-center">
+                      <ArticleRichText text={option.text} className="math-text-ui--mcq" />
                     </span>
                   </div>
                 ))}
@@ -878,8 +949,8 @@ function ExerciseBlock({ block }) {
               className={cn(
                 "mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
                 hintOpen
-                  ? "border-teal-300 bg-teal-50 text-teal-700 dark:border-teal-700 dark:bg-teal-950/50 dark:text-teal-300"
-                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-teal-700 dark:hover:bg-teal-950/40 dark:hover:text-teal-300",
+                  ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
+                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-300",
               )}
             >
               <FillingLightbulb fill={fill} className="h-4 w-4" />
@@ -897,16 +968,16 @@ function ExerciseBlock({ block }) {
               transition={{ duration: 0.22, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="rounded-md border border-teal-200 bg-teal-50/80 px-3 py-2 text-sm text-teal-900 dark:border-teal-800 dark:bg-teal-950/40 dark:text-teal-100">
+              <div className={cn("rounded-md border px-3 py-2 text-sm leading-[1.6]", noteColors.accent.border, noteColors.accent.bg, "text-slate-800 dark:text-slate-100")}>
                 <div className="mb-1 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-teal-700 dark:text-teal-300">
+                  <div className={cn("flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
                     <FillingLightbulb fill={fill} className="h-3.5 w-3.5" />
                     {hintCount > 1
                       ? `Wskazówka ${hintLevel}/${hintCount}`
                       : "Wskazówka"}
                   </div>
                   {hintCount > 1 && hintLevel < hintCount ? (
-                    <span className="text-[10px] font-medium text-teal-600/80 dark:text-teal-400/80">
+                    <span className={cn("text-[10px] font-medium opacity-80", noteColors.accent.text)}>
                       Kliknij żarówkę po więcej
                     </span>
                   ) : null}
@@ -922,12 +993,7 @@ function ExerciseBlock({ block }) {
             type="button"
             onClick={() => setAnswerOpen((value) => !value)}
             aria-expanded={answerOpen}
-            className={cn(
-              "block w-full text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition dark:text-slate-500",
-              isRozszerzony
-                ? "hover:text-violet-700 dark:hover:text-violet-300"
-                : "hover:text-blue-700 dark:hover:text-blue-300",
-            )}
+            className="block w-full text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition hover:text-blue-700 dark:text-slate-500 dark:hover:text-blue-300"
           >
             {answerOpen ? "Kliknij, aby zwinąć odpowiedź" : "Kliknij, aby rozwinąć odpowiedź"}
           </button>
@@ -946,8 +1012,8 @@ function ExerciseBlock({ block }) {
           >
             <div className="space-y-3 border-t border-slate-200 px-4 pb-4 pt-3 dark:border-slate-700">
               {block.answer ? (
-                <div className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-100">
-                  <span className="mr-1 font-semibold text-emerald-700 dark:text-emerald-300">
+                <div className={cn("rounded-md border px-3 py-2 text-sm leading-[1.6] text-slate-800 dark:text-slate-100", noteColors.accent.border, noteColors.accent.bg)}>
+                  <span className={cn("mr-1 font-semibold", noteColors.accent.text)}>
                     Odpowiedź:
                   </span>
                   <ArticleRichText text={block.answer} />
@@ -1008,7 +1074,7 @@ function taskMatchesArticleFilter(task, filter) {
   return topicHit || subtopicHit || questionHit;
 }
 
-function RelatedMaturaTasks({ filter, articleId, embedded = false }) {
+function RelatedMaturaTasks({ filter, articleId }) {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1043,7 +1109,10 @@ function RelatedMaturaTasks({ filter, articleId, embedded = false }) {
 
       const matched = (data ?? [])
         .map(mapDbTaskRow)
-        .filter((task) => task && task.question && isMaturalneTask(task))
+        .filter(
+          (task) =>
+            task && task.question && !isStemTask(task) && isMaturalneTask(task),
+        )
         .filter((task) => taskMatchesArticleFilter(task, filter))
         .slice(0, limit);
 
@@ -1059,8 +1128,8 @@ function RelatedMaturaTasks({ filter, articleId, embedded = false }) {
 
   if (!filter) return null;
 
-  const body = (
-    <>
+  return (
+    <div className="space-y-4">
       {loading ? (
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1115,45 +1184,24 @@ function RelatedMaturaTasks({ filter, articleId, embedded = false }) {
           </motion.div>
         ))}
       </div>
-    </>
-  );
-
-  if (embedded) {
-    return <div className="space-y-4">{body}</div>;
-  }
-
-  return (
-    <section className="mt-10 space-y-4">
-      <div className="flex items-baseline gap-3 border-b border-slate-200 pb-2 dark:border-slate-700">
-        <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">6</span>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
-          Zadania maturalne
-        </h2>
-      </div>
-      <p className="text-[15px] leading-7 text-slate-700 dark:text-slate-300">
-        Zadania z arkuszy powiązane z tematem artykułu. Kliknij kafelek, aby otworzyć pełne zadanie.
-      </p>
-      {body}
-    </section>
+    </div>
   );
 }
 
 function ArticleSection({ section, index, articleId, relatedTasks }) {
-  const blocks =
-    section.blocks ||
-    (section.paragraphs || []).map((content) => ({ type: "text", content }));
+  const blocks = section.blocks || [];
 
   return (
     <section className="scroll-mt-24">
-      <div className="mb-4 flex items-baseline gap-3 border-b border-slate-200 pb-2 dark:border-slate-700">
-        <span className="font-mono text-sm font-semibold text-blue-600 dark:text-blue-400">
+      <div className="mb-5 flex items-baseline gap-3 border-b border-slate-200 pb-3 dark:border-slate-700">
+        <span className={cn("font-mono text-sm font-semibold", noteColors.accent.text)}>
           {section.number || String(index + 1).padStart(2, "0")}
         </span>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
           {section.heading}
         </h2>
       </div>
-      <div className="space-y-4">
+      <div className="space-y-5">
         {blocks.map((block, blockIndex) => (
           <ArticleBlock
             key={`${section.heading}-${blockIndex}`}
@@ -1184,7 +1232,7 @@ export default function ArticleView() {
     () => filterArticleByContentModes(rawArticle, contentModes),
     [rawArticle, contentModes],
   );
-  const formulas = useMemo(() => collectArticleFormulas(article), [article]);
+  const formulas = useMemo(() => collectArticleFormulas(rawArticle), [rawArticle]);
   const [previewLabel, setPreviewLabel] = useState(null);
   const [focusedLabel, setFocusedLabel] = useState(null);
   const [focusNonce, setFocusNonce] = useState(0);
@@ -1211,13 +1259,15 @@ export default function ArticleView() {
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-    setPreviewLabel(null);
     setFocusedLabel(label);
     setFocusNonce((value) => value + 1);
     const node = document.getElementById(formulaDomId(label));
     if (node) {
+      setPreviewLabel(null);
       node.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
     }
+    setPreviewLabel(label);
   }, []);
 
   useEffect(() => {
@@ -1246,7 +1296,7 @@ export default function ArticleView() {
   if (!rawArticle || !article) {
     return (
       <div className="flex flex-col items-center justify-center gap-4 px-4 py-24">
-        <p className="text-slate-500 dark:text-slate-400">Nie znaleziono artykułu.</p>
+        <p className="text-slate-500 dark:text-slate-400">Nie znaleziono notatki.</p>
         <Link
           to={createPageUrl("Course")}
           className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
@@ -1274,23 +1324,23 @@ export default function ArticleView() {
             </span>
           </Link>
 
-          <header className="mb-8 space-y-5 border-b border-slate-200 pb-8 dark:border-slate-700">
+          <header className="mb-10 space-y-5 border-b border-slate-200 pb-8 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className="border-sky-400 text-sky-700 dark:border-sky-600 dark:text-sky-300"
+                className="border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
               >
-                Artykuł
+                Notatka
               </Badge>
-              <span className="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+              <span className="rounded px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
                 {article.topic}
               </span>
               {article.subtopic ? (
-                <span className="rounded-full bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700 dark:bg-teal-950/50 dark:text-teal-300">
+                <span className="rounded px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                   {article.subtopic}
                 </span>
               ) : null}
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+              <span className="rounded px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                 {modeLabels}
               </span>
               <span className="inline-flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
@@ -1303,11 +1353,6 @@ export default function ArticleView() {
               <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
                 {article.title}
               </h1>
-              {article.description ? (
-                <p className="text-lg leading-relaxed text-slate-600 dark:text-slate-300">
-                  {article.description}
-                </p>
-              ) : null}
             </div>
 
             {article.legend?.length ? (
@@ -1329,22 +1374,10 @@ export default function ArticleView() {
                 section={section}
                 index={index}
                 articleId={article.id}
-                relatedTasks={rawArticle?.relatedTasks || article.relatedTasks}
+                relatedTasks={article.relatedTasks}
               />
             ))}
           </div>
-
-          {article.closing ? (
-            <footer className="mt-10 rounded-xl border border-violet-200 bg-violet-50/70 px-4 py-4 dark:border-violet-800 dark:bg-violet-950/30">
-              <div className="mb-1 flex items-center gap-2 text-sm font-semibold text-violet-800 dark:text-violet-200">
-                <Sigma className="h-4 w-4" />
-                Podsumowanie
-              </div>
-              <p className="text-sm leading-6 text-violet-900/90 dark:text-violet-100/90">
-                <ArticleRichText text={article.closing} />
-              </p>
-            </footer>
-          ) : null}
         </motion.article>
       </div>
     </FormulaPreviewContext.Provider>

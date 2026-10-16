@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef, useState } from "react";
 import MathText from "@/components/MathText";
 import { cn } from "@/lib/utils";
 import {
@@ -55,6 +56,52 @@ function QuestionTextBlock({ text, bold = false, className = "" }) {
   );
 }
 
+function AfterImageText({ text }) {
+  const parts = splitQuestionParts(text);
+  if (parts.instruction) {
+    return (
+      <div className="space-y-1">
+        <QuestionTextBlock text={parts.instruction} bold />
+        <QuestionTextBlock text={parts.body} bold={false} />
+      </div>
+    );
+  }
+  return <QuestionTextBlock text={parts.body} bold />;
+}
+
+function TileAfterImageFade({ children, className = "" }) {
+  const ref = useRef(null);
+  const [truncated, setTruncated] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return undefined;
+
+    const update = () => {
+      setTruncated(el.scrollHeight > el.clientHeight + 1);
+    };
+
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [children]);
+
+  return (
+    <div className={cn("relative", className)}>
+      <div ref={ref} className="max-h-[4.5em] overflow-hidden">
+        {children}
+      </div>
+      {truncated ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-slate-50 via-slate-50/70 to-transparent dark:from-slate-900 dark:via-slate-900/70"
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export default function TaskQuestionBody({
   task,
   compact = false,
@@ -92,11 +139,11 @@ export default function TaskQuestionBody({
           )}
         >
           {questionParts.instruction ? (
-            <QuestionTextBlock text={questionParts.instruction} bold />
+            <QuestionTextBlock text={questionParts.instruction} bold={false} />
           ) : null}
           <QuestionTextBlock
             text={questionParts.body}
-            bold={!questionParts.instruction}
+            bold
           />
         </div>
       ) : null}
@@ -117,15 +164,21 @@ export default function TaskQuestionBody({
       ) : null}
 
       {task?.questionTextPoObrazku?.trim() ? (
-        <div
-          className={cn(
-            textClass,
-            "overflow-visible",
-            compact ? (tile ? "p-0" : "pt-1 pb-0.5") : "py-1",
-          )}
-        >
-          <MathText text={task.questionTextPoObrazku} className="math-text-ui--flow" />
-        </div>
+        tile && task?.imageUrl ? (
+          <TileAfterImageFade className={cn(textClass, "p-0")}>
+            <AfterImageText text={task.questionTextPoObrazku} />
+          </TileAfterImageFade>
+        ) : (
+          <div
+            className={cn(
+              textClass,
+              "overflow-visible",
+              compact ? "pt-1 pb-0.5" : "py-1",
+            )}
+          >
+            <AfterImageText text={task.questionTextPoObrazku} />
+          </div>
+        )
       ) : null}
     </div>
   );

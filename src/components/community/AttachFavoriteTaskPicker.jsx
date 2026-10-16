@@ -12,7 +12,7 @@ import {
 import { createPageUrl } from "@/utils";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { publicSupabase } from "@/supabase-config.js";
-import { mapDbTaskRow } from "@/utils/map-db-task";
+import { isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import TaskQuestionBody from "@/components/TaskQuestionBody";
 
 export function taskToAttachedPayload(task) {
@@ -75,7 +75,7 @@ export default function AttachFavoriteTaskPicker({
       const byId = new Map(
         (data ?? [])
           .map(mapDbTaskRow)
-          .filter((t) => t && t.question)
+          .filter((t) => t && t.question && !isStemTask(t))
           .map((t) => [t.id, t]),
       );
 

@@ -1,8 +1,8 @@
 import { publicSupabase } from "@/supabase-config.js";
 import { parseOpenParts } from "@/utils/open-parts.js";
 
-/** Bucket ze zdjęciami do zadań (ścieżka w kolumnie obrazek, bez leading slash). */
-export const TASK_IMAGES_BUCKET = "tasks_images";
+/** Bucket ze zdjęciami/PNG do zadań (ścieżka w kolumnie obrazek, bez leading slash). */
+export const TASK_IMAGES_BUCKET = "task_images";
 
 export function resolveTaskObrazekUrl(obrazek) {
   const v = typeof obrazek === "string" ? obrazek.trim() : "";
@@ -259,9 +259,124 @@ export function arkuszLinkedBadgeClassName(level) {
 export function parseTaskNr(raw) {
   if (raw == null || raw === "") return null;
   const n = Number(raw);
-  if (Number.isFinite(n) && n > 0) return Math.floor(n);
-  return null;
+  if (!Number.isFinite(n) || n <= 0) return null;
+  return Math.round(n * 100) / 100;
 }
+
+export function formatTaskNr(nr) {
+  if (nr == null || nr === "") return "";
+  const n = Number(nr);
+  if (!Number.isFinite(n)) return String(nr);
+  return Number.isInteger(n) ? String(n) : String(n);
+}
+
+/** Np. „Zadanie 12 podpunkt 12.3” — tytuł podpunktu ze stemem. */
+export function formatStemSubtaskTitle(stemNr, subtaskNr) {
+  const stem = formatTaskNr(stemNr);
+  const sub = formatTaskNr(subtaskNr);
+  if (stem && sub) return `Zadanie ${stem} podpunkt ${sub}`;
+  if (sub) return `Zadanie ${sub}`;
+  if (stem) return `Zadanie ${stem}`;
+  return "Treść pytania";
+}
+
+export function isStemTask(taskOrQuestion) {
+  if (!taskOrQuestion) return false;
+  return (
+    taskOrQuestion.type === "stem" ||
+    taskOrQuestion.question_type === "stem" ||
+    taskOrQuestion.task_kind === "stem"
+  );
+}
+
+/** Podpina stem do podpunktów i usuwa same pnie z listy rozwiązywalnej. */
+export function attachWorksheetStemContext(questions) {
+  const list = Array.isArray(questions) ? questions : [];
+  const byId = new Map(list.map((q) => [String(q.id), q]));
+
+  return list
+    .filter((q) => !isStemTask(q))
+    .map((q) => {
+      const parentId = q.parent_id ?? q.parentId ?? null;
+      if (!parentId) return { ...q, stem: null };
+      const stem = byId.get(String(parentId));
+      if (!stem || !isStemTask(stem)) return { ...q, stem: null };
+      return { ...q, stem };
+    });
+}
+
+export function groupWorksheetQuestionsByStem(questions) {
+  const groups = [];
+  for (const q of questions ?? []) {
+    const stemId = q.stem?.id ? String(q.stem.id) : null;
+    const last = groups[groups.length - 1];
+    if (stemId && last?.stemId === stemId) {
+      last.items.push(q);
+    } else {
+      groups.push({ stemId, stem: q.stem ?? null, items: [q] });
+    }
+  }
+  return groups;
+}
+
+/** Wcześniejsze podpunkty tego samego stemu (nr mniejsze od bieżącego). */
+export function getPreviousStemSiblings(tasks, current) {
+  if (!current) return [];
+  const parentId = current.parentId ?? current.parent_id ?? null;
+  if (!parentId) return [];
+  const currentNr = parseTaskNr(current.nr ?? current.question_number);
+  if (currentNr == null) return [];
+
+  const siblings = (tasks ?? []).filter((t) => {
+    if (!t || isStemTask(t)) return false;
+    if (String(t.id) === String(current.id)) return false;
+    const tParent = t.parentId ?? t.parent_id ?? null;
+    if (String(tParent) !== String(parentId)) return false;
+    const tNr = parseTaskNr(t.nr ?? t.question_number);
+    return tNr != null && tNr < currentNr;
+  });
+
+  return sortTasksByNr(siblings);
+}
+
+export function formatTaskSolutionText(taskOrQuestion) {
+  if (!taskOrQuestion) return "";
+
+  const openParts =
+    taskOrQuestion.openParts ??
+    taskOrQuestion.open_parts ??
+    null;
+  if (Array.isArray(openParts) && openParts.length > 0) {
+    return openParts
+      .map((part) => {
+        const label = part.label ?? part.prompt ?? "";
+        const expected = part.expected ?? part.correct ?? "";
+        return label ? `${label}: ${expected}` : String(expected);
+      })
+      .filter((line) => line.trim() !== "")
+      .join("\n");
+  }
+
+  const isClosed =
+    taskOrQuestion.type === "closed" ||
+    taskOrQuestion.question_type === "single_choice";
+  const answer =
+    taskOrQuestion.answer ?? taskOrQuestion.correct_answer ?? "";
+  if (!answer) return "";
+
+  if (isClosed && Array.isArray(taskOrQuestion.options)) {
+    const idx = taskOrQuestion.options.findIndex(
+      (opt) => String(opt).trim() === String(answer).trim(),
+    );
+    if (idx >= 0) {
+      const letter = String.fromCharCode(65 + idx);
+      return `${letter}. ${answer}`;
+    }
+  }
+
+  return String(answer);
+}
+
 
 export function parseTaskPunktacja(raw, fallback = 1) {
   if (raw == null || raw === "") return fallback;
@@ -324,6 +439,7 @@ export function normalizeDbPoziom(raw) {
 export function mapDbTaskRow(row) {
   if (!row) return null;
 
+  const isStem = row.task_kind === "stem";
   const isClosed = row.task_kind === "closed";
   const rawAnswers = row.answers ?? row.options;
   const arr = Array.isArray(rawAnswers) ? rawAnswers : [];
@@ -388,12 +504,13 @@ export function mapDbTaskRow(row) {
     topic: topic ?? "—",
     subtopic: subtopic ?? null,
     szacowanaTrudnosc,
-    type: isClosed ? "closed" : "open",
+    type: isStem ? "stem" : isClosed ? "closed" : "open",
     options: isClosed ? options : undefined,
     arkusz: row.arkusz ?? null,
     nr: parseTaskNr(row.nr),
     keyNr: parseTaskNr(row.key_nr),
-    punktacja: parseTaskPunktacja(row.punktacja),
+    parentId: row.parent_id ?? null,
+    punktacja: isStem ? 0 : parseTaskPunktacja(row.punktacja),
     obrazek: row.obrazek ?? null,
     imageUrl: resolveTaskObrazekUrl(row.obrazek),
     questionTextPoObrazku:
@@ -439,6 +556,7 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
   if (!task) return null;
 
   const questionNumber = task.nr ?? fallbackNumber ?? 1;
+  const isStem = task.type === "stem";
   const isClosed = task.type === "closed";
   let options;
   let correct_answer = task.answer ?? "";
@@ -468,15 +586,17 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     question_number: questionNumber,
     nr: task.nr ?? null,
     key_nr: task.keyNr ?? null,
-    question_type: isClosed ? "single_choice" : "open",
+    parent_id: task.parentId ?? null,
+    question_type: isStem ? "stem" : isClosed ? "single_choice" : "open",
     question_text: questionText,
     question_text_po_obrazku: task.questionTextPoObrazku ?? null,
-    open_parts: task.openParts ?? null,
-    options,
-    correct_answer,
-    points: task.punktacja ?? 1,
-    punktacja: task.punktacja ?? 1,
+    open_parts: isStem ? null : task.openParts ?? null,
+    options: isStem ? undefined : options,
+    correct_answer: isStem ? "" : correct_answer,
+    points: isStem ? 0 : task.punktacja ?? 1,
+    punktacja: isStem ? 0 : task.punktacja ?? 1,
     image_url: task.imageUrl ?? null,
     video_url: task.videoUrl ?? null,
+    stem: null,
   };
 }
