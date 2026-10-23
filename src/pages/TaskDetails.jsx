@@ -32,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import WorksheetOpenParts from "@/components/WorksheetOpenParts";
 import {
   areAllOpenPartsFilled,
+  getOpenPartsList,
   hasOpenParts,
   isMultiOpenQuestionCorrect,
   openPartAnswerKey,
@@ -583,10 +584,16 @@ export default function TaskDetailsPage() {
 
   const renderOpen = () => {
     if (openQuestionShape && hasOpenParts(openQuestionShape)) {
+      const openPartsList = getOpenPartsList(openQuestionShape);
+      const isPfParts = openPartsList.every((part) =>
+        /p\s*lub\s*f/i.test(String(part.placeholder ?? "")),
+      );
       return (
         <div className="space-y-6">
           <p className="text-lg font-medium leading-snug text-slate-950 dark:text-white">
-            Uzupełnij zdania. Wpisz odpowiednie przedziały w polach poniżej.
+            {isPfParts
+              ? "Oceń prawdziwość poniższych stwierdzeń. Wybierz P albo F."
+              : "Uzupełnij zdania. Wpisz odpowiednie wartości w polach poniżej."}
           </p>
           <WorksheetOpenParts
             question={openQuestionShape}
@@ -888,7 +895,11 @@ export default function TaskDetailsPage() {
               </p>
             ) : (
               <section className="space-y-4">
-                {task.type === "closed" ? renderClosed() : renderOpen()}
+                {hasOpenParts(openQuestionShape)
+                  ? renderOpen()
+                  : task.type === "closed"
+                    ? renderClosed()
+                    : renderOpen()}
               </section>
             )}
 

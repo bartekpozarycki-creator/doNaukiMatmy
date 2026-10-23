@@ -6,25 +6,19 @@ import { cn } from "@/lib/utils";
 const MATH_PART_RE =
   /(\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$\$[\s\S]+?\$\$|\$[\s\S]+?\$)/g;
 
-function isInlineFriendlyLatex(latex) {
-  const trimmed = latex.trim();
-  if (!trimmed) return true;
-  if (trimmed.includes("\n")) return false;
-  if (/\\begin\{/.test(trimmed)) return false;
-  return true;
-}
-
 function renderLatexPart(latex, displayDelimiter, key) {
-  const inline = !displayDelimiter || isInlineFriendlyLatex(latex);
+  const displayMode = Boolean(displayDelimiter);
   try {
     const html = katex.renderToString(latex, {
       throwOnError: false,
-      displayMode: !inline,
+      displayMode,
     });
     return (
       <span
         key={key}
-        className={inline ? "math-text-ui__math-inline" : "math-text-ui__math-display"}
+        className={
+          displayMode ? "math-text-ui__math-display" : "math-text-ui__math-inline"
+        }
         dangerouslySetInnerHTML={{ __html: html }}
       />
     );

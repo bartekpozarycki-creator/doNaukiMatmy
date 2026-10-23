@@ -7,7 +7,12 @@ import { Badge } from "@/components/ui/badge";
 import { CycleFilter, FilterBar, FilterSearchField, PrettySelectFilter } from "@/components/ListFilters";
 import { createPageUrl } from "@/utils";
 import { sampleCoursesByLevel, allSampleCourses } from "@/utils/sample-courses";
-import { sampleArticles, defaultArticleContentModes, getArticleContentModes } from "@/utils/sample-articles";
+import {
+  sampleArticles,
+  defaultArticleContentModes,
+  getArticleContentModes,
+  isArticleUnavailable,
+} from "@/utils/sample-articles";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -159,9 +164,11 @@ function CourseCard({ course, onOpen }) {
 
 function ArticleCard({ item, onOpen }) {
   const availableModes = getArticleContentModes(item);
+  const unavailable = isArticleUnavailable(item);
   const [selectedModes, setSelectedModes] = useState(() => defaultArticleContentModes(item));
 
   const toggleMode = (mode) => {
+    if (unavailable) return;
     setSelectedModes((prev) => {
       if (prev.includes(mode)) {
         if (prev.length === 1) return prev;
@@ -171,31 +178,48 @@ function ArticleCard({ item, onOpen }) {
     });
   };
 
-  const openArticle = () => onOpen(item, selectedModes);
+  const openArticle = () => {
+    if (unavailable) return;
+    onOpen(item, selectedModes);
+  };
 
   return (
     <Card
-      role="button"
-      tabIndex={0}
-      onClick={openArticle}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          openArticle();
-        }
-      }}
-      className="h-full cursor-pointer border-0 bg-white shadow-md transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:bg-slate-800"
+      role={unavailable ? undefined : "button"}
+      tabIndex={unavailable ? -1 : 0}
+      aria-disabled={unavailable || undefined}
+      onClick={unavailable ? undefined : openArticle}
+      onKeyDown={
+        unavailable
+          ? undefined
+          : (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                openArticle();
+              }
+            }
+      }
+      className={cn(
+        "flex h-full flex-col border-0 bg-white shadow-md dark:bg-slate-800",
+        unavailable
+          ? "opacity-80"
+          : "cursor-pointer transition-all duration-300 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500",
+      )}
     >
-      <CardHeader className="pb-3">
+      <CardHeader className="shrink-0 pb-3">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 space-y-2">
             <Badge
               variant="outline"
-              className="border-sky-400 text-sky-700 dark:border-sky-600 dark:text-sky-300"
+              className={
+                unavailable
+                  ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+                  : "border-sky-400 text-sky-700 dark:border-sky-600 dark:text-sky-300"
+              }
             >
-              Notatka
+              {unavailable ? "Chwilowo niedostępne" : "Notatka"}
             </Badge>
-            <CardTitle className="text-lg leading-tight text-slate-900 dark:text-white">
+            <CardTitle className="line-clamp-2 min-h-[2.75rem] text-lg font-semibold leading-tight text-slate-900 dark:text-white">
               {item.title}
             </CardTitle>
           </div>
@@ -204,27 +228,27 @@ function ArticleCard({ item, onOpen }) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {item.description ? (
-          <p className="line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-            {item.description}
-          </p>
-        ) : null}
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-          <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+      <CardContent className="flex flex-1 flex-col gap-4">
+        <p className="line-clamp-3 min-h-[3.75rem] text-sm font-normal leading-relaxed text-slate-600 dark:text-slate-300">
+          {unavailable
+            ? "Ta notatka jest na razie wyłączona. Wróć tu wkrótce."
+            : item.description || "\u00a0"}
+        </p>
+        <div className="flex min-h-[1.75rem] flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
             {item.topic}
           </span>
           {item.subtopic ? (
-            <span className="rounded-full bg-slate-100 px-2.5 py-1 font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+            <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
               {item.subtopic}
             </span>
           ) : null}
-          <span className="inline-flex items-center gap-1">
+          <span className="inline-flex items-center gap-1 text-xs font-medium">
             <Clock className="h-3.5 w-3.5" />
             {item.readMinutes} min czytania
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex min-h-[1.75rem] flex-wrap gap-2">
           {availableModes.map((mode) => {
             const active = selectedModes.includes(mode);
             const isRozszerzenie = mode === "rozszerzenie";
@@ -232,13 +256,16 @@ function ArticleCard({ item, onOpen }) {
               <button
                 key={mode}
                 type="button"
+                disabled={unavailable}
                 onClick={(event) => {
                   event.stopPropagation();
                   toggleMode(mode);
                 }}
                 className={cn(
-                  "rounded-md border px-2.5 py-1 text-xs font-semibold transition",
-                  active
+                  "rounded-md border px-2.5 py-1 text-xs font-semibold leading-none transition",
+                  unavailable
+                    ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500"
+                    : active
                     ? isRozszerzenie
                       ? "border-violet-500 bg-violet-100 text-violet-800 dark:border-violet-400 dark:bg-violet-950/50 dark:text-violet-200"
                       : "border-blue-500 bg-blue-100 text-blue-800 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200"
@@ -252,13 +279,14 @@ function ArticleCard({ item, onOpen }) {
         </div>
         <Button
           type="button"
-          className="h-10 w-full bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
+          disabled={unavailable}
+          className="mt-auto h-10 w-full text-sm font-medium bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white"
           onClick={(event) => {
             event.stopPropagation();
             openArticle();
           }}
         >
-          Otwórz notatkę
+          {unavailable ? "Niedostępne" : "Otwórz notatkę"}
         </Button>
       </CardContent>
     </Card>
@@ -355,6 +383,7 @@ export default function CoursePage() {
   };
 
   const goToArticle = (article, contentModes) => {
+    if (isArticleUnavailable(article)) return;
     const modes = contentModes?.length ? contentModes : defaultArticleContentModes(article);
     const params = new URLSearchParams({
       id: article.id,

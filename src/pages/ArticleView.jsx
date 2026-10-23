@@ -19,6 +19,7 @@ import {
   Clock,
   Lightbulb,
   Loader2,
+  Play,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MathText from "@/components/MathText";
@@ -28,16 +29,17 @@ import {
   filterArticleByContentModes,
   getArticleContentModes,
   getSampleArticleById,
+  isArticleUnavailable,
   parseArticleContentModesParam,
 } from "@/utils/sample-articles";
 import { publicSupabase } from "@/supabase-config.js";
-import { isMaturalneTask, isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
+import { isMaturalneTask, isStemTask, mapDbTaskRow, normalizeVideoEmbedUrl } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { cn } from "@/lib/utils";
 
-const noteColors = {
-  accent: {
+const accentPalettes = {
+  blue: {
     border: "border-blue-200 dark:border-blue-800",
     borderStrong: "border-l-blue-500 dark:border-l-blue-400",
     bg: "bg-blue-50/70 dark:bg-blue-950/30",
@@ -46,49 +48,105 @@ const noteColors = {
     textStrong: "text-blue-900 dark:text-blue-100",
     chip: "bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
     solid: "bg-blue-600 text-white dark:bg-blue-500",
+    hoverBg: "hover:bg-blue-50/40 dark:hover:bg-blue-950/20",
+    chipInteractive:
+      "border-blue-200 bg-blue-50 text-blue-700 hover:shadow-sm dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+    hintOn:
+      "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    hintOff:
+      "border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-300",
+    hoverText: "hover:text-blue-700 dark:hover:text-blue-300",
+    divider: "border-blue-200/80 dark:border-blue-800",
+    badge: "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
+    topic: "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
+    ring: "focus-visible:ring-blue-500",
   },
-  warn: {
-    wrap: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40",
-    title: "text-rose-800 dark:text-rose-200",
-    body: "text-rose-900/90 dark:text-rose-100/90",
+  violet: {
+    border: "border-violet-200 dark:border-violet-800",
+    borderStrong: "border-l-violet-500 dark:border-l-violet-400",
+    bg: "bg-violet-50/70 dark:bg-violet-950/30",
+    bgSoft: "bg-violet-50/50 dark:bg-violet-950/20",
+    text: "text-violet-700 dark:text-violet-300",
+    textStrong: "text-violet-900 dark:text-violet-100",
+    chip: "bg-violet-100 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+    solid: "bg-violet-600 text-white dark:bg-violet-500",
+    hoverBg: "hover:bg-violet-50/40 dark:hover:bg-violet-950/20",
+    chipInteractive:
+      "border-violet-200 bg-violet-50 text-violet-700 hover:shadow-sm dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-300",
+    hintOn:
+      "border-violet-300 bg-violet-50 text-violet-700 dark:border-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+    hintOff:
+      "border-slate-200 bg-slate-50 text-slate-500 hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-violet-700 dark:hover:bg-violet-950/40 dark:hover:text-violet-300",
+    hoverText: "hover:text-violet-700 dark:hover:text-violet-300",
+    divider: "border-violet-200/80 dark:border-violet-800",
+    badge: "border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-300",
+    topic: "bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
+    ring: "focus-visible:ring-violet-500",
   },
-  frame:
-    "rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
 };
 
-const calloutStyles = {
-  insight: {
-    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
-    title: noteColors.accent.text,
-    body: "text-slate-700 dark:text-slate-200",
-    icon: Lightbulb,
-  },
-  definition: {
-    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
-    title: noteColors.accent.text,
-    body: "text-slate-700 dark:text-slate-200",
-    icon: BookOpen,
-  },
-  why: {
-    wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
-    title: noteColors.accent.text,
-    body: "text-slate-700 dark:text-slate-200",
-    icon: Brain,
-  },
-  pitfall: {
-    wrap: cn("border px-4 py-3", noteColors.warn.wrap),
-    title: noteColors.warn.title,
-    body: noteColors.warn.body,
-    icon: AlertTriangle,
-  },
-};
+function createNoteColors(accentKey = "blue") {
+  return {
+    accent: accentPalettes[accentKey] || accentPalettes.blue,
+    warn: {
+      wrap: "border-rose-200 bg-rose-50/80 dark:border-rose-900 dark:bg-rose-950/40",
+      title: "text-rose-800 dark:text-rose-200",
+      body: "text-rose-900/90 dark:text-rose-100/90",
+    },
+    frame:
+      "rounded-lg border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900/40",
+  };
+}
 
-const formulaAccents = {
-  blue: {
+const NoteColorsContext = createContext(createNoteColors("blue"));
+
+function useNoteColors() {
+  return useContext(NoteColorsContext);
+}
+
+function articleAccentKey(article) {
+  const levels = article?.levels || [];
+  if (levels.length > 0 && levels.every((level) => level === "rozszerzony")) {
+    return "violet";
+  }
+  return "blue";
+}
+
+function getCalloutStyles(noteColors) {
+  return {
+    insight: {
+      wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+      title: noteColors.accent.text,
+      body: "text-slate-700 dark:text-slate-200",
+      icon: Lightbulb,
+    },
+    definition: {
+      wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+      title: noteColors.accent.text,
+      body: "text-slate-700 dark:text-slate-200",
+      icon: BookOpen,
+    },
+    why: {
+      wrap: cn("border px-4 py-3", noteColors.accent.border, noteColors.accent.bg),
+      title: noteColors.accent.text,
+      body: "text-slate-700 dark:text-slate-200",
+      icon: Brain,
+    },
+    pitfall: {
+      wrap: cn("border px-4 py-3", noteColors.warn.wrap),
+      title: noteColors.warn.title,
+      body: noteColors.warn.body,
+      icon: AlertTriangle,
+    },
+  };
+}
+
+function getFormulaAccent(noteColors) {
+  return {
     shell: cn("border-l-4", noteColors.accent.borderStrong, noteColors.accent.bg),
     chip: noteColors.accent.text,
-  },
-};
+  };
+}
 
 const FormulaPreviewContext = createContext(null);
 
@@ -113,6 +171,7 @@ function formulaDomId(label) {
 
 function FormulaRefChip({ label }) {
   const preview = useContext(FormulaPreviewContext);
+  const noteColors = useNoteColors();
 
   return (
     <span
@@ -120,7 +179,7 @@ function FormulaRefChip({ label }) {
       tabIndex={0}
       className={cn(
         "mx-0.5 inline-flex -translate-y-[0.12em] cursor-pointer items-center rounded-md border px-1.5 py-0.5 align-middle font-mono text-[0.85em] font-semibold leading-none transition",
-        "border-blue-200 bg-blue-50 text-blue-700 hover:shadow-sm dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-300",
+        noteColors.accent.chipInteractive,
       )}
       onMouseEnter={() => preview?.showFormula(label)}
       onMouseLeave={() => preview?.hideFormula()}
@@ -149,7 +208,9 @@ function FormulaRefChip({ label }) {
 }
 
 function renderRichSegment(text, keyPrefix, formulas) {
-  const parts = String(text ?? "").split(/(\*\*[^*]+\*\*|\(\d+\))/g);
+  const parts = String(text ?? "").split(
+    /(\$\$[\s\S]+?\$\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\)|\$[\s\S]+?\$|\*\*[^*]+\*\*|\(\d+\))/g,
+  );
 
   return parts.map((part, index) => {
     if (!part) return null;
@@ -185,10 +246,9 @@ function ArticleRichText({ text, className = "" }) {
 }
 
 function FormulaPreviewToast({ formula }) {
+  const noteColors = useNoteColors();
   if (typeof document === "undefined") return null;
-  const accent = formula
-    ? formulaAccents[formula.accent] || formulaAccents.blue
-    : null;
+  const accent = formula ? getFormulaAccent(noteColors) : null;
 
   return createPortal(
     <AnimatePresence>
@@ -236,8 +296,9 @@ function FormulaPreviewToast({ formula }) {
 
 function FormulaBlock({ block }) {
   const preview = useContext(FormulaPreviewContext);
+  const noteColors = useNoteColors();
   const [open, setOpen] = useState(false);
-  const accent = formulaAccents[block.accent] || formulaAccents.blue;
+  const accent = getFormulaAccent(noteColors);
   const hasExample = Boolean(block.example);
   const domId = formulaDomId(block.label);
 
@@ -251,7 +312,7 @@ function FormulaBlock({ block }) {
     <div
       id={domId}
       className={cn(
-        "overflow-hidden rounded-lg border-l-4 transition-shadow scroll-mt-24",
+        "overflow-hidden rounded-lg border-l-4 transition-shadow scroll-mt-24 [&_.katex-display]:my-0 [&_.math-text-ui__math-display]:my-0",
         accent.shell,
       )}
     >
@@ -271,12 +332,12 @@ function FormulaBlock({ block }) {
           }
         }}
         className={cn(
-          "space-y-2 px-4 py-3 sm:px-5",
+          "space-y-1 px-3 py-2 sm:px-4 sm:py-2.5",
           hasExample ? "cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]" : "cursor-default",
         )}
       >
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 overflow-x-auto py-1 text-center text-base sm:text-lg">
+          <div className="min-w-0 flex-1 overflow-x-auto py-0.5 text-center text-[15px] sm:text-base">
             <MathText text={`$$${block.latex}$$`} />
           </div>
           {block.label ? (
@@ -350,7 +411,7 @@ function FormulaBlock({ block }) {
                     </ol>
                   ) : null}
                   {block.example.result ? (
-                    <p className="mt-2 border-t border-blue-200/80 pt-2 text-sm font-semibold text-slate-900 dark:border-blue-800 dark:text-slate-100">
+                    <p className={cn("mt-2 border-t pt-2 text-sm font-semibold text-slate-900 dark:text-slate-100", noteColors.accent.divider)}>
                       <ArticleRichText text={block.example.result} />
                     </p>
                   ) : null}
@@ -364,13 +425,35 @@ function FormulaBlock({ block }) {
   );
 }
 
+function ArticleVideo({ url, title }) {
+  const embedUrl = normalizeVideoEmbedUrl(url);
+  if (!embedUrl) return null;
+
+  return (
+    <div className="mt-3 overflow-hidden rounded-lg bg-slate-100 dark:bg-slate-800">
+      <div className="aspect-video w-full">
+        <iframe
+          src={embedUrl}
+          title={title || "Wytłumaczenie wideo"}
+          className="h-full w-full"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+        />
+      </div>
+    </div>
+  );
+}
+
 function CalloutBlock({ block }) {
+  const noteColors = useNoteColors();
   const [exampleOpen, setExampleOpen] = useState(false);
   const [contentOpen, setContentOpen] = useState(false);
+  const calloutStyles = getCalloutStyles(noteColors);
   const style = calloutStyles[block.variant] || calloutStyles.insight;
   const Icon = style.icon;
   const collapsible = Boolean(block.collapsible);
   const example = block.example;
+  const videoUrl = block.video;
   const hasExample = Boolean(
     example && (example.wrong || example.right || example.note || example.prompt),
   );
@@ -392,6 +475,9 @@ function CalloutBlock({ block }) {
           <span className="min-w-0 flex-1">
             <ArticleRichText text={block.title} />
           </span>
+          {videoUrl ? (
+            <Play className="h-3.5 w-3.5 shrink-0 fill-current opacity-80" />
+          ) : null}
           <ChevronDown
             className={cn(
               "h-4 w-4 shrink-0 transition-transform duration-200",
@@ -418,6 +504,9 @@ function CalloutBlock({ block }) {
           >
             <div className={cn("text-sm leading-[1.6]", style.body, collapsible ? "mt-1.5" : null)}>
               <ArticleRichText text={block.content} />
+              {videoUrl ? (
+                <ArticleVideo url={videoUrl} title={block.title} />
+              ) : null}
             </div>
           </motion.div>
         ) : null}
@@ -490,6 +579,8 @@ function CalloutBlock({ block }) {
 }
 
 function ArticleBlock({ block, articleId, relatedTasks }) {
+  const noteColors = useNoteColors();
+
   if (block.type === "text") {
     return (
       <p className="text-base leading-[1.6] text-slate-700 dark:text-slate-200 sm:text-[17px]">
@@ -519,7 +610,7 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
 
   if (block.type === "formula-list") {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2">
         {(block.items || []).map((item) => (
           <FormulaBlock key={item.label || item.latex} block={item} />
         ))}
@@ -625,6 +716,7 @@ function CleanSolutionPanel({ lines, idKey = "clean" }) {
 }
 
 function ExampleResult({ text }) {
+  const noteColors = useNoteColors();
   if (!text) return null;
   return (
     <div className={cn("rounded-lg border px-3 py-2.5 text-sm font-semibold leading-[1.6] text-slate-900 dark:text-slate-100", noteColors.accent.border, noteColors.accent.bg)}>
@@ -637,15 +729,16 @@ function ExampleResult({ text }) {
 }
 
 function GuidedExampleBlock({ block }) {
+  const noteColors = useNoteColors();
   return (
     <div className={cn("overflow-hidden", noteColors.frame)}>
-      <div className="space-y-4 px-4 py-4 sm:px-5 sm:py-5">
-        <div className="space-y-1.5">
+      <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
+        <div className="space-y-2">
           <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
             {block.title || "Przykład"}
           </p>
           {block.prompt ? (
-            <p className="text-base font-semibold leading-[1.6] text-slate-900 dark:text-white sm:text-[17px]">
+            <p className="text-base font-semibold leading-[1.65] text-slate-900 dark:text-white sm:text-[17px]">
               <ArticleRichText text={block.prompt} />
             </p>
           ) : null}
@@ -655,14 +748,14 @@ function GuidedExampleBlock({ block }) {
           {(block.steps || []).map((step, index) => (
             <li
               key={`${block.title}-${index}`}
-              className="grid grid-cols-[1.75rem_minmax(0,1fr)] items-start gap-x-3 text-[15px] leading-[1.6] text-slate-700 dark:text-slate-200"
+              className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3"
             >
-              <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
+              <span className={cn("mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
                 {index + 1}
               </span>
-              <span className="min-w-0 pt-0.5">
+              <div className="min-w-0 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
                 <ArticleRichText text={step} />
-              </span>
+              </div>
             </li>
           ))}
         </ol>
@@ -679,6 +772,7 @@ function GuidedExampleBlock({ block }) {
 }
 
 function WorkedExampleBlock({ block }) {
+  const noteColors = useNoteColors();
   const [open, setOpen] = useState(false);
   const isRozszerzony = block.level === "rozszerzony";
 
@@ -690,7 +784,7 @@ function WorkedExampleBlock({ block }) {
         onClick={() => setOpen((value) => !value)}
         className={cn(
           "flex w-full items-start justify-between gap-3 px-4 py-3.5 text-left transition sm:px-5",
-          "hover:bg-blue-50/40 dark:hover:bg-blue-950/20",
+          noteColors.accent.hoverBg,
         )}
       >
         <div className="min-w-0 space-y-1.5">
@@ -762,6 +856,7 @@ function WorkedExampleBlock({ block }) {
 }
 
 function ExerciseGroupBlock({ block }) {
+  const noteColors = useNoteColors();
   const [open, setOpen] = useState(false);
   const exercises = block.exercises || [];
   const value = block.formulaLabel || block.title || "group";
@@ -773,7 +868,10 @@ function ExerciseGroupBlock({ block }) {
         aria-expanded={open}
         aria-controls={`exercise-group-${value}`}
         onClick={() => setOpen((current) => !current)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-base font-semibold text-slate-900 transition hover:bg-blue-50/40 dark:text-white dark:hover:bg-blue-950/20 sm:px-5"
+        className={cn(
+          "flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-base font-semibold text-slate-900 transition dark:text-white sm:px-5",
+          noteColors.accent.hoverBg,
+        )}
       >
         <span className="flex min-w-0 flex-wrap items-center gap-2">
           <span>
@@ -856,6 +954,7 @@ function FillingLightbulb({ fill = 0, className = "h-4 w-4" }) {
 }
 
 function ExerciseBlock({ block }) {
+  const noteColors = useNoteColors();
   const hintStages = Array.isArray(block.hints)
     ? block.hints.filter(Boolean)
     : block.hint
@@ -948,9 +1047,7 @@ function ExerciseBlock({ block }) {
               }
               className={cn(
                 "mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition",
-                hintOpen
-                  ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/50 dark:text-blue-300"
-                  : "border-slate-200 bg-slate-50 text-slate-500 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-blue-700 dark:hover:bg-blue-950/40 dark:hover:text-blue-300",
+                hintOpen ? noteColors.accent.hintOn : noteColors.accent.hintOff,
               )}
             >
               <FillingLightbulb fill={fill} className="h-4 w-4" />
@@ -993,7 +1090,10 @@ function ExerciseBlock({ block }) {
             type="button"
             onClick={() => setAnswerOpen((value) => !value)}
             aria-expanded={answerOpen}
-            className="block w-full text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition hover:text-blue-700 dark:text-slate-500 dark:hover:text-blue-300"
+            className={cn(
+              "block w-full text-left text-[11px] font-semibold uppercase tracking-wide text-slate-400 transition dark:text-slate-500",
+              noteColors.accent.hoverText,
+            )}
           >
             {answerOpen ? "Kliknij, aby zwinąć odpowiedź" : "Kliknij, aby rozwinąć odpowiedź"}
           </button>
@@ -1075,6 +1175,7 @@ function taskMatchesArticleFilter(task, filter) {
 }
 
 function RelatedMaturaTasks({ filter, articleId }) {
+  const noteColors = useNoteColors();
   const navigate = useNavigate();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1175,7 +1276,10 @@ function RelatedMaturaTasks({ filter, articleId }) {
                 });
               }
             }}
-            className="group/tile cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className={cn(
+              "group/tile cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2",
+              noteColors.accent.ring,
+            )}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.22, delay: Math.min(index * 0.03, 0.18) }}
@@ -1189,6 +1293,7 @@ function RelatedMaturaTasks({ filter, articleId }) {
 }
 
 function ArticleSection({ section, index, articleId, relatedTasks }) {
+  const noteColors = useNoteColors();
   const blocks = section.blocks || [];
 
   return (
@@ -1292,6 +1397,10 @@ export default function ArticleView() {
   const modeLabels = contentModes
     .map((mode) => (mode === "rozszerzenie" ? "Rozszerzenie" : "Podstawa"))
     .join(" · ");
+  const noteTheme = useMemo(
+    () => createNoteColors(articleAccentKey(rawArticle)),
+    [rawArticle],
+  );
 
   if (!rawArticle || !article) {
     return (
@@ -1307,7 +1416,33 @@ export default function ArticleView() {
     );
   }
 
+  if (isArticleUnavailable(rawArticle)) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 px-4 py-24 text-center">
+        <Badge
+          variant="outline"
+          className="border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+        >
+          Chwilowo niedostępne
+        </Badge>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+          {rawArticle.title}
+        </h1>
+        <p className="max-w-md text-slate-500 dark:text-slate-400">
+          Ta notatka jest na razie wyłączona. Wróć tu wkrótce.
+        </p>
+        <Link
+          to={createPageUrl("Course")}
+          className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+        >
+          Wróć do Kursy i dydaktyka
+        </Link>
+      </div>
+    );
+  }
+
   return (
+    <NoteColorsContext.Provider value={noteTheme}>
     <FormulaPreviewContext.Provider value={previewApi}>
       <FormulaPreviewToast formula={previewFormula} />
       <div className="px-4 py-10 sm:px-6 lg:px-8">
@@ -1328,11 +1463,11 @@ export default function ArticleView() {
             <div className="flex flex-wrap items-center gap-2">
               <Badge
                 variant="outline"
-                className="border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
+                className={noteTheme.accent.badge}
               >
                 Notatka
               </Badge>
-              <span className="rounded px-2.5 py-1 text-xs font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300">
+              <span className={cn("rounded px-2.5 py-1 text-xs font-medium", noteTheme.accent.topic)}>
                 {article.topic}
               </span>
               {article.subtopic ? (
@@ -1381,5 +1516,6 @@ export default function ArticleView() {
         </motion.article>
       </div>
     </FormulaPreviewContext.Provider>
+    </NoteColorsContext.Provider>
   );
 }

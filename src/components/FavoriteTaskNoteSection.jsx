@@ -3,27 +3,35 @@ import { Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import FavoriteNoteDialog from "@/components/FavoriteNoteDialog";
-import MathText from "@/components/MathText";
 import { cn } from "@/lib/utils";
-import { formatMathNoteLine } from "@/utils/math-note-rendering";
+import {
+  looksLikeRichNoteHtml,
+  sanitizeNoteHtml,
+} from "@/utils/rich-note";
 
 const propType = () => null;
 
 function NotePreview({ text, lineClamp }) {
-  const lines = text.split("\n");
+  if (looksLikeRichNoteHtml(text)) {
+    return (
+      <div
+        className={cn(
+          "rich-note-preview text-sm leading-relaxed text-slate-700 dark:text-slate-300 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_s]:line-through [&_strike]:line-through",
+          lineClamp && "line-clamp-4",
+        )}
+        dangerouslySetInnerHTML={{ __html: sanitizeNoteHtml(text) }}
+      />
+    );
+  }
+
   return (
     <div
-      className={
-        lineClamp
-          ? "line-clamp-4 space-y-1 text-sm text-slate-700 dark:text-slate-300"
-          : "space-y-1 text-sm text-slate-700 dark:text-slate-300"
-      }
+      className={cn(
+        "whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300",
+        lineClamp && "line-clamp-4",
+      )}
     >
-      {lines.map((line, index) => (
-        <div key={index} className="min-h-[1.25rem]">
-          {line.trim() ? <MathText text={formatMathNoteLine(line)} /> : "\u00a0"}
-        </div>
-      ))}
+      {text}
     </div>
   );
 }

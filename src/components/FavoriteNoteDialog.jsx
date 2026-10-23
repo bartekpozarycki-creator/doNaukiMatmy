@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,14 +8,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useFavorites } from "@/contexts/FavoritesContext";
-import MathNoteEditor from "@/components/MathNoteEditor";
+import RichTextNoteEditor from "@/components/RichTextNoteEditor";
+import { isBlankNoteHtml, sanitizeNoteHtml } from "@/utils/rich-note";
 
 const propType = () => null;
 
 export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
   const { getNote, setNote, isFavorite, addFavorite } = useFavorites();
   const [draft, setDraft] = useState("");
-  const textareaRef = useRef(null);
 
   useEffect(() => {
     if (open && taskId) {
@@ -28,56 +28,29 @@ export default function FavoriteNoteDialog({ taskId, open, onOpenChange }) {
     if (!isFavorite(taskId)) {
       addFavorite(taskId);
     }
-    setNote(taskId, draft);
-    handleOpenChange(false);
+    const cleaned = sanitizeNoteHtml(draft);
+    setNote(taskId, isBlankNoteHtml(cleaned) ? "" : cleaned);
+    onOpenChange(false);
   };
 
   const handleClear = () => {
     if (!taskId) return;
     setNote(taskId, "");
-    handleOpenChange(false);
-  };
-
-  const handleOpenChange = (nextOpen) => {
-    if (!nextOpen) {
-      globalThis.mathVirtualKeyboard?.hide?.();
-    }
-    onOpenChange(nextOpen);
-  };
-
-  const handleInteractOutside = (event) => {
-    const target = event.detail?.originalEvent?.target ?? event.target;
-    if (!(target instanceof Element)) return;
-    if (
-      target.closest(
-        ".ML__keyboard, .MLK__plate, .MLK__backdrop, .MLK__keycap, .ML__popover, .ML__menu, [class*='MLK__'], [class*='ML__keyboard'], math-field",
-      )
-    ) {
-      event.preventDefault();
-    }
+    onOpenChange(false);
   };
 
   if (!taskId) return null;
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent
-        onInteractOutside={handleInteractOutside}
-        onPointerDownOutside={handleInteractOutside}
-        onFocusOutside={handleInteractOutside}
-        className="max-w-lg overflow-hidden border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900"
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg overflow-hidden border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
         <DialogHeader>
           <DialogTitle className="text-slate-900 dark:text-white">
             Notatka do zadania
           </DialogTitle>
         </DialogHeader>
         <div className="min-w-0">
-          <MathNoteEditor
-            value={draft}
-            onChange={setDraft}
-            textareaRef={textareaRef}
-          />
+          <RichTextNoteEditor value={draft} onChange={setDraft} />
         </div>
         <DialogFooter className="gap-2 sm:gap-0">
           {getNote(taskId) ? (

@@ -24,26 +24,54 @@ function splitQuestionParts(text) {
   return { instruction, body };
 }
 
+function splitAroundClosedInstruction(text) {
+  const raw = String(text ?? "").trim();
+  if (!raw) return null;
+  const instr = CLOSED_WORKSHEET_QUESTION_INSTRUCTION;
+  const idx = raw.indexOf(instr);
+  if (idx === -1) return null;
+  return {
+    before: raw.slice(0, idx).trim(),
+    instruction: instr,
+    after: raw.slice(idx + instr.length).trim(),
+  };
+}
+
 function getQuestionPartsForDisplay(question, { hideClosedInstruction = false } = {}) {
   let text = String(question ?? "").trim();
-  if (!text) return { instruction: null, body: "" };
+  if (!text) return { before: "", instruction: null, after: "", body: "" };
 
   if (hideClosedInstruction) {
     text = stripLeadingWorksheetInstruction(
       text,
       CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
     );
+    const closedSplit = splitAroundClosedInstruction(text);
+    if (closedSplit) {
+      const merged = [closedSplit.before, closedSplit.after]
+        .filter(Boolean)
+        .join("\n\n");
+      return { before: "", instruction: null, after: "", body: merged || text };
+    }
+  }
+
+  const closedSplit = splitAroundClosedInstruction(text);
+  if (closedSplit) {
+    return {
+      before: closedSplit.before,
+      instruction: closedSplit.instruction,
+      after: closedSplit.after,
+      body: "",
+    };
   }
 
   const parts = splitQuestionParts(text);
-  if (
-    hideClosedInstruction &&
-    parts.instruction === CLOSED_WORKSHEET_QUESTION_INSTRUCTION
-  ) {
-    return { instruction: null, body: parts.body || text };
-  }
-
-  return parts;
+  return {
+    before: "",
+    instruction: parts.instruction,
+    after: "",
+    body: parts.body,
+  };
 }
 
 function QuestionTextBlock({ text, bold = false, className = "" }) {
@@ -138,13 +166,31 @@ export default function TaskQuestionBody({
             compact ? (tile ? "p-0" : "pt-1 pb-0.5") : "py-1",
           )}
         >
-          {questionParts.instruction ? (
-            <QuestionTextBlock text={questionParts.instruction} bold={false} />
+          {questionParts.before ? (
+            <QuestionTextBlock text={questionParts.before} bold={false} />
           ) : null}
-          <QuestionTextBlock
-            text={questionParts.body}
-            bold
-          />
+          {questionParts.instruction ? (
+            <QuestionTextBlock
+              text={questionParts.instruction}
+              bold={
+                questionParts.instruction ===
+                CLOSED_WORKSHEET_QUESTION_INSTRUCTION
+              }
+            />
+          ) : null}
+          {questionParts.after ? (
+            <QuestionTextBlock text={questionParts.after} bold={false} />
+          ) : null}
+          {questionParts.body ? (
+            <QuestionTextBlock
+              text={questionParts.body}
+              bold={Boolean(
+                questionParts.instruction &&
+                  questionParts.instruction !==
+                    CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
+              )}
+            />
+          ) : null}
         </div>
       ) : null}
 

@@ -37,11 +37,13 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MathText from "@/components/MathText";
+import CkeSolutionText from "@/components/CkeSolutionText";
 import WorksheetOpenParts from "@/components/WorksheetOpenParts";
 import { useWorksheetScores } from "@/hooks/use-worksheet-scores";
 import { publicSupabase } from "@/supabase-config.js";
 import {
   attachWorksheetStemContext,
+  CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
   formatStemSubtaskTitle,
   formatTaskNr,
   groupWorksheetQuestionsByStem,
@@ -65,9 +67,11 @@ import {
   getWorksheetScoreSummary,
   getWorksheetTotalPoints,
   isSimpleOpenQuestion,
+  recordWorksheetScoresAsTaskAttempts,
 } from "@/utils/worksheet-scores";
 import { usePageActions } from "@/contexts/PageActionsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import {
   resolveWorksheetAnswerKeyUrl,
   answerKeyPdfUrlWithPage,
@@ -350,7 +354,17 @@ const getQuestionInstruction = (question) => {
     return "Oceń prawdziwość zdania. Wybierz Prawda albo Fałsz.";
   }
   if (hasOpenParts(question)) {
-    return "Uzupełnij zdania. Wpisz odpowiednie przedziały w polach poniżej.";
+    if (question.question_text_po_obrazku?.trim()) {
+      return "";
+    }
+    const parts = getOpenPartsList(question);
+    const isPf = parts.every((part) =>
+      /p\s*lub\s*f/i.test(String(part.placeholder ?? "")),
+    );
+    if (isPf) {
+      return "Oceń prawdziwość poniższych stwierdzeń. Wybierz P albo F.";
+    }
+    return "Uzupełnij zdania. Wpisz odpowiednie wartości w polach poniżej.";
   }
   if (isSimpleOpenQuestion(question)) {
     return "Rozwiąż zadanie samodzielnie, a następnie oceń swoją pracę według klucza CKE.";
@@ -414,6 +428,7 @@ export default function WorksheetDetailsPage() {
   const [reviewMode, setReviewMode] = useState(false);
   const [reviewAnswers, setReviewAnswers] = useState(null);
   const completedSnapshotRef = useRef(null);
+  const recordedTaskIdsRef = useRef(new Set());
   const [answerKeyUrl, setAnswerKeyUrl] = useState(null);
   const [answerKeyLoading, setAnswerKeyLoading] = useState(false);
   const [answerKeyDialogOpen, setAnswerKeyDialogOpen] = useState(false);
@@ -470,6 +485,7 @@ export default function WorksheetDetailsPage() {
     setReviewFilter(REVIEW_FILTER_ALL);
     setRetryQuestionIds(null);
     setRetryPoolIds([]);
+    recordedTaskIdsRef.current = new Set();
     setAnswerKeyUrl(null);
     setAnswerKeyDialogOpen(false);
     setAnswerKeyPdfPage(1);
@@ -544,6 +560,32 @@ export default function WorksheetDetailsPage() {
   };
   const { saveProgress, getAttempt, restorePreviousCompleted } =
     useWorksheetProgress();
+  const { recordAttempt, recordAttempts } = useTaskProgress();
+
+  const syncTaskProgressFromScores = useCallback(
+    (sourceQuestions, questionScoresMap, { force = false } = {}) => {
+      const pending = (sourceQuestions || []).filter((question) => {
+        if (!question?.id) return false;
+        const id = String(question.id);
+        if (!force && recordedTaskIdsRef.current.has(id)) return false;
+        const entry =
+          questionScoresMap?.[question.id] ?? questionScoresMap?.[id];
+        return Boolean(entry?.graded);
+      });
+      if (!pending.length) return;
+      recordWorksheetScoresAsTaskAttempts({
+        questions: pending,
+        questionScores: questionScoresMap,
+        recordAttempt,
+        recordAttempts,
+      });
+      pending.forEach((question) => {
+        recordedTaskIdsRef.current.add(String(question.id));
+      });
+    },
+    [recordAttempt, recordAttempts],
+  );
+
   const displayMonth = formatDisplayPart(worksheet.month);
   const displayYear = worksheet.year || parsedMeta.year;
   const displayFormula = formatDisplayPart(worksheet.formula);
@@ -909,6 +951,15 @@ export default function WorksheetDetailsPage() {
 
   const handleCheckQuestion = (questionId) => {
     setCheckedQuestionIds((prev) => ({ ...prev, [questionId]: true }));
+    const question = questions.find((q) => String(q.id) === String(questionId));
+    if (!question) return;
+    const scores = buildWorksheetQuestionScores({
+      questions: [question],
+      answersMap: answers,
+      checkedIds: { ...checkedQuestionIds, [questionId]: true },
+      selfPoints: selfAwardedPoints,
+    });
+    syncTaskProgressFromScores([question], scores);
   };
 
   const handleSetSelfPoints = (questionId, points) => {
@@ -917,6 +968,13 @@ export default function WorksheetDetailsPage() {
     const max = getQuestionMaxPoints(question);
     const clamped = Math.min(Math.max(0, Math.floor(Number(points) || 0)), max);
     setSelfAwardedPoints((prev) => ({ ...prev, [questionId]: clamped }));
+    const scores = buildWorksheetQuestionScores({
+      questions: [question],
+      answersMap: answers,
+      checkedIds: checkedQuestionIds,
+      selfPoints: { ...selfAwardedPoints, [questionId]: clamped },
+    });
+    syncTaskProgressFromScores([question], scores);
   };
 
   const formatTime = (seconds) => {
@@ -948,6 +1006,8 @@ export default function WorksheetDetailsPage() {
     const { questionScores: qScores, score, total } = scoring.buildFinalSnapshot();
     const scoredQuestions = scoringSourceQuestions;
     const nextRetryPool = collectFailedQuestionIds(scoredQuestions, qScores);
+
+    syncTaskProgressFromScores(scoredQuestions, qScores);
 
     if (isRetrySession) {
       setQuestionScores(qScores);
@@ -1014,6 +1074,7 @@ export default function WorksheetDetailsPage() {
 
       setRetryQuestionIds(uniqueIds);
       setRetryPoolIds(uniqueIds);
+      recordedTaskIdsRef.current = new Set();
       setAnswers({});
       setCheckedQuestionIds({});
       setSelfAwardedPoints({});
@@ -1454,18 +1515,61 @@ export default function WorksheetDetailsPage() {
           </h2>
         </div>
         <CardContent className="space-y-7 p-6 sm:p-8">
-          <p className="worksheet-question-prompt text-xl leading-relaxed text-slate-950 dark:text-slate-100">
-            <span className="font-bold">{getQuestionInstruction(question)}</span>
-            {question.question_text?.trim() ? (
-              <>
-                {" "}
-                <MathText
-                  text={question.question_text}
-                  className="math-text-ui--flow font-normal"
-                />
-              </>
-            ) : null}
-          </p>
+          <div className="worksheet-question-prompt space-y-1 text-xl leading-relaxed text-slate-950 dark:text-slate-100">
+            {(() => {
+              const raw = question.question_text?.trim() ?? "";
+              const instr = CLOSED_WORKSHEET_QUESTION_INSTRUCTION;
+              const instrIdx = raw.indexOf(instr);
+              if (
+                question.question_type === "single_choice" &&
+                instrIdx >= 0
+              ) {
+                const before = raw.slice(0, instrIdx).trim();
+                const after = raw.slice(instrIdx + instr.length).trim();
+                return (
+                  <>
+                    {before ? (
+                      <div className="font-normal">
+                        <MathText
+                          text={before}
+                          className="math-text-ui--flow"
+                        />
+                      </div>
+                    ) : null}
+                    <div className="font-bold">
+                      <MathText text={instr} className="math-text-ui--flow" />
+                    </div>
+                    {after ? (
+                      <div className="font-normal">
+                        <MathText
+                          text={after}
+                          className="math-text-ui--flow"
+                        />
+                      </div>
+                    ) : null}
+                  </>
+                );
+              }
+              const lead = getQuestionInstruction(question);
+              return (
+                <>
+                  {lead ? (
+                    <div className="font-bold">
+                      <MathText text={lead} className="math-text-ui--flow" />
+                    </div>
+                  ) : null}
+                  {raw ? (
+                    <div className="font-normal">
+                      <MathText
+                        text={raw}
+                        className="math-text-ui--flow"
+                      />
+                    </div>
+                  ) : null}
+                </>
+              );
+            })()}
+          </div>
 
         {question.image_url ? (
           <img
@@ -1513,7 +1617,7 @@ export default function WorksheetDetailsPage() {
           />
         ) : null}
 
-        {question.question_type === "single_choice" && (
+        {question.question_type === "single_choice" && !hasOpenParts(question) && (
           <div
             role="radiogroup"
             aria-label={`Odpowiedzi do zadania ${question.question_number}`}
@@ -1527,7 +1631,7 @@ export default function WorksheetDetailsPage() {
           </div>
         )}
 
-        {question.question_type === "true_false" && (
+        {question.question_type === "true_false" && !hasOpenParts(question) && (
           <div
             role="radiogroup"
             aria-label={`Odpowiedź prawda lub fałsz — zadanie ${question.question_number}`}
@@ -1545,14 +1649,31 @@ export default function WorksheetDetailsPage() {
           <div className="space-y-4 border-t border-slate-200 pt-6 dark:border-slate-700">
             {isSimpleOpenQuestion(question) ? (
               <div className="space-y-4">
-                <Button
-                  type="button"
-                  onClick={() => openAnswerKeyAtQuestion(question)}
-                  disabled={!canCheckQuestion(question, answers)}
-                  className={finishButtonClass}
-                >
-                  Sprawdź odpowiedź
-                </Button>
+                {question.odpowiedz_tekstowa?.trim() ? (
+                  <Accordion
+                    type="single"
+                    collapsible
+                    className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
+                  >
+                    <AccordionItem value={`cke-${question.id}`} className="border-0">
+                      <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
+                        Zobacz schemat oceniania CKE i przykładowe rozwiązania
+                      </AccordionTrigger>
+                      <AccordionContent className="px-4 pb-4">
+                        <CkeSolutionText text={question.odpowiedz_tekstowa} />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                ) : (
+                  <Button
+                    type="button"
+                    onClick={() => openAnswerKeyAtQuestion(question)}
+                    disabled={!canCheckQuestion(question, answers)}
+                    className={finishButtonClass}
+                  >
+                    Sprawdź odpowiedź
+                  </Button>
+                )}
                 <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
                   <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
                     Przyznij sobie punkty:

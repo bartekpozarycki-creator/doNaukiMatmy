@@ -68,12 +68,33 @@ export function normalizeIntervalAnswer(value) {
     .toLowerCase();
 }
 
+function parsePlainNumber(value) {
+  const unified = String(value ?? "").replace(",", ".");
+  if (!/^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(unified)) return null;
+  const n = Number(unified);
+  return Number.isFinite(n) ? n : null;
+}
+
+function canonicalizeDecimals(value) {
+  const s = String(value ?? "");
+  if (/[(\[{]/.test(s) && /[)\]}]/.test(s)) return s;
+  return s.replace(/(\d),(\d+)/g, "$1.$2");
+}
+
 export function isOpenPartAnswerCorrect(part, userValue) {
   const expected = normalizeIntervalAnswer(part?.expected);
   if (!expected) return true;
   const user = normalizeIntervalAnswer(userValue);
   if (!user) return false;
-  return user === expected;
+  if (user === expected) return true;
+
+  const expectedNum = parsePlainNumber(expected);
+  const userNum = parsePlainNumber(user);
+  if (expectedNum != null && userNum != null) {
+    return expectedNum === userNum;
+  }
+
+  return canonicalizeDecimals(user) === canonicalizeDecimals(expected);
 }
 
 export function areAllOpenPartsFilled(question, answersMap) {

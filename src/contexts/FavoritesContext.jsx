@@ -11,9 +11,25 @@ import {
   saveCloudData,
   writeLocalJson,
 } from "@/utils/cloud-sync";
+import {
+  isBlankNoteHtml,
+  looksLikeRichNoteHtml,
+  sanitizeNoteHtml,
+} from "@/utils/rich-note";
 
 const FavoritesContext = createContext();
 const childrenPropType = () => null;
+
+function normalizeNoteValue(note) {
+  if (typeof note !== "string") return "";
+  const trimmed = note.trim();
+  if (!trimmed) return "";
+  if (looksLikeRichNoteHtml(trimmed)) {
+    const cleaned = sanitizeNoteHtml(trimmed);
+    return isBlankNoteHtml(cleaned) ? "" : cleaned;
+  }
+  return trimmed;
+}
 
 function storageKey(userId) {
   return userId ? `mm_task_favorites_${userId}` : "mm_task_favorites_guest";
@@ -26,9 +42,9 @@ function notesStorageKey(userId) {
 function normalizeNotes(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return Object.fromEntries(
-    Object.entries(value).filter(
-      ([taskId, note]) => taskId && typeof note === "string" && note.trim(),
-    ),
+    Object.entries(value)
+      .map(([taskId, note]) => [taskId, normalizeNoteValue(note)])
+      .filter(([taskId, note]) => taskId && note),
   );
 }
 
@@ -142,7 +158,7 @@ export function FavoritesProvider({ children }) {
   );
 
   const getNote = useCallback(
-    (taskId) => favoriteNotes[taskId]?.trim() || "",
+    (taskId) => normalizeNoteValue(favoriteNotes[taskId] || ""),
     [favoriteNotes],
   );
 
@@ -154,12 +170,12 @@ export function FavoritesProvider({ children }) {
   const setNote = useCallback(
     (taskId, note) => {
       if (!taskId) return;
-      const trimmed = note?.trim() || "";
+      const cleaned = normalizeNoteValue(note);
       const next = { ...favoriteNotes };
-      if (!trimmed) {
+      if (!cleaned) {
         delete next[taskId];
       } else {
-        next[taskId] = trimmed;
+        next[taskId] = cleaned;
       }
       saveNotes(next);
     },

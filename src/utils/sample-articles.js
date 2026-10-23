@@ -1,7 +1,10 @@
-export const sampleArticles = [
+﻿export const sampleArticles = [
   {
     id: "artykul-logarytmy",
     title: "Logarytmy",
+    unavailable: true,
+    description:
+      "Definicja logarytmu, najważniejsze wzory i typowe zadania. Poziom podstawowy i rozszerzony.",
     topic: "Liczby rzeczywiste",
     subtopic: "Logarytmy",
     contentModes: ["podstawa", "rozszerzenie"],
@@ -32,8 +35,8 @@ export const sampleArticles = [
           {
             type: "list",
             items: [
-              "Wzór (1) — **definicja**: $\\log_a b=c$ wtedy i tylko wtedy, gdy $a^c=b$.",
-              "Wzór (2) — **tożsamość równoważna**: $a^{\\log_a b}=b$.",
+              "Wzór (1) - **definicja**: $\\log_a b=c$ wtedy i tylko wtedy, gdy $a^c=b$.",
+              "Wzór (2) - **tożsamość równoważna**: $a^{\\log_a b}=b$.",
             ],
           },
           {
@@ -101,10 +104,10 @@ export const sampleArticles = [
           {
             type: "list",
             items: [
-              "(3) — **logarytm iloczynu**: $\\log_a(xy)=\\log_a x+\\log_a y$",
-              "(4) — **logarytm potęgi**: $\\log_a x^r=r\\log_a x$",
-              "(5) — **potęga w podstawie**: $\\log_{a^r} b=\\dfrac{1}{r}\\log_a b$",
-              "(6) — **logarytm ilorazu**: $\\log_a\\dfrac{x}{y}=\\log_a x-\\log_a y$",
+              "(3) - **logarytm iloczynu**: $\\log_a(xy)=\\log_a x+\\log_a y$",
+              "(4) - **logarytm potęgi**: $\\log_a x^r=r\\log_a x$",
+              "(5) - **potęga w podstawie**: $\\log_{a^r} b=\\dfrac{1}{r}\\log_a b$",
+              "(6) - **logarytm ilorazu**: $\\log_a\\dfrac{x}{y}=\\log_a x-\\log_a y$",
             ],
           },
           {
@@ -175,7 +178,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — kolejność przy różnicy",
+            title: "Częsty błąd - kolejność przy różnicy",
             content:
               "Przy **$\\log_a x-\\log_a y$** do **licznika** idzie $x$, do **mianownika** $y$.",
             example: {
@@ -188,7 +191,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — współczynniki przy sumie i różnicy",
+            title: "Częsty błąd - współczynniki przy sumie i różnicy",
             content:
               "Wzory (3) i (6) działają wprost tylko przy współczynniku **$1$**: $\\log_a x\\pm\\log_a y$.",
             example: {
@@ -202,7 +205,7 @@ export const sampleArticles = [
           {
             type: "list",
             items: [
-              "Jeśli masz $2\\log_a x+\\log_a y$ — najpierw wzór (4): $2\\log_a x=\\log_a x^2$.",
+              "Jeśli masz $2\\log_a x+\\log_a y$ - najpierw wzór (4): $2\\log_a x=\\log_a x^2$.",
               "Gdy przed oboma logarytmami stoi to samo $k$: $k\\log_a x\\pm k\\log_a y=k(\\log_a x\\pm\\log_a y)$.",
               "W wyniku też musi zostać współczynnik $k$.",
             ],
@@ -226,8 +229,8 @@ export const sampleArticles = [
             type: "list",
             contentLevel: "rozszerzenie",
             items: [
-              "(7) — **zmiana podstawy**: $\\log_b c=\\dfrac{\\log_a c}{\\log_a b}$",
-              "(8) — **szczególny przypadek**: $\\log_a b=\\dfrac{1}{\\log_b a}$",
+              "(7) - **zmiana podstawy**: $\\log_b c=\\dfrac{\\log_a c}{\\log_a b}$",
+              "(8) - **szczególny przypadek**: $\\log_a b=\\dfrac{1}{\\log_b a}$",
             ],
           },
           {
@@ -286,7 +289,7 @@ export const sampleArticles = [
           {
             type: "text",
             content:
-              "Gdy wynik $\\log_a b$ nie jest oczywisty „na oko” — **nie zgaduj**. Przejdź na równanie wykładnicze z definicji (1).",
+              "Gdy wynik $\\log_a b$ nie jest oczywisty „na oko” - **nie zgaduj**. Przejdź na równanie wykładnicze z definicji (1).",
           },
           {
             type: "callout",
@@ -297,7 +300,7 @@ export const sampleArticles = [
           },
           {
             type: "text",
-            content: "**Schemat rozwiązania** — zawsze ten sam:",
+            content: "**Schemat rozwiązania** - zawsze ten sam:",
           },
           {
             type: "steps",
@@ -415,7 +418,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — mieszanie podstaw",
+            title: "Częsty błąd - mieszanie podstaw",
             content:
               "Nie mieszaj podstaw w jednym kroku. Kolejność: **pierwiastki → potęgi → jedna podstawa → porównanie wykładników**. Wynik ujemny jest możliwy.",
             example: {
@@ -1121,23 +1124,23 @@ export const sampleArticles = [
                 prompt:
                   "Oceń prawdziwość stwierdzeń: (I) $\\log_2 3+\\log_2 6=\\log_2 18$ oraz (II) $\\log_2 6-\\log_2 3=\\log_2 3$.",
                 options: [
-                  { key: "A", text: "I — P, II — P" },
-                  { key: "B", text: "I — P, II — F" },
-                  { key: "C", text: "I — F, II — P" },
-                  { key: "D", text: "I — F, II — F" },
+                  { key: "A", text: "I - P, II - P" },
+                  { key: "B", text: "I - P, II - F" },
+                  { key: "C", text: "I - F, II - P" },
+                  { key: "D", text: "I - F, II - F" },
                 ],
                 hints: [
-                  "I: sprawdź wzór (3) — suma daje logarytm iloczynu.",
-                  "II: sprawdź wzór (6) — różnica daje $\\log_2\\dfrac{6}{3}=\\log_2 2$.",
+                  "I: sprawdź wzór (3) - suma daje logarytm iloczynu.",
+                  "II: sprawdź wzór (6) - różnica daje $\\log_2\\dfrac{6}{3}=\\log_2 2$.",
                 ],
-                answer: "B. I — P, II — F",
+                answer: "B. I - P, II - F",
                 explanation: [
-                  "I: $\\log_2 3+\\log_2 6=\\log_2(3\\cdot 6)=\\log_2 18$ — prawda.",
-                  "II: $\\log_2 6-\\log_2 3=\\log_2\\dfrac{6}{3}=\\log_2 2=1$, a nie $\\log_2 3$ — fałsz.",
+                  "I: $\\log_2 3+\\log_2 6=\\log_2(3\\cdot 6)=\\log_2 18$ - prawda.",
+                  "II: $\\log_2 6-\\log_2 3=\\log_2\\dfrac{6}{3}=\\log_2 2=1$, a nie $\\log_2 3$ - fałsz.",
                 ],
                 cleanSolution: [
-                  "I: $\\log_2 3+\\log_2 6=\\log_2 18$ — P",
-                  "II: $\\log_2 6-\\log_2 3=\\log_2 2\\neq\\log_2 3$ — F",
+                  "I: $\\log_2 3+\\log_2 6=\\log_2 18$ - P",
+                  "II: $\\log_2 6-\\log_2 3=\\log_2 2\\neq\\log_2 3$ - F",
                 ],
               },
               {
@@ -1148,23 +1151,23 @@ export const sampleArticles = [
                 prompt:
                   "Oceń prawdziwość stwierdzeń: (I) $3\\log_5 2=\\log_5 8$ oraz (II) $3+\\log_5 2=\\log_5 6$.",
                 options: [
-                  { key: "A", text: "I — P, II — P" },
-                  { key: "B", text: "I — P, II — F" },
-                  { key: "C", text: "I — F, II — P" },
-                  { key: "D", text: "I — F, II — F" },
+                  { key: "A", text: "I - P, II - P" },
+                  { key: "B", text: "I - P, II - F" },
+                  { key: "C", text: "I - F, II - P" },
+                  { key: "D", text: "I - F, II - F" },
                 ],
                 hints: [
-                  "I: zastosuj wzór (4) — współczynnik wchodzi do wykładnika.",
-                  "II: uwaga na pułapkę — sumy liczby i logarytmu nie zamieniasz na logarytm iloczynu wprost.",
+                  "I: zastosuj wzór (4) - współczynnik wchodzi do wykładnika.",
+                  "II: uwaga na pułapkę - sumy liczby i logarytmu nie zamieniasz na logarytm iloczynu wprost.",
                 ],
-                answer: "B. I — P, II — F",
+                answer: "B. I - P, II - F",
                 explanation: [
-                  "I: $3\\log_5 2=\\log_5 2^3=\\log_5 8$ — prawda.",
-                  "II: $3+\\log_5 2=\\log_5 5^3+\\log_5 2=\\log_5(125\\cdot 2)=\\log_5 250\\neq\\log_5 6$ — fałsz.",
+                  "I: $3\\log_5 2=\\log_5 2^3=\\log_5 8$ - prawda.",
+                  "II: $3+\\log_5 2=\\log_5 5^3+\\log_5 2=\\log_5(125\\cdot 2)=\\log_5 250\\neq\\log_5 6$ - fałsz.",
                 ],
                 cleanSolution: [
-                  "I: $3\\log_5 2=\\log_5 8$ — P",
-                  "II: $3+\\log_5 2=\\log_5 250\\neq\\log_5 6$ — F",
+                  "I: $3\\log_5 2=\\log_5 8$ - P",
+                  "II: $3+\\log_5 2=\\log_5 250\\neq\\log_5 6$ - F",
                 ],
               },
               {
@@ -1336,23 +1339,23 @@ export const sampleArticles = [
                 prompt:
                   "Oceń prawdziwość stwierdzeń: (I) $\\log_3 4\\cdot\\log_4 9=2$ oraz (II) $\\dfrac{\\log_2 5}{\\log_2 25}=\\dfrac{1}{2}$.",
                 options: [
-                  { key: "A", text: "I — P, II — P" },
-                  { key: "B", text: "I — P, II — F" },
-                  { key: "C", text: "I — F, II — P" },
-                  { key: "D", text: "I — F, II — F" },
+                  { key: "A", text: "I - P, II - P" },
+                  { key: "B", text: "I - P, II - F" },
+                  { key: "C", text: "I - F, II - P" },
+                  { key: "D", text: "I - F, II - F" },
                 ],
                 hints: [
                   "I: skorzystaj z łańcucha $\\log_a b\\cdot\\log_b c=\\log_a c$.",
                   "II: zapisz $25=5^2$ w mianowniku.",
                 ],
-                answer: "A. I — P, II — P",
+                answer: "A. I - P, II - P",
                 explanation: [
-                  "I: $\\log_3 4\\cdot\\log_4 9=\\log_3 9=2$ — prawda.",
-                  "II: $\\dfrac{\\log_2 5}{\\log_2 25}=\\dfrac{\\log_2 5}{2\\log_2 5}=\\dfrac{1}{2}$ — prawda.",
+                  "I: $\\log_3 4\\cdot\\log_4 9=\\log_3 9=2$ - prawda.",
+                  "II: $\\dfrac{\\log_2 5}{\\log_2 25}=\\dfrac{\\log_2 5}{2\\log_2 5}=\\dfrac{1}{2}$ - prawda.",
                 ],
                 cleanSolution: [
-                  "I: $\\log_3 4\\cdot\\log_4 9=\\log_3 9=2$ — P",
-                  "II: $\\dfrac{\\log_2 5}{\\log_2 25}=\\dfrac{1}{2}$ — P",
+                  "I: $\\log_3 4\\cdot\\log_4 9=\\log_3 9=2$ - P",
+                  "II: $\\dfrac{\\log_2 5}{\\log_2 25}=\\dfrac{1}{2}$ - P",
                 ],
               },
               {
@@ -1569,23 +1572,23 @@ export const sampleArticles = [
                 prompt:
                   "Oceń prawdziwość stwierdzeń: (I) $2\\log_7 3=\\log_7 9$ oraz (II) $\\dfrac{1}{2}\\log_4 5=\\log_8 5$.",
                 options: [
-                  { key: "A", text: "I — P, II — P" },
-                  { key: "B", text: "I — P, II — F" },
-                  { key: "C", text: "I — F, II — P" },
-                  { key: "D", text: "I — F, II — F" },
+                  { key: "A", text: "I - P, II - P" },
+                  { key: "B", text: "I - P, II - F" },
+                  { key: "C", text: "I - F, II - P" },
+                  { key: "D", text: "I - F, II - F" },
                 ],
                 hints: [
-                  "I: sprawdź wzór (4) — współczynnik wchodzi do wykładnika.",
+                  "I: sprawdź wzór (4) - współczynnik wchodzi do wykładnika.",
                   "II: z wzoru (5) byłoby $\\dfrac{1}{2}\\log_4 5=\\log_{16} 5$, nie $\\log_8 5$.",
                 ],
-                answer: "B. I — P, II — F",
+                answer: "B. I - P, II - F",
                 explanation: [
-                  "I: $2\\log_7 3=\\log_7 3^2=\\log_7 9$ — prawda.",
-                  "II: $\\dfrac{1}{2}\\log_4 5=\\log_{4^2} 5=\\log_{16} 5\\neq\\log_8 5$ — fałsz.",
+                  "I: $2\\log_7 3=\\log_7 3^2=\\log_7 9$ - prawda.",
+                  "II: $\\dfrac{1}{2}\\log_4 5=\\log_{4^2} 5=\\log_{16} 5\\neq\\log_8 5$ - fałsz.",
                 ],
                 cleanSolution: [
-                  "I: $2\\log_7 3=\\log_7 9$ — P",
-                  "II: $\\dfrac{1}{2}\\log_4 5=\\log_{16} 5\\neq\\log_8 5$ — F",
+                  "I: $2\\log_7 3=\\log_7 9$ - P",
+                  "II: $\\dfrac{1}{2}\\log_4 5=\\log_{16} 5\\neq\\log_8 5$ - F",
                 ],
               },
               {
@@ -2522,21 +2525,21 @@ export const sampleArticles = [
           },
           {
             type: "text",
-            content: "**Własności** — przy tej samej podstawie:",
+            content: "**Własności** - przy tej samej podstawie:",
           },
           {
             type: "list",
             items: [
-              "(3) — **iloczyn** → suma",
-              "(6) — **iloraz** → różnica",
-              "(4) — **potęga w argumencie** wychodzi przed logarytm",
-              "(5) — **potęga w podstawie** daje czynnik $\\dfrac{1}{r}$",
+              "(3) - **iloczyn** → suma",
+              "(6) - **iloraz** → różnica",
+              "(4) - **potęga w argumencie** wychodzi przed logarytm",
+              "(5) - **potęga w podstawie** daje czynnik $\\dfrac{1}{r}$",
               "Na rozszerzeniu: zmiana podstawy (7) oraz odwrotność (8)",
             ],
           },
           {
             type: "text",
-            content: "**Schemat obliczania** — gdy wynik nie jest oczywisty:",
+            content: "**Schemat obliczania** - gdy wynik nie jest oczywisty:",
           },
           {
             type: "list",
@@ -2552,7 +2555,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — kolejność w ilorazie",
+            title: "Częsty błąd - kolejność w ilorazie",
             content:
               "Przy **$\\log_a x-\\log_a y$**: $x$ → licznik, $y$ → mianownik.",
             example: {
@@ -2565,7 +2568,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — współczynniki przy sumie i różnicy",
+            title: "Częsty błąd - współczynniki przy sumie i różnicy",
             content:
               "Wzory (3) i (6) wprost tylko przy współczynniku **$1$**. Najpierw wzór (4), potem łącz.",
             example: {
@@ -2579,7 +2582,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — skomplikowane logarytmy",
+            title: "Częsty błąd - skomplikowane logarytmy",
             content:
               "Nie mieszaj podstaw w jednym kroku: **pierwiastki → potęgi → jedna podstawa → wykładniki**.",
             example: {
@@ -2594,7 +2597,7 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "pitfall",
-            title: "Częsty błąd — dziedzina",
+            title: "Częsty błąd - dziedzina",
             content:
               "Zawsze: podstawa **$a>0$**, **$a\\neq 1$**, argument **$b>0$**. Najpierw dziedzina, potem przekształcenia.",
             example: {
@@ -2609,14 +2612,14 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "why",
-            title: "Niuans — podstawa z przedziału $(0,1)$",
+            title: "Niuans - podstawa z przedziału $(0,1)$",
             content:
               "Jeśli **$0<a<1$**, funkcja $\\log_a$ jest **malejąca**, a wynik może być ujemny. Kontroluj przez definicję $a^c=b$.",
           },
           {
             type: "callout",
             variant: "why",
-            title: "Niuans — zmiana podstawy",
+            title: "Niuans - zmiana podstawy",
             contentLevel: "rozszerzenie",
             content:
               "Wzór (7) przelicza logarytm na wygodniejszą podstawę. Wzór (8): **$\\log_a b=\\dfrac{1}{\\log_b a}$**. Przydatne przy różnych podstawach lub $\\log_b a\\cdot\\log_a b=1$.",
@@ -2624,9 +2627,556 @@ export const sampleArticles = [
           {
             type: "callout",
             variant: "why",
-            title: "Niuans — co wolno wyciągać przed logarytm",
+            title: "Niuans - co wolno wyciągać przed logarytm",
             content:
               "Przed logarytm wychodzi **wykładnik argumentu** (4). Potęgę w podstawie obsługuje (5): $\\log_{a^r} b=\\dfrac{1}{r}\\log_a b$. Nie dzielisz logarytmów jak zwykłych liczb.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "artykul-wzory-viete",
+    title: "Wzory Viete’a",
+    description:
+      "Czym są wzory Viete’a dla równania kwadratowego i jak je udowodnić. Poziom rozszerzony.",
+    topic: "Funkcje",
+    subtopic: "Równania kwadratowe",
+    contentModes: ["rozszerzenie"],
+    levels: ["rozszerzony"],
+    readMinutes: 18,
+    relatedTasks: {
+      topicIncludes: ["viete", "viète", "kwadrat"],
+      subtopicIncludes: ["viete", "viète", "równanie kwadrat"],
+      questionIncludes: ["viete", "viète", "x_1", "x_2", "suma pierwiastków", "iloczyn pierwiastków"],
+      limit: 12,
+    },
+    legend: [
+      {
+        label: "Poziom rozszerzony",
+        dot: "bg-violet-400",
+        contentLevel: "rozszerzenie",
+      },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Wzory Viete’a",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "rozszerzenie",
+            title: "Idea",
+            content:
+              "Wzory Viete’a wiążą **współczynniki** równania kwadratowego z **sumą i iloczynem** jego pierwiastków, bez wyznaczania samych pierwiastków.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "rozszerzenie",
+            title: "Założenia",
+            content:
+              "Rozważamy równanie kwadratowe $ax^2+bx+c=0$, gdzie **$a\\neq 0$**. Niech $x_1$ oraz $x_2$ będą jego pierwiastkami rzeczywistymi (czyli $\\Delta\\ge 0$). Wtedy $x_1+x_2=-\\dfrac{b}{a}$ oraz $x_1x_2=\\dfrac{c}{a}$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                latex: "x_1 + x_2 = -\\dfrac{b}{a}",
+                label: "(1)",
+                accent: "violet",
+                caption: "suma pierwiastków",
+                contentLevel: "rozszerzenie",
+              },
+              {
+                latex: "x_1 x_2 = \\dfrac{c}{a}",
+                label: "(2)",
+                accent: "violet",
+                caption: "iloczyn pierwiastków",
+                contentLevel: "rozszerzenie",
+              },
+            ],
+          },
+        ],
+      },
+      {
+        number: "2",
+        heading: "Dowody",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Wzory (1) i (2) nie biorą się znikąd. Poniżej sposób, żeby zobaczyć, skąd dokładnie wynikają. To jest bardziej ciekawostka, a nie rzecz, którą trzeba umieć.",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content: "**Dowód.** Ze wzorów na pierwiastki.",
+          },
+          {
+            type: "steps",
+            contentLevel: "rozszerzenie",
+            items: [
+              "Załóż $\\Delta=b^2-4ac\\ge 0$. Wtedy pierwiastki to $$x_1=\\dfrac{-b-\\sqrt{\\Delta}}{2a},\\qquad x_2=\\dfrac{-b+\\sqrt{\\Delta}}{2a}.$$",
+              "**Suma.** Dodaj $x_1$ i $x_2$: $$x_1+x_2=\\dfrac{-b-\\sqrt{\\Delta}}{2a}+\\dfrac{-b+\\sqrt{\\Delta}}{2a}.$$",
+              "Złącz liczniki: $$x_1+x_2=\\dfrac{(-b-\\sqrt{\\Delta})+(-b+\\sqrt{\\Delta})}{2a}=\\dfrac{-2b}{2a}.$$",
+              "Uprość: $$x_1+x_2=-\\dfrac{b}{a}.$$ To wzór (1).",
+              "**Iloczyn.** Pomnóż pierwiastki: $$x_1x_2=\\dfrac{(-b-\\sqrt{\\Delta})(-b+\\sqrt{\\Delta})}{4a^2}.$$",
+              "Skorzystaj z różnicy kwadratów: $$x_1x_2=\\dfrac{b^2-\\Delta}{4a^2}.$$",
+              "Wstaw $\\Delta=b^2-4ac$: $$x_1x_2=\\dfrac{b^2-(b^2-4ac)}{4a^2}=\\dfrac{4ac}{4a^2}=\\dfrac{c}{a}.$$ To wzór (2).",
+            ],
+          },
+        ],
+      },
+      {
+        number: "3",
+        heading: "Uwagi przed rozwiązywaniem zadań",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Zanim przejdziesz do zadań, sprawdź te uwagi. To one najczęściej decydują o tym, czy rozwiązanie jest kompletne.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "Równanie musi zostać kwadratowe",
+            content:
+              "Jeśli w zadaniu pojawia się parametr w współczynniku przy $x^2$, np. $f(x)=mx^2+x+2$, to żeby były dwa pierwiastki trójmianu kwadratowego, musi być **$m\\neq 0$**. Dla $m=0$ równanie przestaje być kwadratowe.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "„Dwa różne pierwiastki” ≠ „dwa pierwiastki”",
+            content:
+              "**Dwa różne pierwiastki** wymagają $\\Delta>0$. Sformułowanie **dwa pierwiastki** zwykle dopuszcza też $\\Delta\\ge 0$. Jeśli $\\Delta=0$, mamy **pierwiastek podwójny** $x_1=x_2$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "Zakazane wartości pierwiastków",
+            content:
+              "Jeśli w założeniach jest $x_1\\neq d$ lub $x_2\\neq d$ (gdzie $d\\in\\mathbb{R}$), sprawdzamy, dla jakiego parametru $f(d)=0$, i **wyrzucamy** taką wartość parametru z rozwiązania.",
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "Przykład",
+            content:
+              "Dla $f(x)=x^2+x+2m$ i warunku $\\dfrac{1}{x_1}+\\dfrac{1}{x_2}=7$ wynika, że $x_1\\neq 0$ oraz $x_2\\neq 0$. Szukamy więc takich $m$, dla których $x_1$ lub $x_2$ jest zerem (tu $f(0)=2m=0$, więc $m=0$), i takie $m$ wyrzucamy z rozwiązania.",
+          },
+        ],
+      },
+      {
+        number: "4",
+        heading: "Przykłady",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Rozwiążemy razem trzy proste zadania. Przy każdym kroku jest wytłumaczenie, po co go robimy - na tym etapie nie musisz jeszcze umieć rozwiązywać takich zadań samodzielnie.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 1",
+            prompt:
+              "Znajdź wartości parametru $m$, dla których funkcja $f(x)=mx^2+mx+1$ ma dwa różne pierwiastki.",
+            steps: [
+              "Szukamy **dwóch różnych pierwiastków**. Zanim użyjesz wzorów Viete’a, sprawdź, czy te pierwiastki w ogóle istnieją.",
+              "Współczynnik przy $x^2$ to $m$. Żeby $f$ była funkcją kwadratową, musi być $$m\\neq 0.$$ Dla $m=0$ zostałoby $f(x)=1$ - funkcja stała, nie kwadratowa.",
+              "Dwa różne pierwiastki są wtedy, gdy $\\Delta>0$. Tu $a=m$, $b=m$, $c=1$, więc $$\\Delta=m^2-4m.$$",
+              "Wyłączamy $m$: $$\\Delta=m(m-4).$$ Nierówność $m(m-4)>0$ zachodzi dla $$m\\in(-\\infty,0)\\cup(4,+\\infty).$$",
+              "Zero nie należy do tego zbioru, więc warunek $m\\neq 0$ jest już spełniony.",
+            ],
+            result: "$m\\in(-\\infty,0)\\cup(4,+\\infty)$",
+            cleanSolution: [
+              "$m\\neq 0$",
+              "$\\Delta=m^2-4m=m(m-4)$",
+              "$\\Delta>0\\Leftrightarrow m(m-4)>0$",
+              "$m\\in(-\\infty,0)\\cup(4,+\\infty)$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 2",
+            prompt:
+              "Pierwiastki równania $x^2-3x+m=0$ spełniają $x_1^2+x_2^2=5$. Znajdź $m$.",
+            steps: [
+              "Nie liczymy $x_1$ i $x_2$ ze wzorów na pierwiastki. Ze wzorów Viete’a: $$x_1+x_2=-\\dfrac{b}{a},\\qquad x_1x_2=\\dfrac{c}{a}.$$",
+              "Tu $a=1$, $b=-3$, $c=m$. Minus przy $b$ jest ważny: $$x_1+x_2=-\\dfrac{-3}{1}=3,\\qquad x_1x_2=m.$$",
+              "Warunek to **suma kwadratów**, nie suma i nie iloczyn. Z tożsamości $(x_1+x_2)^2=x_1^2+2x_1x_2+x_2^2$ mamy $$x_1^2+x_2^2=(x_1+x_2)^2-2x_1x_2.$$",
+              "Podstawiamy: $$x_1^2+x_2^2=3^2-2m=9-2m.$$ Z zadania $9-2m=5$, więc $2m=4$ i $m=2$.",
+              "Sprawdzenie: $$\\Delta=9-8=1>0.$$ Dwa pierwiastki istnieją.",
+            ],
+            result: "$m=2$",
+            cleanSolution: [
+              "$x_1+x_2=3$,\\quad $x_1x_2=m$",
+              "$x_1^2+x_2^2=(x_1+x_2)^2-2x_1x_2=9-2m$",
+              "$9-2m=5$",
+              "$m=2$",
+              "$\\Delta=9-8=1>0$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 3",
+            prompt:
+              "Dla równania $x^2+mx+2=0$ zachodzi $\\dfrac{1}{x_1}+\\dfrac{1}{x_2}=3$. Znajdź $m$.",
+            steps: [
+              "Znowu nie liczymy pierwiastków wprost. Odczytamy sumę i iloczyn ze wzorów Viete’a, a warunek sprowadzimy do ich kombinacji.",
+              "Tu $a=1$, $b=m$, $c=2$. Wzór (1) i wzór (2): $$x_1+x_2=-m,\\qquad x_1x_2=2.$$ Minus przy sumie jest, bo $b$ weszło ze znakiem plus.",
+              "W warunku są odwrotności, więc $x_1$ i $x_2$ nie mogą być zerem. Ale $x_1x_2=2\\neq 0$, więc automatycznie $x_1\\neq 0$ oraz $x_2\\neq 0$.",
+              "Wspólny mianownik: $$\\dfrac{1}{x_1}+\\dfrac{1}{x_2}=\\dfrac{x_1+x_2}{x_1x_2}.$$ W liczniku suma, w mianowniku iloczyn - dokładnie to, co dają wzory Viete’a.",
+              "Podstawiamy: $$\\dfrac{x_1+x_2}{x_1x_2}=\\dfrac{-m}{2}.$$ Z zadania ma być $3$, więc $\\dfrac{-m}{2}=3$, czyli $m=-6$.",
+              "Sprawdzenie: $$\\Delta=36-8=28>0.$$ Dwa różne pierwiastki istnieją, więc $m=-6$ jest poprawne.",
+            ],
+            result: "$m=-6$",
+            cleanSolution: [
+              "$x_1+x_2=-m$,\\quad $x_1x_2=2$",
+              "$\\dfrac{1}{x_1}+\\dfrac{1}{x_2}=\\dfrac{x_1+x_2}{x_1x_2}=\\dfrac{-m}{2}$",
+              "$\\dfrac{-m}{2}=3$",
+              "$m=-6$",
+              "$\\Delta=36-8=28>0$",
+            ],
+          },
+        ],
+      },
+      {
+        number: "5",
+        heading: "Warunki",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Przykładowe warunki z zadań ze wzorów Viete’a. Przekształć poniższe przykłady do kombinacji $x_1+x_2$ oraz $x_1x_2$. Najpierw zrób to sam, potem rozwiń i porównaj.",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content: "**Proste / w miarę proste**",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "1) $x_1^2+x_2^2$",
+            video: "https://youtu.be/Z6T0dUSPJ2o",
+            content:
+              "$$x_1^2+x_2^2=(x_1+x_2)^2-2x_1x_2=\\left(-\\dfrac{b}{a}\\right)^2-2\\cdot\\dfrac{c}{a}$$\n\nSkąd to się bierze: $(x_1+x_2)^2=x_1^2+2x_1x_2+x_2^2$, więc po odjęciu $2x_1x_2$ zostaje suma kwadratów.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "2) $\\dfrac{1}{x_1}+\\dfrac{1}{x_2}$",
+            content:
+              "$$\\dfrac{1}{x_1}+\\dfrac{1}{x_2}=\\dfrac{x_2}{x_1x_2}+\\dfrac{x_1}{x_1x_2}=\\dfrac{x_1+x_2}{x_1x_2}=\\dfrac{-\\dfrac{b}{a}}{\\dfrac{c}{a}}$$\n\nPamiętaj: musi być $x_1\\neq 0$ oraz $x_2\\neq 0$ (czyli $x_1x_2\\neq 0$).",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "3) $x_1^3+x_2^3$",
+            content:
+              "**I sposób:**\n\n$$x_1^3+x_2^3=(x_1+x_2)(x_1^2-x_1x_2+x_2^2)$$\n\n**II sposób:**\n\n$$(x_1+x_2)^3=x_1^3+3x_1^2x_2+3x_1x_2^2+x_2^3$$\n\n$$(x_1+x_2)^3-3x_1x_2(x_1+x_2)=x_1^3+x_2^3$$\n\nPo podstawieniu wzorów Viete’a:\n\n$$x_1^3+x_2^3=\\left(-\\dfrac{b}{a}\\right)^3-3\\cdot\\dfrac{c}{a}\\cdot\\left(-\\dfrac{b}{a}\\right)$$",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "4) $2x_1^2+5x_1x_2+2x_2^2$",
+            video: "https://youtu.be/BJ7tchlKBRU",
+            content:
+              "$$2x_1^2+5x_1x_2+2x_2^2=2x_1^2+4x_1x_2+2x_2^2+x_1x_2=2(x_1^2+2x_1x_2+x_2^2)+x_1x_2$$\n\n$$=2(x_1+x_2)^2+x_1x_2$$\n\nRozbijamy środkowy wyraz tak, żeby dostać pełny kwadrat $(x_1+x_2)^2$.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "5) $\\dfrac{1}{x_1^2}+\\dfrac{1}{x_2^2}$",
+            content:
+              "$$\\dfrac{1}{x_1^2}+\\dfrac{1}{x_2^2}=\\dfrac{x_2^2}{x_1^2x_2^2}+\\dfrac{x_1^2}{x_1^2x_2^2}=\\dfrac{x_1^2+x_2^2}{(x_1x_2)^2}$$\n\nDalej licznik zamieniamy wzorem z punktu 1): $x_1^2+x_2^2=(x_1+x_2)^2-2x_1x_2$.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "6) $5x_1^2x_2+5x_1x_2^2$",
+            video: "https://youtu.be/muasGty4naE",
+            content:
+              "$$5x_1^2x_2+5x_1x_2^2=5x_1x_2(x_1+x_2)$$\n\nWyciągamy wspólny czynnik $5x_1x_2$ i dostajemy iloczyn oraz sumę, gotowe do podstawienia wzorów Viete’a.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "7) $x_1^2-x_2^2=x_1^4-x_2^4$",
+            content:
+              "Przy $\\Delta>0$ (dwa różne pierwiastki). Gdyby $x_1=x_2$, równanie byłoby **tożsamością**.\n\n$$x_1^2-x_2^2=(x_1^2-x_2^2)(x_1^2+x_2^2)$$\n\n$$(x_1^2-x_2^2)-(x_1^2-x_2^2)(x_1^2+x_2^2)=0$$\n\n$$(x_1-x_2)(x_1+x_2)\\big(1-(x_1^2+x_2^2)\\big)=0$$\n\nZ $x_1\\neq x_2$ zostaje $x_1+x_2=0$ albo $1-(x_1^2+x_2^2)=0$, a $x_1^2+x_2^2$ zamieniamy jak w punkcie 1).",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "8) $x_1$ jest przeciwnością $x_2$",
+            video: "https://youtu.be/K_vtkVMj1sI",
+            content:
+              "$$x_1=-x_2\\quad\\Rightarrow\\quad x_1+x_2=0$$\n\nZe wzorów Viete’a: $-\\dfrac{b}{a}=0$, czyli $b=0$.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "9) $x_1$ jest odwrotnością $x_2$",
+            video: "https://youtu.be/VQaQRmhYfzc",
+            content:
+              "$$x_1=\\dfrac{1}{x_2}\\quad\\big|\\cdot x_2\\quad (x_2\\neq 0)$$\n\n$$x_1x_2=1$$\n\nZe wzorów Viete’a: $\\dfrac{c}{a}=1$.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "10) $|x_1-x_2|=180$",
+            content:
+              "Podnosimy obie strony do kwadratu:\n\n$$|x_1-x_2|=180\\quad\\big|\\cdot(\\ )^2$$\n\n$$(x_1-x_2)^2=180^2$$\n\n$$x_1^2-2x_1x_2+x_2^2=180^2$$\n\nDalej: $x_1^2+x_2^2=(x_1+x_2)^2-2x_1x_2$, więc\n\n$$(x_1+x_2)^2-4x_1x_2=180^2$$\n\ni podstawiamy wzory Viete’a.",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content: "**Średnie**",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "12) obydwa dodatnie",
+            content:
+              "$$\\begin{cases} \\Delta>0 \\\\ x_1+x_2>0 \\\\ x_1x_2>0 \\end{cases}$$",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "12.1) obydwa nieujemne",
+            content:
+              "$$\\begin{cases} x_1+x_2\\ge 0 \\\\ x_1x_2\\ge 0 \\\\ \\Delta>0 \\end{cases}$$",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "13) obydwa ujemne",
+            content:
+              "$$\\begin{cases} x_1+x_2<0 \\\\ x_1x_2>0 \\\\ \\Delta>0 \\end{cases}$$",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "13.1) obydwa niedodatnie",
+            content:
+              "$$\\begin{cases} x_1+x_2\\le 0 \\\\ x_1x_2\\ge 0 \\\\ \\Delta>0 \\end{cases}$$",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "14) obydwa tego samego znaku",
+            content:
+              "$$\\begin{cases} x_1x_2>0 \\\\ \\Delta>0 \\end{cases}$$",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "15) $x_1$ większy/mniejszy o $d$ od $x_2$",
+            content:
+              "$$|x_1-x_2|=d,\\qquad d\\in\\mathbb{R}$$\n\n**!** Wartość bezwzględna oznacza odległość. Dalej postępujemy jak w punkcie 10).",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "16) obydwa różnego znaku",
+            content:
+              "$$\\begin{cases} x_1x_2<0 \\\\ \\Delta>0 \\end{cases}$$",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content: "**Trudne**",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "17) obydwa większe / mniejsze od $d$",
+            content:
+              "Przykład: obydwa większe od $2$.\n\n$$\\begin{cases} x_1>2 \\\\ x_2>2 \\end{cases}\\quad\\Longrightarrow\\quad\\begin{cases} x_1-2>0 \\\\ x_2-2>0 \\end{cases}$$\n\nStąd:\n\n$$\\begin{cases} x_1+x_2>4 \\\\ (x_1-2)(x_2-2)>0 \\end{cases}$$\n\nRozwijamy iloczyn:\n\n$$(x_1-2)(x_2-2)=x_1x_2-2x_1-2x_2+4=x_1x_2-2(x_1+x_2)+4$$\n\n$$x_1x_2-2(x_1+x_2)+4>0$$\n\nDla „mniejsze od $d$” znaki nierówności się odwracają analogicznie. Do tego dokładamy $\\Delta>0$.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "18) oba należą do przedziału $(p,q)$ lub $[p,q]$",
+            content:
+              "Oba pierwiastki leżą w danym przedziale. Dla przedziału otwartego $(p,q)$ łączymy warunki z punktu 17):\n\n$$\\begin{cases} x_1>p \\text{ i } x_2>p \\\\ x_1<q \\text{ i } x_2<q \\\\ \\Delta>0 \\end{cases}$$\n\nDla przedziału domkniętego $[p,q]$ zamieniamy ostre nierówności na nieostre ($\\ge$, $\\le$).",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "19) $x_1<p$ i $x_2>q$, gdzie $p<q$",
+            content:
+              "**I sposób:**\n\n$$\\begin{cases} x_1-p<0 \\\\ x_2-q>0 \\end{cases}\\quad\\Longleftrightarrow\\quad\\begin{cases} (x_1-p)(x_2-p)<0 \\\\ (x_1-q)(x_2-q)<0 \\end{cases}$$\n\nRozwijamy:\n\n$$\\begin{cases} x_1x_2-p(x_1+x_2)+p^2<0 \\\\ x_1x_2-q(x_1+x_2)+q^2<0 \\end{cases}$$\n\nPotem podstawiamy wzory Viete’a. (To oznacza, że $p$ i $q$ leżą między pierwiastkami.)",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "20) zależność liniowa, np. $3x_1-2x_2=7$",
+            content:
+              "Łączymy warunek z wzorami Viete’a:\n\n$$\\begin{cases} 3x_1-2x_2=7 \\\\ x_1+x_2=-\\dfrac{b}{a} \\\\ x_1x_2=\\dfrac{c}{a} \\end{cases}$$\n\nZ pierwszego: $x_1=\\dfrac{7+2x_2}{3}$. Wstawiamy do sumy:\n\n$$\\dfrac{7+2x_2}{3}+x_2=-\\dfrac{b}{a}$$\n\nPo wymnożeniu przez $3a$:\n\n$$a(7+2x_2)+3ax_2=-3b$$\n\n$$7a+5ax_2=-3b$$\n\n$$x_2=-\\dfrac{3b+7a}{5a}$$\n\nPotem $x_1$ z sumy albo z warunku, a na końcu sprawdzamy iloczyn / $\\Delta$.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "21) jedno rozwiązanie nieujemne",
+            content:
+              "Dokładnie jeden pierwiastek spełnia $x\\ge 0$. Typowo oznacza to pierwiastki różnego znaku (albo jeden równy $0$), czyli m.in. $x_1x_2\\le 0$ oraz $\\Delta>0$, z dodatkowym warunkiem, że większy pierwiastek jest nieujemny.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "artykul-funkcja-liniowa",
+    title: "Funkcja liniowa",
+    unavailable: true,
+    description:
+      "Postać $f(x)=ax+b$, wykres i podstawowe własności. Na razie tylko poziom podstawowy.",
+    topic: "Funkcje",
+    subtopic: "Funkcja liniowa",
+    contentModes: ["podstawa"],
+    levels: ["podstawowy"],
+    readMinutes: 6,
+    relatedTasks: {
+      topicIncludes: ["funkcja liniowa", "liniow"],
+      subtopicIncludes: ["funkcja liniowa", "liniow"],
+      questionIncludes: ["funkcja liniowa", "ax+b", "y=ax"],
+      limit: 12,
+    },
+    legend: [
+      { label: "Poziom podstawowy", dot: "bg-blue-500", contentLevel: "podstawa" },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Definicja",
+        blocks: [
+          {
+            type: "callout",
+            variant: "definition",
+            title: "Funkcja liniowa",
+            content:
+              "Funkcją liniową nazywamy funkcję daną wzorem $$f(x)=ax+b,$$ gdzie $a$ i $b$ są ustalonymi liczbami rzeczywistymi.",
+          },
+          {
+            type: "list",
+            items: [
+              "Współczynnik $a$ to **współczynnik kierunkowy**.",
+              "Współczynnik $b$ to **wyraz wolny** (punkt przecięcia z osią $OY$).",
+            ],
+          },
+        ],
+      },
+      {
+        number: "2",
+        heading: "Wykres",
+        blocks: [
+          {
+            type: "text",
+            content:
+              "Wykresem funkcji liniowej jest **prosta**. Do narysowania wykresu wystarczą zwykle dwa punkty, np. przecięcia z osiami.",
+          },
+          {
+            type: "formula-list",
+            items: [
+              {
+                latex: "f(0)=b",
+                label: "(1)",
+                accent: "blue",
+                caption: "przecięcie z osią $OY$: punkt $(0,b)$",
+              },
+              {
+                latex: "ax+b=0 \\quad (a\\neq 0)",
+                label: "(2)",
+                accent: "blue",
+                caption: "przecięcie z osią $OX$: punkt $\\left(-\\dfrac{b}{a},0\\right)$",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            title: "Zapamiętaj",
+            content:
+              "Jeśli $a=0$, to $f(x)=b$ jest funkcją **stałą** - wykresem jest prosta równoległa do osi $OX$.",
+          },
+        ],
+      },
+      {
+        number: "3",
+        heading: "Monotoniczność",
+        blocks: [
+          {
+            type: "list",
+            items: [
+              "Gdy $a>0$, funkcja jest **rosnąca**.",
+              "Gdy $a<0$, funkcja jest **malejąca**.",
+              "Gdy $a=0$, funkcja jest **stała**.",
+            ],
           },
         ],
       },
@@ -2637,6 +3187,10 @@ export const sampleArticles = [
 export function getSampleArticleById(id) {
   if (!id) return null;
   return sampleArticles.find((article) => article.id === id) ?? null;
+}
+
+export function isArticleUnavailable(article) {
+  return Boolean(article?.unavailable);
 }
 
 export function getArticleContentModes(article) {

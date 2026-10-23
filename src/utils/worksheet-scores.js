@@ -8,6 +8,38 @@ import {
 export const isStemWorksheetQuestion = (question) =>
   question?.question_type === "stem" || question?.type === "stem";
 
+export function recordWorksheetScoresAsTaskAttempts({
+  questions = [],
+  questionScores = {},
+  recordAttempt,
+  recordAttempts,
+}) {
+  const items = [];
+  questions.forEach((question) => {
+    if (!question?.id || isStemWorksheetQuestion(question)) return;
+    const entry =
+      questionScores[question.id] ?? questionScores[String(question.id)];
+    if (!entry?.graded) return;
+    items.push({
+      taskId: String(question.id),
+      isCorrect: entry.correct === true,
+      options: { baseDifficulty: question.szacowanaTrudnosc ?? null },
+    });
+  });
+
+  if (!items.length) return;
+
+  if (typeof recordAttempts === "function") {
+    recordAttempts(items);
+    return;
+  }
+
+  if (typeof recordAttempt !== "function") return;
+  items.forEach((item) => {
+    recordAttempt(item.taskId, item.isCorrect, item.options);
+  });
+}
+
 export const isOpenWorksheetQuestion = (question) =>
   question?.question_type === "open";
 
@@ -83,7 +115,12 @@ export const isQuestionAnswerCorrect = (question, answersMap) => {
   const correctVal = getStoredAnswerValue(question, {
     [question.id]: question.correct_answer,
   });
-  return Boolean(userVal && correctVal && userVal === correctVal);
+  return Boolean(
+    userVal &&
+      correctVal &&
+      (userVal === correctVal ||
+        isOpenPartAnswerCorrect({ expected: correctVal }, userVal)),
+  );
 };
 
 const computeOpenPartsEarned = (question, answersMap) => {

@@ -107,8 +107,7 @@ export function TaskProgressProvider({ children }) {
     };
   }, [user?.id]);
 
-  const save = (next) => {
-    setProgress(next);
+  const persistProgress = (next) => {
     const key = user?.id ? `mm_task_progress_${user.id}` : "mm_task_progress_guest";
     writeLocalJson(key, next);
     if (user?.id) {
@@ -122,8 +121,15 @@ export function TaskProgressProvider({ children }) {
     }
   };
 
-  const recordAttempt = (taskId, isCorrect, options = {}) => {
-    const prev = progress[taskId];
+  const save = (next) => {
+    setProgress(next);
+    persistProgress(next);
+  };
+
+  const applyAttemptToProgress = (current, taskId, isCorrect, options = {}) => {
+    if (taskId == null || taskId === "") return current;
+    const key = String(taskId);
+    const prev = current[key] ?? current[taskId];
     const baseDifficulty =
       options.baseDifficulty ?? prev?.baseDifficulty ?? null;
 
@@ -157,28 +163,70 @@ export function TaskProgressProvider({ children }) {
     const metrics = computeReviewMetrics(entryBase);
     const entry = { ...entryBase, ...metrics };
 
-    save({ ...progress, [taskId]: entry });
+    const next = { ...current, [key]: entry };
+    if (key !== taskId && Object.prototype.hasOwnProperty.call(next, taskId)) {
+      delete next[taskId];
+    }
+    return next;
   };
 
-  const deleteAttempt = (taskId, attemptIndex) => {
-    const prev = progress[taskId];
-    if (!prev?.attempts?.length) return;
-
-    const attempts = prev.attempts.filter((_, index) => index !== attemptIndex);
-    if (!attempts.length) {
-      const next = { ...progress };
-      delete next[taskId];
-      save(next);
-      return;
-    }
-
-    save({
-      ...progress,
-      [taskId]: buildEntryFromAttempts(attempts, prev.baseDifficulty),
+  const recordAttempt = (taskId, isCorrect, options = {}) => {
+    setProgress((current) => {
+      const next = applyAttemptToProgress(current, taskId, isCorrect, options);
+      persistProgress(next);
+      return next;
     });
   };
 
-  const getProgress = (taskId) => withResolvedSchedule(progress[taskId] || null);
+  const recordAttempts = (items = []) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    setProgress((current) => {
+      let next = current;
+      items.forEach((item) => {
+        if (!item) return;
+        next = applyAttemptToProgress(
+          next,
+          item.taskId,
+          item.isCorrect,
+          item.options || {},
+        );
+      });
+      persistProgress(next);
+      return next;
+    });
+  };
+
+  const deleteAttempt = (taskId, attemptIndex) => {
+    setProgress((current) => {
+      const key = String(taskId);
+      const prev = current[key] ?? current[taskId];
+      if (!prev?.attempts?.length) return current;
+
+      const attempts = prev.attempts.filter((_, index) => index !== attemptIndex);
+      let next;
+      if (!attempts.length) {
+        next = { ...current };
+        delete next[key];
+        if (key !== taskId) delete next[taskId];
+      } else {
+        next = {
+          ...current,
+          [key]: buildEntryFromAttempts(attempts, prev.baseDifficulty),
+        };
+        if (key !== taskId && Object.prototype.hasOwnProperty.call(next, taskId)) {
+          delete next[taskId];
+        }
+      }
+      persistProgress(next);
+      return next;
+    });
+  };
+
+  const getProgress = (taskId) => {
+    if (taskId == null || taskId === "") return null;
+    const key = String(taskId);
+    return withResolvedSchedule(progress[key] || progress[taskId] || null);
+  };
 
   const getAllProgress = () => progress;
 
@@ -187,6 +235,7 @@ export function TaskProgressProvider({ children }) {
       value={{
         progress,
         recordAttempt,
+        recordAttempts,
         deleteAttempt,
         getProgress,
         getAllProgress,

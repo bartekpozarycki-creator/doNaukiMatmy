@@ -270,14 +270,16 @@ export function formatTaskNr(nr) {
   return Number.isInteger(n) ? String(n) : String(n);
 }
 
-/** Np. „Zadanie 12 podpunkt 12.3” — tytuł podpunktu ze stemem. */
 export function formatStemSubtaskTitle(stemNr, subtaskNr) {
   const stem = formatTaskNr(stemNr);
   const sub = formatTaskNr(subtaskNr);
-  if (stem && sub) return `Zadanie ${stem} podpunkt ${sub}`;
-  if (sub) return `Zadanie ${sub}`;
-  if (stem) return `Zadanie ${stem}`;
-  return "Treść pytania";
+  let label = "";
+  if (sub && stem) {
+    label = sub === stem || sub.startsWith(`${stem}.`) ? sub : `${stem}.${sub}`;
+  } else {
+    label = sub || stem;
+  }
+  return label ? `Zadanie ${label}` : "Treść pytania";
 }
 
 export function isStemTask(taskOrQuestion) {
@@ -496,7 +498,7 @@ export function mapDbTaskRow(row) {
       : String(rawEstimatedDifficulty).trim();
 
   return {
-    id: row.id,
+    id: row.id != null ? String(row.id) : row.id,
     question: row.question_text ?? "",
     answer,
     level: normalizeDbPoziom(row.poziom),
@@ -508,7 +510,6 @@ export function mapDbTaskRow(row) {
     options: isClosed ? options : undefined,
     arkusz: row.arkusz ?? null,
     nr: parseTaskNr(row.nr),
-    keyNr: parseTaskNr(row.key_nr),
     parentId: row.parent_id ?? null,
     punktacja: isStem ? 0 : parseTaskPunktacja(row.punktacja),
     obrazek: row.obrazek ?? null,
@@ -520,6 +521,11 @@ export function mapDbTaskRow(row) {
         : null,
     openParts: parseOpenParts(row.open_parts),
     videoUrl: pickVideoUrlFromRow(row),
+    odpowiedzTekstowa:
+      typeof row.odpowiedz_tekstowa === "string" &&
+      row.odpowiedz_tekstowa.trim() !== ""
+        ? row.odpowiedz_tekstowa.trim()
+        : null,
   };
 }
 
@@ -585,9 +591,14 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     worksheet_id: worksheetId,
     question_number: questionNumber,
     nr: task.nr ?? null,
-    key_nr: task.keyNr ?? null,
     parent_id: task.parentId ?? null,
-    question_type: isStem ? "stem" : isClosed ? "single_choice" : "open",
+    question_type: isStem
+      ? "stem"
+      : Array.isArray(task.openParts) && task.openParts.length > 0
+        ? "open"
+        : isClosed
+          ? "single_choice"
+          : "open",
     question_text: questionText,
     question_text_po_obrazku: task.questionTextPoObrazku ?? null,
     open_parts: isStem ? null : task.openParts ?? null,
@@ -595,8 +606,10 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     correct_answer: isStem ? "" : correct_answer,
     points: isStem ? 0 : task.punktacja ?? 1,
     punktacja: isStem ? 0 : task.punktacja ?? 1,
+    szacowanaTrudnosc: task.szacowanaTrudnosc ?? null,
     image_url: task.imageUrl ?? null,
     video_url: task.videoUrl ?? null,
+    odpowiedz_tekstowa: task.odpowiedzTekstowa ?? null,
     stem: null,
   };
 }
