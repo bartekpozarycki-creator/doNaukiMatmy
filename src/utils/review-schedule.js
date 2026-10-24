@@ -3,6 +3,7 @@ import {
   resolveTaskDifficultyTier,
   TASK_DIFFICULTY_TIER_ORDER,
 } from "@/utils/map-db-task";
+import { calculateMastery, getMasteryLabel } from "@/utils/mastery";
 
 const MS_PER_HOUR = 60 * 60 * 1000;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -133,6 +134,17 @@ function tierIndex(tier) {
   return index >= 0 ? index : TASK_DIFFICULTY_TIER_ORDER.indexOf("srednie");
 }
 
+export function resolveBaseDifficultyTier(raw) {
+  const tier = resolveTaskDifficultyTier(raw);
+  if (tier && TASK_DIFFICULTY_TIER_ORDER.includes(tier)) return tier;
+  return "srednie";
+}
+
+export function difficultyTierToLevel(tier) {
+  const index = TASK_DIFFICULTY_TIER_ORDER.indexOf(tier);
+  return index >= 0 ? index + 1 : 4;
+}
+
 function indexToTier(index) {
   const clamped = Math.min(
     TASK_DIFFICULTY_TIER_ORDER.length - 1,
@@ -199,6 +211,141 @@ export function resolveReviewStatusFromAttempts(
     index <= tierIndex("bardzo_latwe")
   ) {
     return "bardzo_latwe";
+  }
+
+  return indexToTier(index);
+}
+
+function attemptTimestamp(attempt) {
+  const timestamp = Date.parse(attempt?.date ?? "");
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function orderAttemptsForDifficulty(attempts) {
+  return attempts
+    .map((attempt, index) => ({ attempt, index }))
+    .sort((a, b) => {
+      const left = attemptTimestamp(a.attempt);
+      const right = attemptTimestamp(b.attempt);
+      if (left == null && right == null) return a.index - b.index;
+      if (left == null) return 1;
+      if (right == null) return -1;
+      if (left !== right) return left - right;
+      return a.index - b.index;
+    })
+    .map((item) => item.attempt);
+}
+
+function partitionDifficultyAttempts(attempts, baseDifficulty) {
+  const ordered = orderAttemptsForDifficulty(attempts);
+  const anchors = [];
+  let scheduleEntry = null;
+  let sessionAnchorWasWrong = false;
+  let sessionHasEarlyWrong = false;
+
+  for (const attempt of ordered) {
+    const attemptTime = attemptTimestamp(attempt);
+    const dueAt = scheduleEntry?.nextReviewAt
+      ? Date.parse(scheduleEntry.nextReviewAt)
+      : NaN;
+    const reviewReached =
+      anchors.length === 0 ||
+      (attemptTime != null && Number.isFinite(dueAt) && attemptTime >= dueAt);
+
+    if (reviewReached) {
+      anchors.push(attempt);
+      sessionAnchorWasWrong = !attempt?.isCorrect;
+      sessionHasEarlyWrong = false;
+    } else if (!attempt?.isCorrect) {
+      sessionHasEarlyWrong = true;
+    }
+
+    const when = attemptTime != null ? new Date(attemptTime) : new Date();
+    const schedule = computeScheduleAfterAttempt(
+      scheduleEntry,
+      Boolean(attempt?.isCorrect),
+      baseDifficulty,
+      when,
+    );
+    scheduleEntry = {
+      baseDifficulty,
+      attempts: [
+        ...(scheduleEntry?.attempts || []),
+        {
+          date: when.toISOString(),
+          isCorrect: Boolean(attempt?.isCorrect),
+        },
+      ],
+      correctStreak: schedule.correctStreak,
+      intervalDays: schedule.intervalDays,
+      intervalHours: schedule.intervalHours,
+      nextReviewAt: schedule.nextReviewAt,
+      difficultyScore: schedule.difficultyScore,
+      reviewStatus: schedule.reviewStatus,
+    };
+  }
+
+  return {
+    anchors,
+    mildWorsen: sessionHasEarlyWrong && !sessionAnchorWasWrong,
+  };
+}
+
+function personalDifficultyIndex(attempts, baseTier) {
+  const difficultyScore = calculateReviewDifficulty({ attempts });
+  const correctStreak = countTrailingCorrectStreak(attempts);
+  const wrongStreak = countTrailingWrongStreak(attempts);
+  const wrongCount = attempts.filter((attempt) => !attempt?.isCorrect).length;
+  const wrongRate = attempts.length ? wrongCount / attempts.length : 0;
+  const lastAttempt = attempts.at(-1);
+
+  let index = tierIndex(baseTier);
+
+  if (wrongStreak >= 3) {
+    index = Math.max(index, tierIndex("bardzo_trudne"));
+  } else if (wrongStreak === 2) {
+    index = Math.min(index + 2, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  } else if (wrongStreak === 1) {
+    index = Math.min(index + 1, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  }
+
+  if (wrongRate >= 0.5 && attempts.length >= 4) {
+    index = Math.min(index + 1, TASK_DIFFICULTY_TIER_ORDER.length - 1);
+  }
+
+  if (wrongStreak === 0 && correctStreak >= 2) {
+    index = Math.max(0, index - 1);
+  }
+  if (wrongStreak === 0 && correctStreak >= 4 && wrongRate <= 0.2) {
+    index = Math.max(0, index - 1);
+  }
+
+  if (
+    lastAttempt?.isCorrect &&
+    correctStreak >= 3 &&
+    difficultyScore <= 35 &&
+    index <= tierIndex("bardzo_latwe")
+  ) {
+    return tierIndex("bardzo_latwe");
+  }
+
+  return index;
+}
+
+export function resolvePersonalDifficultyTier(entry = {}, baseDifficulty = null) {
+  const attempts = Array.isArray(entry.attempts) ? entry.attempts : [];
+  const baseTier = resolveBaseDifficultyTier(
+    baseDifficulty ?? entry.baseDifficulty ?? null,
+  );
+  if (!attempts.length) return baseTier;
+
+  const { anchors, mildWorsen } = partitionDifficultyAttempts(
+    attempts,
+    baseDifficulty ?? entry.baseDifficulty ?? baseTier,
+  );
+  let index = personalDifficultyIndex(anchors, baseTier);
+  if (mildWorsen) {
+    index = Math.min(index + 1, TASK_DIFFICULTY_TIER_ORDER.length - 1);
   }
 
   return indexToTier(index);
@@ -303,12 +450,23 @@ export function computeReviewMetrics(entry = {}) {
     difficultyScore,
     masteryStatus,
   });
+  const personalDifficulty = resolvePersonalDifficultyTier(
+    entry,
+    entry.baseDifficulty,
+  );
+  const mastery = calculateMastery(entry.attempts);
+  const masteryLabel = getMasteryLabel(mastery, entry.attempts);
 
   return {
     reviewStatus,
+    legacySchedulingStatus: reviewStatus,
     difficultyScore,
     masteryStatus,
     reviewReason,
+    personalDifficulty,
+    personalDifficultyLevel: difficultyTierToLevel(personalDifficulty),
+    mastery,
+    masteryLabel,
   };
 }
 

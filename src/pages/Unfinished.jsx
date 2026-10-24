@@ -8,9 +8,8 @@ import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { motion } from "framer-motion";
 import tasks from "@/data/tasksets.json";
 import MathText from "@/components/MathText";
+import { formatTaskDifficultyLabel, taskDifficultyBadgeClassName } from "@/utils/map-db-task";
 import {
-  getReviewStatusBadgeClass,
-  getReviewStatusMeta,
   isReviewDue,
   resolveTaskSchedule,
   statusToPriority,
@@ -26,14 +25,16 @@ export default function UnfinishedPage() {
       if (!entry?.attempts?.length) return false;
       const schedule = resolveTaskSchedule(entry);
       if (isReviewDue(schedule?.nextReviewAt)) return true;
-      return statusToPriority(schedule?.reviewStatus) >= statusToPriority("trudne");
+      return (
+        statusToPriority(schedule?.personalDifficulty) >= statusToPriority("trudne")
+      );
     })
     .sort((a, b) => {
       const scheduleA = resolveTaskSchedule(progress[a.id]);
       const scheduleB = resolveTaskSchedule(progress[b.id]);
       return (
-        statusToPriority(scheduleB?.reviewStatus) -
-        statusToPriority(scheduleA?.reviewStatus)
+        statusToPriority(scheduleB?.personalDifficulty) -
+        statusToPriority(scheduleA?.personalDifficulty)
       );
     });
 
@@ -73,7 +74,9 @@ export default function UnfinishedPage() {
             {tasksToReview.map((t, idx) => {
               const entry = progress[t.id];
               const schedule = resolveTaskSchedule(entry);
-              const statusMeta = getReviewStatusMeta(schedule?.reviewStatus);
+              const difficultyLabel = formatTaskDifficultyLabel(
+                schedule?.personalDifficulty,
+              );
               const lastAttempt = entry.attempts[entry.attempts.length - 1];
               return (
                 <motion.div
@@ -109,11 +112,14 @@ export default function UnfinishedPage() {
                               Prób: {entry.attempts.length} • Ostatnia: {new Date(lastAttempt.date).toLocaleDateString("pl-PL")}
                             </p>
                           </div>
-                          <div className="flex-shrink-0 flex flex-col items-center gap-1">
-                            <Badge className={`${getReviewStatusBadgeClass(statusMeta.id)} text-sm px-3 py-1`}>
-                              {statusMeta.label}
-                            </Badge>
-                            <span className="text-[10px] text-gray-400 dark:text-slate-500">status</span>
+                          <div className="flex-shrink-0 flex flex-col items-end gap-1">
+                            {difficultyLabel ? (
+                              <Badge
+                                className={`${taskDifficultyBadgeClassName(schedule?.personalDifficulty)} text-sm px-3 py-1`}
+                              >
+                                {difficultyLabel}
+                              </Badge>
+                            ) : null}
                           </div>
                         </div>
                       </CardContent>

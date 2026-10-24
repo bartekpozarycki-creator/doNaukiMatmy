@@ -526,6 +526,11 @@ export function mapDbTaskRow(row) {
       row.odpowiedz_tekstowa.trim() !== ""
         ? row.odpowiedz_tekstowa.trim()
         : null,
+    naszaOdpowiedz:
+      typeof row.nasza_odpowiedz === "string" &&
+      row.nasza_odpowiedz.trim() !== ""
+        ? row.nasza_odpowiedz.trim()
+        : null,
   };
 }
 
@@ -610,6 +615,7 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     image_url: task.imageUrl ?? null,
     video_url: task.videoUrl ?? null,
     odpowiedz_tekstowa: task.odpowiedzTekstowa ?? null,
+    nasza_odpowiedz: task.naszaOdpowiedz ?? null,
     stem: null,
   };
 }

@@ -10,7 +10,6 @@ import { cn } from "@/lib/utils";
 import {
   TASK_LEVEL_BAR_SOLID,
   TASK_LEVEL_DISPLAY_LABEL,
-  TASK_MASTERED_DIFFICULTY_BADGE_CLASS,
   formatTaskDifficultyLabel,
   taskDifficultyBadgeClassName,
 } from "@/utils/map-db-task";
@@ -25,11 +24,9 @@ export const taskMasonryTileClass = "mb-5 w-full break-inside-avoid";
 const skeletonClass = "bg-slate-200 dark:bg-slate-700";
 const badgeClass = "px-2.5 py-0.5 text-xs font-medium leading-tight";
 const unattemptedDimClass = "opacity-55";
-const masteredDimClass = "opacity-100";
 
-function taskContentDimClass({ isUnattempted, isMastered }) {
+function taskContentDimClass({ isUnattempted }) {
   if (isUnattempted) return unattemptedDimClass;
-  if (isMastered) return masteredDimClass;
   return null;
 }
 
@@ -67,15 +64,13 @@ export default function TaskListCard({
 }) {
   const { getProgress } = useTaskProgress();
   const userDifficulty = resolveUserTaskDifficulty(task, getProgress(task.id));
-  const isMastered = userDifficulty.isMastered;
   const isUnattempted = !getProgress(task.id)?.attempts?.length;
-  const contentDimClass = taskContentDimClass({ isUnattempted, isMastered });
+  const contentDimClass = taskContentDimClass({ isUnattempted });
   const barSolid = TASK_LEVEL_BAR_SOLID[task.level] ?? "bg-slate-600";
   const levelLabel =
     TASK_LEVEL_DISPLAY_LABEL[task.level] ?? task.level ?? "poziom";
   const subtopicLabel = task.subtopic?.trim() || null;
-  const difficultyLabel =
-    !isMastered ? formatTaskDifficultyLabel(userDifficulty.raw) : null;
+  const difficultyLabel = formatTaskDifficultyLabel(userDifficulty.raw);
   const topicDisplay = task.topic
     ? `${task.topic.charAt(0).toUpperCase()}${task.topic.slice(1)}`
     : task.topic;
@@ -155,17 +150,6 @@ export default function TaskListCard({
                 onClick={suppressTaskTileScrollbarActivation}
               >
                 <div className="flex items-center gap-2 pr-5">
-                  {isMastered ? (
-                    <span
-                      className={cn(
-                        "shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold tracking-wide",
-                        TASK_MASTERED_DIFFICULTY_BADGE_CLASS,
-                      )}
-                      title="Opanowane"
-                    >
-                      Opanowane
-                    </span>
-                  ) : null}
                   <div
                     className={cn(
                       "flex items-center gap-2",
@@ -178,11 +162,7 @@ export default function TaskListCard({
                           "shrink-0 whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-semibold",
                           taskDifficultyBadgeClassName(userDifficulty.raw),
                         )}
-                        title={
-                          userDifficulty.isPersonalized
-                            ? `Twoja trudność: ${difficultyLabel} (baza: ${formatTaskDifficultyLabel(userDifficulty.baseRaw) ?? "—"})`
-                            : `Trudność: ${difficultyLabel}`
-                        }
+                        title={`Twoja trudność: ${difficultyLabel}`}
                       >
                         {difficultyLabel}
                       </span>

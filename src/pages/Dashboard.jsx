@@ -17,7 +17,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const demo = {
-      full_name: "Mauka User",
+      full_name: "Użytkownik Matematyka",
       learning_goal: "",
       theme: "light",
       streak_days: 0,

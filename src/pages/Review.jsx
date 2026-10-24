@@ -79,9 +79,9 @@ function getReviewSortValue(item, criterion) {
     case "attempts":
       return item.attempts.length;
     case "status":
-      return statusToPriority(item.reviewStatus);
+      return statusToPriority(item.personalDifficulty ?? item.reviewStatus);
     default:
-      return statusToPriority(item.reviewStatus);
+      return statusToPriority(item.personalDifficulty ?? item.reviewStatus);
   }
 }
 
@@ -282,6 +282,9 @@ export default function ReviewPage() {
           intervalDays: schedule?.intervalDays,
           correctStreak: schedule?.correctStreak ?? 0,
           reviewStatus: schedule?.reviewStatus ?? entry.reviewStatus,
+          personalDifficulty: schedule?.personalDifficulty ?? null,
+          mastery: schedule?.mastery ?? null,
+          masteryLabel: schedule?.masteryLabel ?? null,
           masteryStatus: schedule?.masteryStatus,
           reviewReason: schedule?.reviewReason,
         };
@@ -451,10 +454,10 @@ export default function ReviewPage() {
     const withAttempts = Object.values(progress).filter(
       (p) => p?.attempts?.length,
     );
-    const needsReview = withAttempts.filter((p) => {
-      const schedule = resolveTaskSchedule(p);
-      return statusToPriority(schedule?.reviewStatus) >= statusToPriority("trudne");
-    }).length;
+    const needsReview = allPracticedItems.filter(
+      (item) =>
+        statusToPriority(item.personalDifficulty) >= statusToPriority("trudne"),
+    ).length;
     const dueToday = allPracticedItems.filter((item) =>
       isReviewDue(item.nextReviewAt),
     ).length;
@@ -544,10 +547,10 @@ export default function ReviewPage() {
                 >
                   <div className="border-t border-slate-100 px-4 py-3 text-sm leading-relaxed dark:border-slate-700">
                     <p className={bodyText}>
-                      Po każdej próbie ustalana jest data następnej powtórki na
-                      podstawie statusu zadania (od „opanowane” / „bardzo łatwe”
-                      do „bardzo trudne”). Łatwiejsze statusy dają dłuższe odstępy,
-                      trudniejsze — krótsze (nawet kilka godzin po błędzie).
+                      Po każdej próbie aktualizuje się Twoja trudność zadania.
+                      Data następnej powtórki jest liczona jak dotychczas: seria
+                      poprawnych odpowiedzi wydłuża odstęp, błąd go skraca —
+                      czasem nawet do kilku godzin.
                     </p>
                   </div>
                 </motion.div>
@@ -628,7 +631,7 @@ export default function ReviewPage() {
 
         <CollapsibleReviewSection
           title="Fiszki"
-          subtitle="Spróbuj zrobić w głowie — potem odwróć kartę"
+          subtitle="Rozwiązuj zadania zamknięte w głowie - potem odwróć kartę"
           open={flashcardsSectionOpen}
           onOpenChange={setFlashcardsSectionOpen}
           info={

@@ -1,64 +1,51 @@
+import { calculateMastery, getMasteryLabel } from "@/utils/mastery";
 import {
-  isTaskMasteredDifficulty,
-  resolveTaskDifficultyTier,
-} from "@/utils/map-db-task";
-import { resolveReviewStatusFromAttempts } from "@/utils/review-schedule";
+  difficultyTierToLevel,
+  resolveBaseDifficultyTier,
+  resolvePersonalDifficultyTier,
+} from "@/utils/review-schedule";
 
 export function resolveUserTaskDifficulty(task, progressEntry) {
-  const baseRaw = task?.szacowanaTrudnosc ?? null;
-  const baseTier = resolveTaskDifficultyTier(baseRaw) ?? "srednie";
-
-  if (isTaskMasteredDifficulty(baseRaw)) {
-    return {
-      raw: "opanowane",
-      tier: "opanowane",
-      isMastered: true,
-      isPersonalized: false,
-      baseRaw,
-    };
-  }
-
+  const baseRaw =
+    task?.szacowanaTrudnosc ?? progressEntry?.baseDifficulty ?? null;
+  const baseTier = resolveBaseDifficultyTier(baseRaw);
   const attempts = Array.isArray(progressEntry?.attempts)
     ? progressEntry.attempts
     : [];
+  const mastery = calculateMastery(attempts);
+  const masteryLabel = getMasteryLabel(mastery, attempts);
 
   if (!attempts.length) {
     return {
-      raw: baseRaw ?? baseTier,
+      raw: baseTier,
       tier: baseTier,
+      level: difficultyTierToLevel(baseTier),
       isMastered: false,
       isPersonalized: false,
       baseRaw,
+      baseTier,
+      mastery: null,
+      masteryLabel: null,
     };
   }
 
-  const reviewStatus =
-    progressEntry?.reviewStatus ??
-    resolveReviewStatusFromAttempts(
-      {
-        ...progressEntry,
-        baseDifficulty: baseRaw,
-      },
-      baseRaw,
-    );
-
-  if (reviewStatus === "opanowane") {
-    return {
-      raw: "opanowane",
-      tier: "opanowane",
-      isMastered: true,
-      isPersonalized: true,
-      baseRaw,
-    };
-  }
-
-  const tier = resolveTaskDifficultyTier(reviewStatus) ?? baseTier;
+  const tier = resolvePersonalDifficultyTier(
+    {
+      ...progressEntry,
+      baseDifficulty: baseRaw,
+    },
+    baseRaw,
+  );
 
   return {
     raw: tier,
     tier,
+    level: difficultyTierToLevel(tier),
     isMastered: false,
     isPersonalized: tier !== baseTier,
     baseRaw,
+    baseTier,
+    mastery,
+    masteryLabel,
   };
 }

@@ -22,6 +22,7 @@ import { publicSupabase } from "@/supabase-config.js";
 import { isStemTask, mapDbTaskRow } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
+import CkeRequirementsLink from "@/components/CkeRequirementsLink";
 
 const TASKS_PER_PAGE = 8;
 const INITIAL_SKELETON_COUNT = TASKS_PER_PAGE;
@@ -310,11 +311,14 @@ export default function TaskSetsPage() {
   return (
     <div className="min-h-full py-8" style={pageStyle}>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
-        <div className="flex items-center gap-3">
-          <Layers className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Zbiory zadań
-          </h1>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <Layers className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+              Zbiory zadań
+            </h1>
+          </div>
+          <CkeRequirementsLink />
         </div>
 
         <button

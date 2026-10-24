@@ -31,8 +31,13 @@ function withResolvedSchedule(entry) {
     nextReviewAt: schedule.nextReviewAt,
     difficultyScore: schedule.difficultyScore,
     reviewStatus: schedule.reviewStatus,
+    legacySchedulingStatus: schedule.legacySchedulingStatus,
     masteryStatus: schedule.masteryStatus,
     reviewReason: schedule.reviewReason,
+    personalDifficulty: schedule.personalDifficulty,
+    personalDifficultyLevel: schedule.personalDifficultyLevel,
+    mastery: schedule.mastery,
+    masteryLabel: schedule.masteryLabel,
   };
 }
 

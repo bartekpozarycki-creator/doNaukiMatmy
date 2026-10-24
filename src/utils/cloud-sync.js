@@ -7,6 +7,7 @@ export const CLOUD_SYNC_KEYS = {
   WORKSHEET_PROGRESS: "worksheet_progress",
   USER_LEVEL: "user_level",
   CONTINUE_LEARNING: "continue_learning",
+  CKE_STRUCK: "cke_struck",
 };
 
 function cloudSyncMarkerKey(userId, key) {
@@ -95,6 +96,16 @@ export async function saveCloudData(userId, key, data) {
 
 export function mergeFavorites(localFavorites, cloudFavorites) {
   return [...new Set([...normalizeArray(localFavorites), ...normalizeArray(cloudFavorites)])];
+}
+
+export function mergeStruckIds(localIds, cloudIds) {
+  return [
+    ...new Set(
+      [...normalizeArray(localIds), ...normalizeArray(cloudIds)].filter(
+        (id) => typeof id === "string" && id,
+      ),
+    ),
+  ];
 }
 
 function normalizeNotesObject(value) {

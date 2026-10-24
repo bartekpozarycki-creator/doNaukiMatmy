@@ -473,3 +473,20 @@ button:focus-visible {
   font: normal 1em / inherit KaTeX_Main, "Times New Roman", serif;
   line-height: inherit;
 }
+
+.cke-requirement-strike {
+  position: relative;
+  color: rgb(148 163 184);
+}
+
+.dark .cke-requirement-strike {
+  color: rgb(100 116 139);
+}
+
+.cke-strike-bar {
+  position: absolute;
+  z-index: 1;
+  height: 1.5px;
+  background: currentColor;
+  pointer-events: none;
+}

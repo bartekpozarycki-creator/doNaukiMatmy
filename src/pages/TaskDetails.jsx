@@ -71,7 +71,6 @@ import {
   mapDbTaskRow,
   sortTasksByNr,
   TASK_LEVEL_BAR_GRADIENT,
-  TASK_MASTERED_DIFFICULTY_BADGE_CLASS,
   formatTaskDifficultyLabel,
   taskDifficultyBadgeClassName,
 } from "@/utils/map-db-task";
@@ -358,9 +357,7 @@ export default function TaskDetailsPage() {
 
   const taskProgress = getProgress(task.id);
   const userDifficulty = resolveUserTaskDifficulty(task, taskProgress);
-  const difficultyLabel = userDifficulty.isMastered
-    ? null
-    : formatTaskDifficultyLabel(userDifficulty.raw);
+  const difficultyLabel = formatTaskDifficultyLabel(userDifficulty.raw);
   const taskVideoUrl = task.videoUrl;
   const similarMaterialsTopic =
     task.topic && task.topic !== "—" ? task.topic : null;
@@ -871,20 +868,9 @@ export default function TaskDetailsPage() {
               {difficultyLabel ? (
                 <span
                   className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${taskDifficultyBadgeClassName(userDifficulty.raw)}`}
-                  title={
-                    userDifficulty.isPersonalized
-                      ? `Twoja trudność: ${difficultyLabel} (baza: ${formatTaskDifficultyLabel(userDifficulty.baseRaw) ?? "—"})`
-                      : `Trudność: ${difficultyLabel}`
-                  }
+                  title={`Twoja trudność: ${difficultyLabel}`}
                 >
-                  {difficultyLabel}
-                </span>
-              ) : null}
-              {userDifficulty.isMastered ? (
-                <span
-                  className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide ${TASK_MASTERED_DIFFICULTY_BADGE_CLASS}`}
-                >
-                  Opanowane
+                  Trudność: {difficultyLabel}
                 </span>
               ) : null}
             </div>

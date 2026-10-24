@@ -41,18 +41,24 @@ function shuffleItems(items) {
   return copy;
 }
 
+function itemDifficultyStatus(item) {
+  return item.personalDifficulty ?? item.reviewStatus;
+}
+
 function orderDeck(items, scope) {
   if (scope === "hardest") {
     return [...items].sort(
       (a, b) =>
-        statusToPriority(b.reviewStatus) - statusToPriority(a.reviewStatus),
+        statusToPriority(itemDifficultyStatus(b)) -
+        statusToPriority(itemDifficultyStatus(a)),
     );
   }
   if (scope === "random") {
     return shuffleItems(
       [...items].sort(
         (a, b) =>
-          statusToPriority(b.reviewStatus) - statusToPriority(a.reviewStatus),
+          statusToPriority(itemDifficultyStatus(b)) -
+          statusToPriority(itemDifficultyStatus(a)),
       ),
     );
   }
@@ -85,6 +91,18 @@ export default function ReviewFlashcards({
   const [cardIndex, setCardIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [videoOpen, setVideoOpen] = useState(false);
+  const [imageOpen, setImageOpen] = useState(false);
+
+  const flashcardItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const task = item?.task;
+        if (!task || task.type !== "closed") return false;
+        if (task.parentId) return false;
+        return true;
+      }),
+    [items],
+  );
 
   useEffect(() => {
     if (enforcedLevel) setLevel(enforcedLevel);
@@ -97,29 +115,29 @@ export default function ReviewFlashcards({
   const topics = useMemo(
     () => [
       "all",
-      ...[...new Set(items.map((item) => item.task.topic).filter(Boolean))].sort(
+      ...[...new Set(flashcardItems.map((item) => item.task.topic).filter(Boolean))].sort(
         (a, b) => a.localeCompare(b, "pl"),
       ),
     ],
-    [items],
+    [flashcardItems],
   );
 
   const subtopics = useMemo(() => {
-    const values = items
+    const values = flashcardItems
       .filter((item) => topic === "all" || item.task.topic === topic)
       .map((item) => item.task.subtopic)
       .filter(Boolean);
     return ["all", ...[...new Set(values)].sort((a, b) => a.localeCompare(b, "pl"))];
-  }, [items, topic]);
+  }, [flashcardItems, topic]);
 
   const levels = useMemo(
     () => [
       "all",
-      ...[...new Set(items.map((item) => item.task.level).filter(Boolean))].sort(
+      ...[...new Set(flashcardItems.map((item) => item.task.level).filter(Boolean))].sort(
         (a, b) => a.localeCompare(b, "pl"),
       ),
     ],
-    [items],
+    [flashcardItems],
   );
 
   const topicOptions = useMemo(
@@ -162,13 +180,13 @@ export default function ReviewFlashcards({
 
   const filteredItems = useMemo(
     () =>
-      filterReviewSessionItems(items, {
+      filterReviewSessionItems(flashcardItems, {
         scope,
         topic,
         subtopic,
         level: effectiveLevel,
       }),
-    [items, scope, topic, subtopic, effectiveLevel],
+    [flashcardItems, scope, topic, subtopic, effectiveLevel],
   );
 
   useEffect(() => {
@@ -176,23 +194,29 @@ export default function ReviewFlashcards({
     setCardIndex(0);
     setIsFlipped(false);
     setVideoOpen(false);
+    setImageOpen(false);
   }, [filteredItems, scope]);
 
   const currentItem = deck[cardIndex] ?? null;
   const currentTask = currentItem?.task ?? null;
   const videoUrl = currentTask?.videoUrl?.trim() || null;
+  const hasImage = Boolean(currentTask?.imageUrl);
+
+  const resetCardChrome = () => {
+    setIsFlipped(false);
+    setVideoOpen(false);
+    setImageOpen(false);
+  };
 
   const handlePrevious = () => {
     if (!deck.length) return;
-    setIsFlipped(false);
-    setVideoOpen(false);
+    resetCardChrome();
     setCardIndex((prev) => (prev - 1 + deck.length) % deck.length);
   };
 
   const handleNext = () => {
     if (!deck.length) return;
-    setIsFlipped(false);
-    setVideoOpen(false);
+    resetCardChrome();
     setCardIndex((prev) => (prev + 1) % deck.length);
   };
 
@@ -200,8 +224,15 @@ export default function ReviewFlashcards({
     if (!filteredItems.length) return;
     setDeck(orderDeck(filteredItems, "random"));
     setCardIndex(0);
-    setIsFlipped(false);
-    setVideoOpen(false);
+    resetCardChrome();
+  };
+
+  const handleCardClick = () => {
+    if (!isFlipped && hasImage) {
+      setImageOpen(true);
+      return;
+    }
+    setIsFlipped((flipped) => !flipped);
   };
 
   const handleGrade = (isCorrect) => {
@@ -274,14 +305,20 @@ export default function ReviewFlashcards({
                   animate={{ opacity: 1, rotateY: 0, y: 0 }}
                   exit={{ opacity: 0, rotateY: isFlipped ? 12 : -12, y: -6 }}
                   transition={{ duration: 0.28, ease: "easeOut" }}
-                  onClick={() => setIsFlipped((flipped) => !flipped)}
+                  onClick={handleCardClick}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
                       event.preventDefault();
-                      setIsFlipped((flipped) => !flipped);
+                      handleCardClick();
                     }
                   }}
-                  aria-label={isFlipped ? "Pokaż pytanie" : "Pokaż odpowiedź"}
+                  aria-label={
+                    isFlipped
+                      ? "Pokaż pytanie"
+                      : hasImage
+                        ? "Powiększ zadanie"
+                        : "Pokaż odpowiedź"
+                  }
                   className={cn(
                     "flex min-h-[220px] cursor-pointer flex-col rounded-xl border p-5 text-left sm:min-h-[260px] sm:p-6",
                     isFlipped
@@ -316,6 +353,7 @@ export default function ReviewFlashcards({
                         task={currentTask}
                         compact
                         tile
+                        imageClassName="max-h-24 w-auto max-w-[70%] object-contain"
                         className="[&_.math-text-ui]:text-base [&_.math-text-ui]:leading-relaxed"
                       />
                     )}
@@ -374,7 +412,9 @@ export default function ReviewFlashcards({
                       </div>
                     ) : (
                       <p className="text-center text-xs text-slate-500 dark:text-slate-400">
-                        Kliknij kartę, aby odwrócić
+                        {hasImage
+                          ? "Kliknij kartę, aby powiększyć"
+                          : "Kliknij kartę, aby odwrócić"}
                       </p>
                     )}
                   </div>
@@ -406,6 +446,25 @@ export default function ReviewFlashcards({
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Button>
           </div>
+
+          <Dialog open={imageOpen} onOpenChange={setImageOpen}>
+            <DialogContent
+              overlayClassName="bg-black/40"
+              className="flex max-h-[85vh] w-[calc(100%-2rem)] max-w-4xl flex-col gap-0 overflow-hidden border-white/40 bg-white/75 p-0 shadow-xl backdrop-blur-md dark:border-slate-700/60 dark:bg-slate-900/75"
+            >
+              <DialogHeader className="shrink-0 border-b border-slate-200/70 px-5 py-4 pr-12 dark:border-slate-700/70">
+                <DialogTitle className="text-base text-slate-900 dark:text-white">
+                  Zadanie
+                </DialogTitle>
+              </DialogHeader>
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 sm:px-8">
+                <TaskQuestionBody
+                  task={currentTask}
+                  imageClassName="max-h-[60vh] w-full max-w-full object-contain"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
 
           <Dialog open={videoOpen} onOpenChange={setVideoOpen}>
             <DialogContent className="max-w-3xl border-slate-200 bg-white p-0 dark:border-slate-700 dark:bg-slate-900">

@@ -1275,13 +1275,10 @@ export default function WorksheetDetailsPage() {
     const items = [
       {
         id: "answer-key",
-        label: answerKeyLoading
-          ? "Ładowanie klucza…"
-          : answerKeyUrl
-            ? "Karta z odpowiedziami (CKE)"
-            : "Klucz niedostępny",
-        icon: BookOpen,
-        disabled: answerKeyLoading,
+        label: "klucz odpowiedzi CKE",
+        icon: KeyRound,
+        hidden: !answerKeyUrl && !answerKeyLoading,
+        disabled: answerKeyLoading || !answerKeyUrl,
         onClick: () => openAnswerKeyDialog(1),
       },
     ];
@@ -1660,7 +1657,10 @@ export default function WorksheetDetailsPage() {
                         Zobacz schemat oceniania CKE i przykładowe rozwiązania
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
-                        <CkeSolutionText text={question.odpowiedz_tekstowa} />
+                        <CkeSolutionText
+                          text={question.odpowiedz_tekstowa}
+                          naszaOdpowiedz={question.nasza_odpowiedz}
+                        />
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>

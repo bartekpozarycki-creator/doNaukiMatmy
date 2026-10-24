@@ -26,7 +26,6 @@ import {
   Calendar,
   Play,
   CheckCircle,
-  KeyRound,
   Clock,
   X,
   ArrowLeft,
@@ -62,6 +61,7 @@ import {
 import WorksheetHistoryTaskPreview, {
   WorksheetHistoryTaskPreviewReveal,
 } from "@/components/WorksheetHistoryTaskPreview";
+import CkeRequirementsLink from "@/components/CkeRequirementsLink";
 
 // Konfiguracja trzech źródeł arkuszy
 const SOURCES = [
@@ -529,25 +529,6 @@ function WorksheetCard({
           >
             <Download className="w-4 h-4" />
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            disabled={!worksheet.answer_key_url}
-            title={
-              worksheet.answer_key_url
-                ? "Pobierz klucz odpowiedzi – zasady oceniania (PDF)"
-                : "Brak klucza odpowiedzi (PDF) w magazynie Supabase"
-            }
-            aria-label="Pobierz klucz odpowiedzi"
-            onClick={() =>
-              worksheet.answer_key_url &&
-              window.open(worksheet.answer_key_url, "_blank")
-            }
-            className={`h-10 w-10 shrink-0 bg-white hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 ${theme.outline}`}
-          >
-            <KeyRound className="w-4 h-4" />
-          </Button>
         </div>
       </CardContent>
 
@@ -1001,31 +982,34 @@ export default function WorksheetsPage() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
-            Arkusze egzaminacyjne
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-slate-300">
-            {profileLevel ? (
-              <>
-                Domyślny filtr:{" "}
-                <span className="font-semibold text-blue-600 dark:text-blue-400">
-                  {goalNames[userLevel]}
-                </span>
-                {" · "}
-              </>
-            ) : null}
-            {loading ? (
-              <>Ładowanie arkuszy…</>
-            ) : (
-              <>
-                W bazie: {worksheets.length} arkuszy
-                {filteredWorksheets.length !== worksheets.length
-                  ? ` · widocznych: ${filteredWorksheets.length}`
-                  : ""}
-              </>
-            )}
-          </p>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900 dark:text-white mb-2">
+              Arkusze egzaminacyjne
+            </h1>
+            <p className="text-lg text-gray-600 dark:text-slate-300">
+              {profileLevel ? (
+                <>
+                  Domyślny filtr:{" "}
+                  <span className="font-semibold text-blue-600 dark:text-blue-400">
+                    {goalNames[userLevel]}
+                  </span>
+                  {" · "}
+                </>
+              ) : null}
+              {loading ? (
+                <>Ładowanie arkuszy…</>
+              ) : (
+                <>
+                  W bazie: {worksheets.length} arkuszy
+                  {filteredWorksheets.length !== worksheets.length
+                    ? ` · widocznych: ${filteredWorksheets.length}`
+                    : ""}
+                </>
+              )}
+            </p>
+          </div>
+          <CkeRequirementsLink />
         </div>
 
         {/* Filters */}

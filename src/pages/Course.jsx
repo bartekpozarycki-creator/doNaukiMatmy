@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { BookOpen, Clock, Construction, FileText, Play } from "lucide-react";
+import { BookOpen, Clock, Construction, FileText, Loader2, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import {
   getArticleContentModes,
   isArticleUnavailable,
 } from "@/utils/sample-articles";
+import { fetchNotes } from "@/utils/notes";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
@@ -303,6 +304,8 @@ export default function CoursePage() {
   const [articleTopic, setArticleTopic] = useState("all");
   const [articleSubtopic, setArticleSubtopic] = useState("all");
   const [articleLevel, setArticleLevel] = useState(enforcedLevel || "all");
+  const [allArticles, setAllArticles] = useState(sampleArticles);
+  const [articlesLoading, setArticlesLoading] = useState(true);
 
   useEffect(() => {
     if (enforcedLevel) {
@@ -315,6 +318,20 @@ export default function CoursePage() {
     setArticleSubtopic("all");
   }, [articleTopic]);
 
+  useEffect(() => {
+    let cancelled = false;
+    const loadNotes = async () => {
+      const { data } = await fetchNotes();
+      if (cancelled) return;
+      setAllArticles(data);
+      setArticlesLoading(false);
+    };
+    loadNotes();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const courses = useMemo(() => {
     const list = sampleCoursesByLevel[selectedLevel] || allSampleCourses;
     return list.slice(1);
@@ -322,16 +339,16 @@ export default function CoursePage() {
 
   const articleTopicOptions = useMemo(() => {
     const topics = [
-      ...new Set(sampleArticles.map((item) => item.topic).filter(Boolean)),
+      ...new Set(allArticles.map((item) => item.topic).filter(Boolean)),
     ].sort((a, b) => a.localeCompare(b, "pl"));
     return [
       { value: "all", label: "Wszystkie tematy" },
       ...topics.map((topic) => ({ value: topic, label: topic })),
     ];
-  }, []);
+  }, [allArticles]);
 
   const articleSubtopicOptions = useMemo(() => {
-    const values = sampleArticles
+    const values = allArticles
       .filter((item) => articleTopic === "all" || item.topic === articleTopic)
       .map((item) => item.subtopic)
       .filter(Boolean);
@@ -340,7 +357,7 @@ export default function CoursePage() {
       { value: "all", label: "Wszystkie podtematy" },
       ...subtopics.map((subtopic) => ({ value: subtopic, label: subtopic })),
     ];
-  }, [articleTopic]);
+  }, [allArticles, articleTopic]);
 
   const effectiveArticleSubtopic = articleSubtopicOptions.some(
     (option) => option.value === articleSubtopic,
@@ -352,7 +369,7 @@ export default function CoursePage() {
 
   const articles = useMemo(() => {
     const query = articleSearch.trim().toLowerCase();
-    return sampleArticles.filter((item) => {
+    return allArticles.filter((item) => {
       if (effectiveArticleLevel !== "all" && !item.levels.includes(effectiveArticleLevel)) {
         return false;
       }
@@ -370,6 +387,7 @@ export default function CoursePage() {
       return haystack.includes(query);
     });
   }, [
+    allArticles,
     articleSearch,
     articleTopic,
     effectiveArticleSubtopic,
@@ -492,7 +510,14 @@ export default function CoursePage() {
             </CardContent>
           </Card>
 
-          {articles.length > 0 ? (
+          {articlesLoading ? (
+            <Card className="border-0 bg-white shadow-lg dark:bg-slate-800">
+              <CardContent className="flex items-center justify-center gap-3 p-8 text-slate-600 dark:text-slate-300">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Ładowanie notatek...
+              </CardContent>
+            </Card>
+          ) : articles.length > 0 ? (
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {articles.map((item) => (
                 <ArticleCard key={item.id} item={item} onOpen={goToArticle} />

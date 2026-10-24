@@ -2,11 +2,11 @@ import { History } from "lucide-react";
 import TaskAttemptHistory from "@/components/TaskAttemptHistory";
 import { useTaskProgress } from "@/contexts/TaskProgressContext";
 import { cn } from "@/lib/utils";
+import { formatTaskDifficultyLabel, taskDifficultyBadgeClassName } from "@/utils/map-db-task";
 import {
   formatReviewScheduleLabel,
-  getReviewStatusBadgeClass,
-  getReviewStatusMeta,
   getScheduleBadgeClass,
+  resolveBaseDifficultyTier,
   resolveTaskSchedule,
 } from "@/utils/review-schedule";
 
@@ -24,10 +24,12 @@ export default function TaskRepetitionPanel({
   const nextReviewLabel = schedule?.nextReviewAt
     ? formatReviewScheduleLabel(schedule.nextReviewAt)
     : null;
-  const statusMeta = getReviewStatusMeta(
-    schedule?.reviewStatus ?? entry?.reviewStatus,
-  );
-  const showStatus = hasAttempts && statusMeta?.id;
+  const difficultyTier = hasAttempts
+    ? schedule?.personalDifficulty ?? resolveBaseDifficultyTier(entry?.baseDifficulty)
+    : resolveBaseDifficultyTier(entry?.baseDifficulty);
+  const difficultyLabel = hasAttempts
+    ? formatTaskDifficultyLabel(difficultyTier)
+    : null;
 
   const handleDeleteAttempt = (attemptIndex) => {
     if (!window.confirm("Usunąć wybraną zapisaną próbę tego zadania?")) return;
@@ -50,14 +52,14 @@ export default function TaskRepetitionPanel({
               Brak zapisanych prób.
             </p>
           )}
-          {showStatus ? (
+          {difficultyLabel ? (
             <span
               className={cn(
                 "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
-                getReviewStatusBadgeClass(statusMeta.id),
+                taskDifficultyBadgeClassName(difficultyTier),
               )}
             >
-              {statusMeta.label}
+              Trudność: {difficultyLabel}
             </span>
           ) : null}
         </div>
@@ -75,19 +77,33 @@ export default function TaskRepetitionPanel({
               Historia prób
             </h3>
             <div className="flex flex-wrap items-center justify-end gap-2.5">
-              {hasAttempts && nextReviewLabel ? (
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
-                    Następna powtórka
-                  </span>
-                  <span
-                    className={cn(
-                      "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums",
-                      getScheduleBadgeClass(schedule?.nextReviewAt),
-                    )}
-                  >
-                    {nextReviewLabel}
-                  </span>
+              {hasAttempts ? (
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {difficultyLabel ? (
+                    <span
+                      className={cn(
+                        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold",
+                        taskDifficultyBadgeClassName(difficultyTier),
+                      )}
+                    >
+                      Trudność: {difficultyLabel}
+                    </span>
+                  ) : null}
+                  {nextReviewLabel ? (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                        Następna powtórka
+                      </span>
+                      <span
+                        className={cn(
+                          "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold tabular-nums",
+                          getScheduleBadgeClass(schedule?.nextReviewAt),
+                        )}
+                      >
+                        {nextReviewLabel}
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               ) : null}
             </div>

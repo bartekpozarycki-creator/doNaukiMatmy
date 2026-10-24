@@ -135,6 +135,7 @@ export default function TaskQuestionBody({
   compact = false,
   tile = false,
   className = "",
+  imageClassName = "",
 }) {
   const textClass = compact
     ? tile
@@ -199,12 +200,13 @@ export default function TaskQuestionBody({
           src={task.imageUrl}
           alt="Ilustracja do zadania"
           className={cn(
-            "mx-auto w-full rounded-lg border border-slate-200 dark:border-slate-700",
-            compact
-              ? tile
-                ? "max-h-32 object-contain"
-                : "max-h-36 object-contain"
-              : "max-w-md",
+            "mx-auto rounded-lg border border-slate-200 object-contain dark:border-slate-700",
+            imageClassName ||
+              (compact
+                ? tile
+                  ? "max-h-32 w-full"
+                  : "max-h-36 w-full"
+                : "w-full max-w-md"),
           )}
         />
       ) : null}

@@ -45,11 +45,15 @@ export function classifyReviewStatus(status) {
   return "moderate";
 }
 
+function itemDifficultyStatus(item) {
+  return item.personalDifficulty ?? item.reviewStatus ?? item.status;
+}
+
 export function classifyReviewItem(item) {
   if (item.nextReviewAt && isReviewDue(item.nextReviewAt)) {
     return "due";
   }
-  return classifyReviewStatus(item.reviewStatus ?? item.status);
+  return classifyReviewStatus(itemDifficultyStatus(item));
 }
 
 function groupReviewItemsByBand(reviewItems) {
@@ -91,7 +95,9 @@ export function filterReviewSessionItems(reviewItems, filters = {}) {
   }
 
   if (scope === "hardest") {
-    const hard = base.filter((item) => isHardReviewStatus(item.reviewStatus));
+    const hard = base.filter((item) =>
+      isHardReviewStatus(itemDifficultyStatus(item)),
+    );
     return hard.length > 0 ? hard : base;
   }
 

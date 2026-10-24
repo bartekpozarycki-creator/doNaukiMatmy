@@ -32,6 +32,7 @@ import {
   isArticleUnavailable,
   parseArticleContentModesParam,
 } from "@/utils/sample-articles";
+import { fetchNoteById } from "@/utils/notes";
 import { publicSupabase } from "@/supabase-config.js";
 import { isMaturalneTask, isStemTask, mapDbTaskRow, normalizeVideoEmbedUrl } from "@/utils/map-db-task";
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
@@ -237,10 +238,25 @@ function renderRichSegment(text, keyPrefix, formulas) {
 function ArticleRichText({ text, className = "" }) {
   const preview = useContext(FormulaPreviewContext);
   const formulas = preview?.formulas;
+  const paragraphs = String(text ?? "")
+    .split(/\n\n+/)
+    .filter((part) => part.trim());
+
+  if (paragraphs.length <= 1) {
+    return (
+      <span className={cn("math-text-ui", className)}>
+        {renderRichSegment(text, "rt", formulas)}
+      </span>
+    );
+  }
 
   return (
-    <span className={cn("math-text-ui", className)}>
-      {renderRichSegment(text, "rt", formulas)}
+    <span className={cn("math-text-ui block space-y-3", className)}>
+      {paragraphs.map((paragraph, index) => (
+        <span key={`p-${index}`} className="block">
+          {renderRichSegment(paragraph, `rt-${index}`, formulas)}
+        </span>
+      ))}
     </span>
   );
 }
@@ -730,10 +746,20 @@ function ExampleResult({ text }) {
 
 function GuidedExampleBlock({ block }) {
   const noteColors = useNoteColors();
+  const [open, setOpen] = useState(false);
+
   return (
     <div className={cn("overflow-hidden", noteColors.frame)}>
-      <div className="space-y-5 px-4 py-4 sm:px-5 sm:py-5">
-        <div className="space-y-2">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className={cn(
+          "flex w-full items-start justify-between gap-3 px-4 py-4 text-left transition sm:px-5 sm:py-5",
+          noteColors.accent.hoverBg,
+        )}
+      >
+        <div className="min-w-0 space-y-2">
           <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
             {block.title || "Przykład"}
           </p>
@@ -742,31 +768,56 @@ function GuidedExampleBlock({ block }) {
               <ArticleRichText text={block.prompt} />
             </p>
           ) : null}
+          <p className={cn("text-[11px] font-semibold uppercase tracking-wide opacity-80", noteColors.accent.text)}>
+            {open ? "Kliknij, aby zwinąć rozwiązanie" : "Kliknij, aby zobaczyć rozwiązanie"}
+          </p>
         </div>
-
-        <ol className="space-y-3">
-          {(block.steps || []).map((step, index) => (
-            <li
-              key={`${block.title}-${index}`}
-              className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3"
-            >
-              <span className={cn("mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
-                {index + 1}
-              </span>
-              <div className="min-w-0 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
-                <ArticleRichText text={step} />
-              </div>
-            </li>
-          ))}
-        </ol>
-
-        <ExampleResult text={block.result} />
-
-        <CleanSolutionPanel
-          lines={block.cleanSolution}
-          idKey={block.title || "guided"}
+        <ChevronDown
+          className={cn(
+            "mt-1 h-4 w-4 shrink-0 transition-transform duration-200",
+            noteColors.accent.text,
+            open ? "rotate-180" : "rotate-0",
+          )}
         />
-      </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {open ? (
+          <motion.div
+            key="guided-example"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-5 border-t border-slate-200 px-4 pb-4 pt-4 dark:border-slate-700 sm:px-5 sm:pb-5">
+              <ol className="space-y-3">
+                {(block.steps || []).map((step, index) => (
+                  <li
+                    key={`${block.title}-${index}`}
+                    className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3"
+                  >
+                    <span className={cn("mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
+                      {index + 1}
+                    </span>
+                    <div className="min-w-0 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
+                      <ArticleRichText text={step} />
+                    </div>
+                  </li>
+                ))}
+              </ol>
+
+              <ExampleResult text={block.result} />
+
+              <CleanSolutionPanel
+                lines={block.cleanSolution}
+                idKey={block.title || "guided"}
+              />
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1324,7 +1375,24 @@ export default function ArticleView() {
   const { state, search } = useLocation();
   const params = new URLSearchParams(search);
   const idParam = params.get("id");
-  const rawArticle = getSampleArticleById(idParam) ?? state?.article ?? null;
+  const [rawArticle, setRawArticle] = useState(
+    () => state?.article ?? getSampleArticleById(idParam) ?? null,
+  );
+  const [articleLoading, setArticleLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadNote = async () => {
+      const { data } = await fetchNoteById(idParam);
+      if (cancelled) return;
+      if (data) setRawArticle(data);
+      setArticleLoading(false);
+    };
+    loadNote();
+    return () => {
+      cancelled = true;
+    };
+  }, [idParam]);
   const contentModes = useMemo(() => {
     const available = getArticleContentModes(rawArticle);
     if (Array.isArray(state?.contentModes) && state.contentModes.length > 0) {
@@ -1401,6 +1469,15 @@ export default function ArticleView() {
     () => createNoteColors(articleAccentKey(rawArticle)),
     [rawArticle],
   );
+
+  if (articleLoading && !rawArticle) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 px-4 py-24 text-slate-500 dark:text-slate-400">
+        <Loader2 className="h-5 w-5 animate-spin" />
+        Ładowanie notatki...
+      </div>
+    );
+  }
 
   if (!rawArticle || !article) {
     return (

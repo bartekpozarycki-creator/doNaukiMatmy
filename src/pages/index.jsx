@@ -38,6 +38,7 @@ import PotegiMemory from "./PotegiMemory";
 import TaskDetails from "./TaskDetails";
 import Favorites from "./Favorites";
 import ReviewSession from "./ReviewSession";
+import CkeRequirements from "./CkeRequirements";
 
 import {
     createBrowserRouter,
@@ -98,6 +99,7 @@ const PAGES = {
     ReviewSession: ReviewSession,
 
     Favorites: Favorites,
+    CkeRequirements: CkeRequirements,
     
 }
 
@@ -185,6 +187,8 @@ const router = createBrowserRouter([
             { path: "/MicroReview", element: <Navigate to="/" replace /> },
             { path: "/MicroTopic", element: <Navigate to="/" replace /> },
             { path: "/TaskSets", element: <TaskSets /> },
+            { path: "/Oficjalne-wymagania-CKE", element: <CkeRequirements /> },
+            { path: "/CkeRequirements", element: <Navigate to="/Oficjalne-wymagania-CKE" replace /> },
             { path: "/TaskDetails", element: <TaskDetails /> },
             { path: "/ReviewSession", element: <ReviewSession /> },
             { path: "/Favorites", element: <Favorites /> },

@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from "@/contexts/ThemeContext";
 import { PageActionsProvider } from "@/contexts/PageActionsContext";
+import AnswerKeyFab from "@/components/AnswerKeyFab";
 import PdfFloatingPanel from "@/components/PdfFloatingPanel";
 import { getLayoutNotebookThemeKey, getNotebookPageStyle, shouldShowNotebookBackground } from "@/utils/notebook-page-style";
 import { getMathReferenceSheetUrl } from "@/utils/math-cards";
@@ -170,21 +171,23 @@ export default function Layout({ children, currentPageName }) {
       {/* Top Bar */}
       <nav className={`sticky top-0 z-50 ${isDark ? "bg-slate-800/95" : "bg-white/95"} backdrop-blur-sm border-b ${isDark ? "border-slate-700" : "border-gray-200"} transition-all duration-300 transform ${navHidden ? "-translate-y-full" : "translate-y-0"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex h-[4.5rem] items-center justify-between">
             {/* Logo */}
-            <Link to={createPageUrl("Home")} className="flex items-center gap-2 group">
-              <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
+            <Link to={createPageUrl("Home")} className="group flex items-center gap-2.5">
+              <img
+                src="/app-icon.png"
+                alt=""
+                className="h-10 w-10 rounded-xl object-contain shadow-lg transition-transform duration-300 group-hover:scale-110"
+              />
               <span
-                className={`hidden text-xl font-extrabold tracking-tight sm:inline ${isDark ? "text-white" : "text-slate-900"}`}
+                className={`hidden text-[1.35rem] font-extrabold tracking-tight sm:inline ${isDark ? "text-white" : "text-slate-900"}`}
               >
-                <span className="text-blue-600 dark:text-blue-400">M</span>auka
+                <span className="text-blue-600 dark:text-blue-400">M</span>atematyka
               </span>
             </Link>
 
             {/* Top Navigation Items */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2.5">
               {visibleTopNavigationItems.map((item) => {
                 const isActive =
                   location.pathname === item.url ||
@@ -197,7 +200,7 @@ export default function Layout({ children, currentPageName }) {
                   <Link
                     key={item.title}
                     to={item.url}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-all duration-200 font-medium text-sm ${
+                    className={`flex items-center gap-2 rounded-lg px-3.5 py-2.5 text-[15px] font-medium transition-all duration-200 ${
                       isActive
                         ? "bg-blue-500 text-white shadow-md"
                         : isDark
@@ -205,13 +208,13 @@ export default function Layout({ children, currentPageName }) {
                         : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                     }`}
                   >
-                    <item.icon className="w-4 h-4" />
+                    <item.icon className="h-[1.125rem] w-[1.125rem]" />
                     <span className="hidden md:inline">{item.title}</span>
                   </Link>
                 );
               })}
               {!user && (
-                <Link to={createPageUrl('Login')} className={`px-3 py-2 text-sm font-medium rounded-lg ${isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}>Zaloguj</Link>
+                <Link to={createPageUrl('Login')} className={`rounded-lg px-3.5 py-2.5 text-[15px] font-medium ${isDark ? 'text-slate-300 hover:bg-slate-700 hover:text-white' : 'text-gray-700 hover:bg-gray-100'}`}>Zaloguj</Link>
               )}
 
               {/* Menu Button */}
@@ -219,9 +222,9 @@ export default function Layout({ children, currentPageName }) {
                 variant="ghost"
                 size="icon"
                 onClick={() => setMenuOpen(!menuOpen)}
-                className={`ml-2 ${isDark ? "text-slate-300 hover:text-white hover:bg-slate-700" : "hover:bg-gray-100"}`}
+                className={`ml-2 h-10 w-10 ${isDark ? "text-slate-300 hover:text-white hover:bg-slate-700" : "hover:bg-gray-100"}`}
               >
-                <Menu className="w-6 h-6" />
+                <Menu className="h-6 w-6" />
               </Button>
             </div>
           </div>
@@ -401,96 +404,99 @@ export default function Layout({ children, currentPageName }) {
         <main className={mainClassName} style={mainStyle}>
           {children}
         </main>
-      </PageActionsProvider>
 
-      {showFab ? (
-        <>
-      <AnimatePresence>
-        {fabOpen ? (
-          <motion.button
-            type="button"
-            aria-label="Zamknij menu szybkich akcji"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-30 bg-transparent"
-            onClick={() => setFabOpen(false)}
-          />
-        ) : null}
-      </AnimatePresence>
+        {showFab ? (
+          <>
+            <AnimatePresence>
+              {fabOpen ? (
+                <motion.button
+                  type="button"
+                  aria-label="Zamknij menu szybkich akcji"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  className="fixed inset-0 z-30 bg-transparent"
+                  onClick={() => setFabOpen(false)}
+                />
+              ) : null}
+            </AnimatePresence>
 
-      <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
-        <AnimatePresence>
-          {fabOpen
-            ? fabQuickActions.map((item, index) => {
-                const actionButtonClass = `grid h-9 w-9 place-items-center rounded-full shadow-md transition-colors ${
-                  isDark
-                    ? "bg-slate-700 text-white hover:bg-slate-600"
-                    : "bg-white text-slate-700 hover:bg-slate-50"
-                }`;
-
-                return (
-                  <motion.div
-                    key={item.title}
-                    initial={{ opacity: 0, y: 10, scale: 0.92 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.92 }}
-                    transition={{ duration: 0.18, delay: index * 0.04 }}
-                    className="mr-1 flex items-center gap-2"
-                  >
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${
+            <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+              <AnimatePresence>
+                {fabOpen
+                  ? fabQuickActions.map((item, index) => {
+                      const actionButtonClass = `grid h-9 w-9 place-items-center rounded-full shadow-md transition-colors ${
                         isDark
-                          ? "bg-slate-800 text-slate-200"
-                          : "bg-white text-slate-700"
-                      }`}
-                    >
-                      {item.title}
-                    </span>
-                    {item.url ? (
-                      <Link
-                        to={item.url}
-                        aria-label={item.title}
-                        className={actionButtonClass}
-                        onClick={() => setFabOpen(false)}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        aria-label={item.title}
-                        className={actionButtonClass}
-                        onClick={() => handleFabAction(item)}
-                      >
-                        <item.icon className="h-4 w-4 shrink-0" />
-                      </button>
-                    )}
-                  </motion.div>
-                );
-              })
-            : null}
-        </AnimatePresence>
+                          ? "bg-slate-700 text-white hover:bg-slate-600"
+                          : "bg-white text-slate-700 hover:bg-slate-50"
+                      }`;
 
-        <button
-          type="button"
-          aria-label={fabOpen ? "Zamknij" : "Szybkie akcje"}
-          aria-expanded={fabOpen}
-          onClick={() => setFabOpen((open) => !open)}
-          className={`grid h-11 w-11 place-items-center rounded-full p-0 shadow-lg transition-all hover:scale-105 active:scale-95 ${
-            fabOpen ? "rotate-45" : "rotate-0"
-          } ${
-            isDark
-              ? "bg-blue-600 text-white hover:bg-blue-500"
-              : "bg-blue-600 text-white hover:bg-blue-700"
-          }`}
-        >
-          <Plus className="h-[22px] w-[22px] shrink-0 stroke-[2.5]" aria-hidden="true" />
-        </button>
-      </div>
-        </>
-      ) : null}
+                      return (
+                        <motion.div
+                          key={item.title}
+                          initial={{ opacity: 0, y: 10, scale: 0.92 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.92 }}
+                          transition={{ duration: 0.18, delay: index * 0.04 }}
+                          className="mr-1 flex items-center gap-2"
+                        >
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${
+                              isDark
+                                ? "bg-slate-800 text-slate-200"
+                                : "bg-white text-slate-700"
+                            }`}
+                          >
+                            {item.title}
+                          </span>
+                          {item.url ? (
+                            <Link
+                              to={item.url}
+                              aria-label={item.title}
+                              className={actionButtonClass}
+                              onClick={() => setFabOpen(false)}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                            </Link>
+                          ) : (
+                            <button
+                              type="button"
+                              aria-label={item.title}
+                              className={actionButtonClass}
+                              onClick={() => handleFabAction(item)}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                            </button>
+                          )}
+                        </motion.div>
+                      );
+                    })
+                  : null}
+              </AnimatePresence>
+
+              <div className="flex items-center gap-2">
+                <AnswerKeyFab isDark={isDark} />
+                <button
+                  type="button"
+                  aria-label={fabOpen ? "Zamknij" : "Szybkie akcje"}
+                  aria-expanded={fabOpen}
+                  onClick={() => setFabOpen((open) => !open)}
+                  className={`grid h-11 w-11 place-items-center rounded-full p-0 shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                    fabOpen ? "rotate-45" : "rotate-0"
+                  } ${
+                    isDark
+                      ? "bg-blue-600 text-white hover:bg-blue-500"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
+                  }`}
+                >
+                  <Plus className="h-[22px] w-[22px] shrink-0 stroke-[2.5]" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : null}
+      </PageActionsProvider>
 
       {/* Footer */}
       {showFooter && (
@@ -506,7 +512,7 @@ export default function Layout({ children, currentPageName }) {
                 </span>
               </div>
               <p className={`text-sm ${isDark ? "text-slate-400" : "text-gray-600"}`}>
-                © 2024 Mauka. Matematyka może być prosta.
+                © 2024 Matematyka. Matematyka może być prosta.
               </p>
             </div>
           </div>
