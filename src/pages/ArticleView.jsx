@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -26,6 +27,8 @@ import MathText from "@/components/MathText";
 import TaskListCard from "@/components/TaskListCard";
 import { createPageUrl } from "@/utils";
 import {
+  articleContentModeLabel,
+  articleExampleLevelLabel,
   filterArticleByContentModes,
   getArticleContentModes,
   getSampleArticleById,
@@ -38,6 +41,16 @@ import { isMaturalneTask, isStemTask, mapDbTaskRow, normalizeVideoEmbedUrl } fro
 import { shouldNavigateTaskTile } from "@/utils/task-tile-nav";
 import { buildTaskDetailsNavState } from "@/utils/task-details-nav";
 import { cn } from "@/lib/utils";
+import {
+  CartesianGrid,
+  ReferenceLine,
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const accentPalettes = {
   blue: {
@@ -61,6 +74,30 @@ const accentPalettes = {
     badge: "border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300",
     topic: "bg-blue-50 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300",
     ring: "focus-visible:ring-blue-500",
+    plot: "#2563eb",
+  },
+  green: {
+    border: "border-green-200 dark:border-green-800",
+    borderStrong: "border-l-green-500 dark:border-l-green-400",
+    bg: "bg-green-50/70 dark:bg-green-950/30",
+    bgSoft: "bg-green-50/50 dark:bg-green-950/20",
+    text: "text-green-700 dark:text-green-300",
+    textStrong: "text-green-900 dark:text-green-100",
+    chip: "bg-green-100 text-green-700 dark:bg-green-950/50 dark:text-green-300",
+    solid: "bg-green-600 text-white dark:bg-green-500",
+    hoverBg: "hover:bg-green-50/40 dark:hover:bg-green-950/20",
+    chipInteractive:
+      "border-green-200 bg-green-50 text-green-700 hover:shadow-sm dark:border-green-800 dark:bg-green-950/40 dark:text-green-300",
+    hintOn:
+      "border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-950/50 dark:text-green-300",
+    hintOff:
+      "border-slate-200 bg-slate-50 text-slate-500 hover:border-green-300 hover:bg-green-50 hover:text-green-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400 dark:hover:border-green-700 dark:hover:bg-green-950/40 dark:hover:text-green-300",
+    hoverText: "hover:text-green-700 dark:hover:text-green-300",
+    divider: "border-green-200/80 dark:border-green-800",
+    badge: "border-green-300 text-green-700 dark:border-green-700 dark:text-green-300",
+    topic: "bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-300",
+    ring: "focus-visible:ring-green-500",
+    plot: "#16a34a",
   },
   violet: {
     border: "border-violet-200 dark:border-violet-800",
@@ -83,6 +120,7 @@ const accentPalettes = {
     badge: "border-violet-300 text-violet-700 dark:border-violet-700 dark:text-violet-300",
     topic: "bg-violet-50 text-violet-700 dark:bg-violet-950/50 dark:text-violet-300",
     ring: "focus-visible:ring-violet-500",
+    plot: "#7c3aed",
   },
 };
 
@@ -105,10 +143,20 @@ function useNoteColors() {
   return useContext(NoteColorsContext);
 }
 
-function articleAccentKey(article) {
+function articleAccentKey(article, selectedModes) {
+  const modes = Array.isArray(selectedModes) ? selectedModes : [];
+  if (modes.length > 0 && modes.every((mode) => mode === "rozszerzenie")) {
+    return "violet";
+  }
+  if (modes.length > 0 && modes.every((mode) => mode === "podstawowka")) {
+    return "green";
+  }
   const levels = article?.levels || [];
   if (levels.length > 0 && levels.every((level) => level === "rozszerzony")) {
     return "violet";
+  }
+  if (levels.length > 0 && levels.every((level) => level === "podstawówka")) {
+    return "green";
   }
   return "blue";
 }
@@ -293,7 +341,7 @@ function FormulaPreviewToast({ formula }) {
                   </span>
                   {formula.caption ? (
                     <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      {formula.caption}
+                      <ArticleRichText text={formula.caption} />
                     </span>
                   ) : null}
                 </div>
@@ -310,10 +358,166 @@ function FormulaPreviewToast({ formula }) {
   );
 }
 
+function getStepText(step) {
+  if (typeof step === "string") return step;
+  if (step && typeof step === "object") return step.text || step.content || "";
+  return "";
+}
+
+function getStepFigure(step) {
+  if (!step || typeof step !== "object") return null;
+  if (step.figure) return step.figure;
+  if (step.type === "rect-figure") return step;
+  return null;
+}
+
+function RectFigureDrawing({ figure, compact = false, showCaption = true }) {
+  const noteColors = useNoteColors();
+  const hatchId = `cut-hatch-${useId().replace(/:/g, "")}`;
+  const scale = Number(figure?.scale) > 0 ? Number(figure.scale) : compact ? 22 : 28;
+  const pad = Number(figure?.pad) > 0 ? Number(figure.pad) : compact ? 30 : 36;
+  const parts = Array.isArray(figure?.parts) ? figure.parts : [];
+  const labels = Array.isArray(figure?.labels) ? figure.labels : [];
+  const outline = Array.isArray(figure?.outline) ? figure.outline : [];
+  const cutParts = parts.filter((part) => part.cut);
+  const drawParts = parts.filter((part) => !part.cut);
+
+  let maxX = 0;
+  let maxY = 0;
+  for (const part of parts) {
+    const right = Number(part.x) + Number(part.w);
+    const bottom = Number(part.y) + Number(part.h);
+    if (right > maxX) maxX = right;
+    if (bottom > maxY) maxY = bottom;
+  }
+  for (const point of outline) {
+    if (Number(point.x) > maxX) maxX = Number(point.x);
+    if (Number(point.y) > maxY) maxY = Number(point.y);
+  }
+
+  const extraLeft = labels.some((label) => Number(label.x) < 0) ? 56 : 0;
+  const extraRight = labels.some((label) => Number(label.x) > maxX) ? 28 : 0;
+  const vbW = maxX * scale + pad * 2 + extraLeft + extraRight;
+  const vbH = maxY * scale + pad * 2;
+  const toX = (value) => extraLeft + pad + Number(value) * scale;
+  const toY = (value) => pad + Number(value) * scale;
+  const outlinePoints = outline
+    .map((point) => `${toX(point.x)},${toY(point.y)}`)
+    .join(" ");
+
+  return (
+    <div className="min-w-0">
+      <div className="flex justify-center overflow-x-auto px-1 py-2">
+        <div className="relative shrink-0" style={{ width: vbW, height: vbH }}>
+          <svg
+            width={vbW}
+            height={vbH}
+            viewBox={`0 0 ${vbW} ${vbH}`}
+            className={noteColors.accent.text}
+            aria-hidden="true"
+          >
+            <defs>
+              <pattern
+                id={hatchId}
+                width="8"
+                height="8"
+                patternUnits="userSpaceOnUse"
+                patternTransform="rotate(45)"
+              >
+                <line x1="0" y1="0" x2="0" y2="8" className="stroke-current" strokeWidth="1.5" opacity="0.55" />
+              </pattern>
+            </defs>
+            {outline.length >= 3 ? (
+              <polygon
+                points={outlinePoints}
+                className="fill-current stroke-current"
+                fillOpacity="0.14"
+                strokeWidth="2.25"
+                strokeLinejoin="round"
+              />
+            ) : (
+              drawParts.map((part, index) => (
+                <rect
+                  key={`${part.x}-${part.y}-${index}`}
+                  x={toX(part.x)}
+                  y={toY(part.y)}
+                  width={Number(part.w) * scale}
+                  height={Number(part.h) * scale}
+                  className="fill-current stroke-current"
+                  fillOpacity={part.dim ? 0.06 : 0.14}
+                  strokeWidth="2.25"
+                  strokeDasharray={part.dashed ? "6 4" : undefined}
+                />
+              ))
+            )}
+            {cutParts.map((part, index) => (
+              <g key={`cut-${part.x}-${part.y}-${index}`}>
+                <rect
+                  x={toX(part.x)}
+                  y={toY(part.y)}
+                  width={Number(part.w) * scale}
+                  height={Number(part.h) * scale}
+                  className="fill-white dark:fill-slate-900"
+                />
+                <rect
+                  x={toX(part.x)}
+                  y={toY(part.y)}
+                  width={Number(part.w) * scale}
+                  height={Number(part.h) * scale}
+                  fill={`url(#${hatchId})`}
+                  className="stroke-current"
+                  strokeWidth="2.25"
+                  strokeDasharray="6 4"
+                />
+              </g>
+            ))}
+          </svg>
+          {labels.map((label, index) => {
+            const labelX = Number(label.x);
+            const side =
+              labelX < 0 ? "left" : labelX > maxX ? "right" : "center";
+            const leftPx =
+              side === "left" ? toX(0) - 10 : side === "right" ? toX(maxX) + 10 : toX(labelX);
+            return (
+              <div
+                key={`${label.text}-${index}`}
+                className={cn(
+                  "absolute -translate-y-1/2 text-sm font-semibold leading-none text-slate-800 dark:text-slate-100",
+                  side === "left" && "-translate-x-full",
+                  side === "center" && "-translate-x-1/2",
+                )}
+                style={{ left: leftPx, top: toY(label.y) }}
+              >
+                <ArticleRichText text={label.text} />
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      {showCaption && figure?.caption ? (
+        <p className="px-1 pb-1 text-center text-xs leading-[1.5] text-slate-600 dark:text-slate-300">
+          <ArticleRichText text={figure.caption} />
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function ExampleStepContent({ step }) {
+  const text = getStepText(step);
+  const figure = getStepFigure(step);
+  return (
+    <div className="min-w-0 space-y-2">
+      {text ? <ArticleRichText text={text} /> : null}
+      {figure ? <RectFigureDrawing figure={figure} compact /> : null}
+    </div>
+  );
+}
+
 function FormulaBlock({ block }) {
   const preview = useContext(FormulaPreviewContext);
   const noteColors = useNoteColors();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() => Boolean(block.exampleOpen));
   const accent = getFormulaAccent(noteColors);
   const hasExample = Boolean(block.example);
   const domId = formulaDomId(block.label);
@@ -365,7 +569,7 @@ function FormulaBlock({ block }) {
 
         {block.caption ? (
           <p className="text-center text-xs font-medium tracking-wide text-slate-500 dark:text-slate-400">
-            {block.caption}
+            <ArticleRichText text={block.caption} />
           </p>
         ) : null}
 
@@ -400,7 +604,7 @@ function FormulaBlock({ block }) {
                           noteColors.accent.chip,
                         )}
                       >
-                        {block.example.level === "rozszerzony" ? "Rozszerzenie" : "Podstawa"}
+                        {articleExampleLevelLabel(block.example.level)}
                       </span>
                     ) : null}
                   </div>
@@ -409,8 +613,13 @@ function FormulaBlock({ block }) {
                       <ArticleRichText text={block.example.prompt} />
                     </p>
                   ) : null}
+                  {block.example.figure ? (
+                    <div className="mb-2">
+                      <RectFigureDrawing figure={block.example.figure} compact />
+                    </div>
+                  ) : null}
                   {block.example.steps?.length ? (
-                    <ol className="space-y-1.5">
+                    <ol className="space-y-2">
                       {block.example.steps.map((step, index) => (
                         <li
                           key={`${block.label}-e-${index}`}
@@ -419,9 +628,7 @@ function FormulaBlock({ block }) {
                           <span className={cn("font-semibold", noteColors.accent.text)}>
                             {index + 1}.
                           </span>
-                          <span className="min-w-0">
-                            <ArticleRichText text={step} />
-                          </span>
+                          <ExampleStepContent step={step} />
                         </li>
                       ))}
                     </ol>
@@ -594,6 +801,206 @@ function CalloutBlock({ block }) {
   );
 }
 
+function formatPlotTick(value) {
+  if (!Number.isFinite(value)) return "";
+  if (Number.isInteger(value)) return String(value);
+  return String(Math.round(value * 1000) / 1000).replace(".", ",");
+}
+
+function SequencePlotsBlock({ block }) {
+  const noteColors = useNoteColors();
+  const items = block.items || [];
+  const plotColor = noteColors.accent.plot || "#7c3aed";
+
+  return (
+    <div className="grid gap-4 lg:grid-cols-3">
+      {items.map((item, index) => {
+        const points = (item.points || []).map((point) => ({
+          n: Number(point.n),
+          a: Number(point.a),
+        }));
+        const hasLimit = typeof item.limit === "number";
+
+        return (
+          <motion.div
+            key={`${item.title || "plot"}-${index}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: index * 0.06, ease: "easeOut" }}
+            className={cn("overflow-hidden", noteColors.frame)}
+          >
+            <div className="space-y-1 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+              <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
+                {item.title || `Przykład ${index + 1}`}
+              </p>
+              {item.formula ? (
+                <p className="text-sm font-semibold leading-[1.6] text-slate-900 dark:text-white">
+                  <ArticleRichText text={item.formula} />
+                </p>
+              ) : null}
+              {item.terms ? (
+                <p className="text-sm leading-[1.6] text-slate-600 dark:text-slate-300">
+                  <ArticleRichText text={item.terms} />
+                </p>
+              ) : null}
+            </div>
+            <div className="h-52 px-2 py-2 sm:h-56">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 18, right: 12, bottom: 8, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-slate-200 dark:stroke-slate-700" />
+                  <XAxis
+                    dataKey="n"
+                    type="number"
+                    allowDecimals={false}
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={formatPlotTick}
+                    ticks={points.map((point) => point.n).filter((n) => n === 1 || n % 2 === 0)}
+                    domain={[0, Math.max(...points.map((point) => point.n), 1) + 1]}
+                    label={{ value: "n", position: "insideBottomRight", offset: -2, fontSize: 11 }}
+                  />
+                  <YAxis
+                    dataKey="a"
+                    type="number"
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={formatPlotTick}
+                    width={36}
+                    domain={item.yMin != null && item.yMax != null ? [item.yMin, item.yMax] : ["auto", "auto"]}
+                    label={{ value: "aₙ", angle: -90, position: "insideLeft", fontSize: 11 }}
+                  />
+                  <Tooltip
+                    cursor={{ strokeDasharray: "3 3" }}
+                    formatter={(value) => [formatPlotTick(Number(value)), "aₙ"]}
+                    labelFormatter={(value) => `n = ${formatPlotTick(Number(value))}`}
+                  />
+                  {hasLimit ? (
+                    <ReferenceLine
+                      y={item.limit}
+                      stroke={plotColor}
+                      strokeDasharray="6 4"
+                      strokeWidth={1.5}
+                    />
+                  ) : null}
+                  <Scatter data={points} fill={plotColor} line={false} />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+            {item.caption ? (
+              <p className="border-t border-slate-200 px-4 py-2.5 text-sm leading-[1.55] text-slate-700 dark:border-slate-700 dark:text-slate-200">
+                <ArticleRichText text={item.caption} />
+              </p>
+            ) : null}
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function RectFigureBlock({ block }) {
+  const noteColors = useNoteColors();
+  const accent = getFormulaAccent(noteColors);
+  const [open, setOpen] = useState(false);
+  const hasExample = Boolean(block.example);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.28, ease: "easeOut" }}
+      className={cn("overflow-hidden", noteColors.frame)}
+    >
+      <div
+        role={hasExample ? "button" : undefined}
+        tabIndex={hasExample ? 0 : undefined}
+        aria-expanded={hasExample ? open : undefined}
+        onClick={() => {
+          if (!hasExample) return;
+          setOpen((value) => !value);
+        }}
+        onKeyDown={(event) => {
+          if (!hasExample) return;
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            setOpen((value) => !value);
+          }
+        }}
+        className={cn(
+          hasExample ? "cursor-pointer hover:bg-black/[0.02] dark:hover:bg-white/[0.02]" : "cursor-default",
+        )}
+      >
+        <RectFigureDrawing figure={block} showCaption={false} />
+        {block.caption ? (
+          <p className="border-t border-slate-200 px-4 py-2.5 text-sm leading-[1.55] text-slate-700 dark:border-slate-700 dark:text-slate-200">
+            <ArticleRichText text={block.caption} />
+          </p>
+        ) : null}
+        {hasExample ? (
+          <p className={cn("px-4 pb-3 text-center text-[11px] font-semibold uppercase tracking-wide", accent.chip)}>
+            {open ? "Kliknij, aby zwinąć" : "Kliknij, aby zobaczyć pole i obwód"}
+          </p>
+        ) : null}
+      </div>
+      <AnimatePresence initial={false}>
+        {open && hasExample ? (
+          <motion.div
+            key="figure-details"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-3 border-t border-slate-200/80 px-4 pb-4 pt-3 dark:border-slate-700 sm:px-5">
+              <div className={cn("px-3 py-3", noteColors.frame, noteColors.accent.bgSoft)}>
+                <div className="mb-1.5 flex flex-wrap items-center gap-2">
+                  <p className={cn("text-xs font-semibold uppercase tracking-wide", noteColors.accent.text)}>
+                    Przykład
+                  </p>
+                  {block.example.level ? (
+                    <span
+                      className={cn(
+                        "rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                        noteColors.accent.chip,
+                      )}
+                    >
+                      {articleExampleLevelLabel(block.example.level)}
+                    </span>
+                  ) : null}
+                </div>
+                {block.example.prompt ? (
+                  <p className="mb-2 text-sm font-medium leading-[1.6] text-slate-800 dark:text-slate-100">
+                    <ArticleRichText text={block.example.prompt} />
+                  </p>
+                ) : null}
+                {block.example.steps?.length ? (
+                  <ol className="space-y-2">
+                    {block.example.steps.map((step, index) => (
+                      <li
+                        key={`fig-e-${index}`}
+                        className="grid grid-cols-[1.25rem_minmax(0,1fr)] items-start gap-x-2 text-sm leading-[1.6] text-slate-700 dark:text-slate-200"
+                      >
+                        <span className={cn("font-semibold", noteColors.accent.text)}>
+                          {index + 1}.
+                        </span>
+                        <ExampleStepContent step={step} />
+                      </li>
+                    ))}
+                  </ol>
+                ) : null}
+                {block.example.result ? (
+                  <p className={cn("mt-2 border-t pt-2 text-sm font-semibold text-slate-900 dark:text-slate-100", noteColors.accent.divider)}>
+                    <ArticleRichText text={block.example.result} />
+                  </p>
+                ) : null}
+              </div>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
 function ArticleBlock({ block, articleId, relatedTasks }) {
   const noteColors = useNoteColors();
 
@@ -658,6 +1065,14 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
         </ol>
       </div>
     );
+  }
+
+  if (block.type === "sequence-plots") {
+    return <SequencePlotsBlock block={block} />;
+  }
+
+  if (block.type === "rect-figure") {
+    return <RectFigureBlock block={block} />;
   }
 
   if (block.type === "guided-example") {
@@ -768,6 +1183,11 @@ function GuidedExampleBlock({ block }) {
               <ArticleRichText text={block.prompt} />
             </p>
           ) : null}
+          {block.figure ? (
+            <div className="pt-1">
+              <RectFigureDrawing figure={block.figure} compact />
+            </div>
+          ) : null}
           <p className={cn("text-[11px] font-semibold uppercase tracking-wide opacity-80", noteColors.accent.text)}>
             {open ? "Kliknij, aby zwinąć rozwiązanie" : "Kliknij, aby zobaczyć rozwiązanie"}
           </p>
@@ -802,7 +1222,7 @@ function GuidedExampleBlock({ block }) {
                       {index + 1}
                     </span>
                     <div className="min-w-0 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
-                      <ArticleRichText text={step} />
+                      <ExampleStepContent step={step} />
                     </div>
                   </li>
                 ))}
@@ -825,7 +1245,6 @@ function GuidedExampleBlock({ block }) {
 function WorkedExampleBlock({ block }) {
   const noteColors = useNoteColors();
   const [open, setOpen] = useState(false);
-  const isRozszerzony = block.level === "rozszerzony";
 
   return (
     <div className={cn("overflow-hidden", noteColors.frame)}>
@@ -850,7 +1269,7 @@ function WorkedExampleBlock({ block }) {
                   noteColors.accent.chip,
                 )}
               >
-                {isRozszerzony ? "Rozszerzenie" : "Podstawa"}
+                {articleExampleLevelLabel(block.level)}
               </span>
             ) : null}
           </div>
@@ -887,7 +1306,7 @@ function WorkedExampleBlock({ block }) {
                         {index + 1}
                       </span>
                       <span className="min-w-0 pt-0.5">
-                        <ArticleRichText text={step} />
+                        <ExampleStepContent step={step} />
                       </span>
                     </li>
                   ))}
@@ -1017,7 +1436,6 @@ function ExerciseBlock({ block }) {
   const hasHint = hintCount > 0;
   const hintOpen = hintLevel > 0;
   const expandable = Boolean(block.answer || block.explanation?.length);
-  const isRozszerzony = block.level === "rozszerzony";
   const fill = hintCount > 0 ? hintLevel / hintCount : 0;
 
   const advanceHint = () => {
@@ -1045,7 +1463,7 @@ function ExerciseBlock({ block }) {
                     noteColors.accent.chip,
                   )}
                 >
-                  {isRozszerzony ? "Rozszerzenie" : "Podstawa"}
+                  {articleExampleLevelLabel(block.level)}
                 </span>
               ) : null}
             </div>
@@ -1354,7 +1772,7 @@ function ArticleSection({ section, index, articleId, relatedTasks }) {
           {section.number || String(index + 1).padStart(2, "0")}
         </span>
         <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-          {section.heading}
+          <ArticleRichText text={section.heading} />
         </h2>
       </div>
       <div className="space-y-5">
@@ -1463,11 +1881,11 @@ export default function ArticleView() {
   );
 
   const modeLabels = contentModes
-    .map((mode) => (mode === "rozszerzenie" ? "Rozszerzenie" : "Podstawa"))
+    .map((mode) => articleContentModeLabel(mode))
     .join(" · ");
   const noteTheme = useMemo(
-    () => createNoteColors(articleAccentKey(rawArticle)),
-    [rawArticle],
+    () => createNoteColors(articleAccentKey(rawArticle, contentModes)),
+    [rawArticle, contentModes],
   );
 
   if (articleLoading && !rawArticle) {

@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { renderCkeDiagram } from "@/components/CkeSolutionDiagrams";
 import MathText from "@/components/MathText";
 
 function splitPreservingDisplayMath(text) {
@@ -225,6 +226,16 @@ function renderBodyBlocks(blocks, keyPrefix) {
       return;
     }
 
+    const diagram = renderCkeDiagram(trimmed);
+    if (diagram) {
+      nodes.push(
+        <div key={key} className="my-1">
+          {diagram}
+        </div>,
+      );
+      return;
+    }
+
     nodes.push(
       <p
         key={key}
@@ -317,32 +328,11 @@ function SectionAccordion({ sections, prefix }) {
   );
 }
 
-export default function CkeSolutionText({
-  text,
-  naszaOdpowiedz = null,
-  className = "",
-}) {
+export default function CkeSolutionText({ text, className = "" }) {
   const raw = String(text ?? "").trim();
-  const nasza = String(naszaOdpowiedz ?? "").trim();
+  if (!raw) return null;
 
-  const sections = raw ? groupIntoSections(flattenToItems(raw)) : [];
-  if (nasza) {
-    sections.push({
-      title: "Nasza odpowiedź",
-      blocks: flattenToItems(nasza),
-    });
-  } else if (sections.length) {
-    sections.push({
-      title: "Nasza odpowiedź",
-      blocks: [
-        {
-          kind: "line",
-          value: "Wkrótce dodamy tu nasze opracowanie tego zadania.",
-        },
-      ],
-    });
-  }
-
+  const sections = groupIntoSections(flattenToItems(raw));
   if (!sections.length) return null;
 
   return (

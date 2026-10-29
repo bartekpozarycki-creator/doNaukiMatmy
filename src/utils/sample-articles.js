@@ -1,5 +1,1762 @@
 ﻿export const sampleArticles = [
   {
+    id: "artykul-potegi-i-pierwiastki",
+    title: "Potęgi i pierwiastki",
+    description:
+      "Potęgi o wykładniku naturalnym, prawa działań, pierwiastki kwadratowe i sześcienne. Poziom podstawówki, podstawowy i rozszerzony.",
+    topic: "Liczby rzeczywiste",
+    subtopic: "Potęgi i pierwiastki",
+    contentModes: ["podstawowka", "podstawa", "rozszerzenie"],
+    levels: ["podstawówka", "podstawowy", "rozszerzony"],
+    readMinutes: 20,
+    relatedTasks: {
+      topicIncludes: ["potęg", "pierwiast"],
+      subtopicIncludes: ["potęg", "pierwiast"],
+      questionIncludes: ["potęg", "pierwiast", "\\sqrt"],
+      limit: 12,
+    },
+    legend: [
+      { label: "Poziom podstawówki", dot: "bg-green-500", contentLevel: "podstawowka" },
+      { label: "Poziom podstawowy", dot: "bg-blue-500", contentLevel: "podstawa" },
+      { label: "Poziom rozszerzony", dot: "bg-blue-300", contentLevel: "rozszerzenie" },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Co to jest potęga",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Potęga to krótki zapis mnożenia **tej samej liczby** przez siebie. Tę liczbę nazywamy **podstawą**, a ile razy ją mnożymy - **wykładnikiem**.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Definicja potęgi",
+            content:
+              "Niech $n$ będzie liczbą naturalną większą od $1$. Potęga $a^n$ oznacza iloczyn $n$ czynników równych $a$: $$a^n=a\\cdot a\\cdot\\ldots\\cdot a\\quad\\text{($n$ razy)}.$$",
+            example: {
+              prompt: "Oblicz $2^5$.",
+              right:
+                "Wykładnik $5$ oznacza pięć dwójek: $2^5=2\\cdot 2\\cdot 2\\cdot 2\\cdot 2$. Kolejno: $2\\cdot 2=4$, $4\\cdot 2=8$, $8\\cdot 2=16$, $16\\cdot 2=32$. Wynik: $32$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "a^n=a\\cdot a\\cdot\\ldots\\cdot a",
+                label: "(1)",
+                accent: "blue",
+                caption: "definicja potęgi",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $3^4$.",
+                  steps: [
+                    "Wykładnik to $4$, więc mnożymy cztery trójki: $$3^4=3\\cdot 3\\cdot 3\\cdot 3.$$",
+                    "Najpierw $3\\cdot 3=9$.",
+                    "Dalej $9\\cdot 3=27$.",
+                    "Na końcu $27\\cdot 3=81$.",
+                  ],
+                  result: "Wynik: $3^4=81$.",
+                },
+              },
+              {
+                latex: "a^1=a",
+                label: "(2)",
+                accent: "blue",
+                caption: "wykładnik $1$",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $7^1$ i $12^1$.",
+                  steps: [
+                    "Wykładnik $1$ oznacza, że liczbę bierzemy **taką, jaka jest**. Nie mnożymy jej przez nic więcej.",
+                    "Zatem $7^1=7$ oraz $12^1=12$.",
+                  ],
+                  result: "Wynik: $7^1=7$, $12^1=12$.",
+                },
+              },
+              {
+                latex: "a^0=1\\quad (a\\neq 0)",
+                label: "(3)",
+                accent: "blue",
+                caption: "wykładnik $0$",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $5^0$ i $\\left(\\dfrac{1}{2}\\right)^0$.",
+                  steps: [
+                    "To **umowa**: każdą liczbę różną od zera podniesioną do potęgi $0$ liczymy jako $1$.",
+                    "Liczba $5$ jest różna od zera, więc $5^0=1$.",
+                    "Ułamek $\\dfrac{1}{2}$ też jest różny od zera, więc $\\left(\\dfrac{1}{2}\\right)^0=1$.",
+                  ],
+                  result: "Wynik: $5^0=1$, $\\left(\\dfrac{1}{2}\\right)^0=1$.",
+                },
+              },
+              {
+                latex: "a^2=a\\cdot a",
+                label: "(4)",
+                accent: "blue",
+                caption: "kwadrat liczby",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $6^2$.",
+                  steps: [
+                    "Kwadrat liczby to ta liczba pomnożona przez siebie: $$6^2=6\\cdot 6.$$",
+                    "$6\\cdot 6=36$.",
+                  ],
+                  result: "Wynik: $6^2=36$.",
+                },
+              },
+              {
+                latex: "a^3=a\\cdot a\\cdot a",
+                label: "(5)",
+                accent: "blue",
+                caption: "sześcian liczby",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $4^3$.",
+                  steps: [
+                    "Sześcian liczby to trzy takie same czynniki: $$4^3=4\\cdot 4\\cdot 4.$$",
+                    "Najpierw $4\\cdot 4=16$.",
+                    "Dalej $16\\cdot 4=64$.",
+                  ],
+                  result: "Wynik: $4^3=64$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawowka",
+            title: "Potęgi liczby $10$",
+            content:
+              "Potęga $10^n$ to jedynka i $n$ zer. Na przykład $10^1=10$, $10^2=100$, $10^3=1000$, $10^4=10000$. Ze wzoru (3) mamy też $10^0=1$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Potęga to nie mnożenie przez wykładnik",
+            content:
+              "$2^3$ **nie** znaczy $2\\cdot 3$. To trzy dwójki: $2^3=2\\cdot 2\\cdot 2=8$. Natomiast $2\\cdot 3=6$. Inny wynik!",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Nawias przy liczbie ujemnej",
+            content:
+              "Najpierw liczymy potęgę, potem bierzemy minus. Dlatego $$-3^2=-(3\\cdot 3)=-9,$$ ale $$(-3)^2=(-3)\\cdot(-3)=9.$$ Nawias zmienia wynik. Dla nieparzystego wykładnika znak zostaje: $(-2)^3=(-2)\\cdot(-2)\\cdot(-2)=-8$.",
+          },
+        ],
+      },
+      {
+        number: "2",
+        heading: "Prawa działań na potęgach",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Gdy podstawy są **takie same**, nie musimy wypisywać całego iloczynu. Wystarczy dodać, odjąć albo pomnożyć wykładniki. Każdy wzór sprawdzamy na liczbach.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "a^m\\cdot a^n=a^{m+n}",
+                label: "(6)",
+                accent: "blue",
+                caption: "iloczyn potęg o tej samej podstawie",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $2^3\\cdot 2^4$.",
+                  steps: [
+                    "Podstawy są takie same (obie to $2$), więc dodajemy wykładniki: $$2^3\\cdot 2^4=2^{3+4}=2^7.$$",
+                    "Ze wzoru (1): $2^7=2\\cdot 2\\cdot 2\\cdot 2\\cdot 2\\cdot 2\\cdot 2$.",
+                    "Kolejno: $2\\cdot 2=4$, $4\\cdot 2=8$, $8\\cdot 2=16$, $16\\cdot 2=32$, $32\\cdot 2=64$, $64\\cdot 2=128$.",
+                    "Kontrola bez wzoru: $2^3=8$ i $2^4=16$, a $8\\cdot 16=128$. Ten sam wynik.",
+                  ],
+                  result: "Wynik: $2^3\\cdot 2^4=128$.",
+                },
+              },
+              {
+                latex: "\\dfrac{a^m}{a^n}=a^{m-n}\\quad (a\\neq 0)",
+                label: "(7)",
+                accent: "blue",
+                caption: "iloraz potęg o tej samej podstawie",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\dfrac{3^5}{3^2}$.",
+                  steps: [
+                    "Podstawy są takie same i różne od zera, więc odejmujemy wykładniki: $$\\dfrac{3^5}{3^2}=3^{5-2}=3^3.$$",
+                    "Ze wzoru (5): $3^3=3\\cdot 3\\cdot 3=9\\cdot 3=27$.",
+                    "Kontrola: $3^5=243$ i $3^2=9$, a $243:9=27$. Ten sam wynik.",
+                  ],
+                  result: "Wynik: $\\dfrac{3^5}{3^2}=27$.",
+                },
+              },
+              {
+                latex: "(a^m)^n=a^{m\\cdot n}",
+                label: "(8)",
+                accent: "blue",
+                caption: "potęga potęgi",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $(2^3)^2$.",
+                  steps: [
+                    "Wykładniki mnożymy: $$(2^3)^2=2^{3\\cdot 2}=2^6.$$",
+                    "Ze wzoru (1): $2^6=2\\cdot 2\\cdot 2\\cdot 2\\cdot 2\\cdot 2$.",
+                    "Kolejno: $2\\cdot 2=4$, $4\\cdot 2=8$, $8\\cdot 2=16$, $16\\cdot 2=32$, $32\\cdot 2=64$.",
+                    "Kontrola: najpierw $2^3=8$, potem $8^2=64$. Ten sam wynik.",
+                  ],
+                  result: "Wynik: $(2^3)^2=64$.",
+                },
+              },
+              {
+                latex: "(a\\cdot b)^n=a^n\\cdot b^n",
+                label: "(9)",
+                accent: "blue",
+                caption: "potęga iloczynu",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $(2\\cdot 5)^2$.",
+                  steps: [
+                    "Możemy najpierw pomnożyć w nawiasie: $2\\cdot 5=10$, więc $(2\\cdot 5)^2=10^2=100$.",
+                    "Ze wzoru (9) to samo rozdzielamy na czynniki: $$(2\\cdot 5)^2=2^2\\cdot 5^2.$$",
+                    "$2^2=4$ i $5^2=25$, a $4\\cdot 25=100$.",
+                    "Obie drogi dają $100$.",
+                  ],
+                  result: "Wynik: $(2\\cdot 5)^2=100$.",
+                },
+              },
+              {
+                latex: "\\left(\\dfrac{a}{b}\\right)^n=\\dfrac{a^n}{b^n}\\quad (b\\neq 0)",
+                label: "(10)",
+                accent: "blue",
+                caption: "potęga ilorazu",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\left(\\dfrac{8}{2}\\right)^3$.",
+                  steps: [
+                    "Najpierw w nawiasie: $\\dfrac{8}{2}=4$, więc $\\left(\\dfrac{8}{2}\\right)^3=4^3$.",
+                    "Ze wzoru (5): $4^3=4\\cdot 4\\cdot 4=16\\cdot 4=64$.",
+                    "Ze wzoru (10): $\\left(\\dfrac{8}{2}\\right)^3=\\dfrac{8^3}{2^3}$.",
+                    "$8^3=8\\cdot 8\\cdot 8=64\\cdot 8=512$ i $2^3=8$, a $512:8=64$. Ten sam wynik.",
+                  ],
+                  result: "Wynik: $\\left(\\dfrac{8}{2}\\right)^3=64$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Wzory (6) i (7) wymagają tej samej podstawy",
+            content:
+              "Nie wolno pisać $2^3\\cdot 5^3=10^6$. Tu podstawy są różne. Można za to ze wzoru (9) iść w drugą stronę: $2^3\\cdot 5^3=(2\\cdot 5)^3=10^3=1000$.",
+          },
+        ],
+      },
+      {
+        number: "3",
+        heading: "Pierwiastek kwadratowy i sześcienny",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Pierwiastek **odwraca** potęgę. Pierwiastek kwadratowy odwraca kwadrat, a pierwiastek sześcienny odwraca sześcian.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Pierwiastek kwadratowy",
+            content:
+              "Dla $a\\ge 0$ liczba $\\sqrt{a}$ to **nieujemna** liczba, której kwadrat jest równy $a$. Czyli $\\sqrt{a}=b$ wtedy i tylko wtedy, gdy $b\\ge 0$ i $b^2=a$.",
+            example: {
+              prompt: "Oblicz $\\sqrt{36}$.",
+              right:
+                "Szukamy nieujemnej liczby, której kwadrat to $36$. $6\\cdot 6=36$ i $6\\ge 0$, więc $\\sqrt{36}=6$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "(\\sqrt{a})^2=a\\quad (a\\ge 0)",
+                label: "(11)",
+                accent: "blue",
+                caption: "kwadrat pierwiastka kwadratowego",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\sqrt{25}$ i sprawdź wzór (11).",
+                  steps: [
+                    "Szukamy nieujemnej liczby, której kwadrat to $25$.",
+                    "$5\\cdot 5=25$ i $5\\ge 0$, więc $\\sqrt{25}=5$.",
+                    "Sprawdzenie wzoru (11): $(\\sqrt{25})^2=5^2=25$. Wróciliśmy do liczby pod pierwiastkiem.",
+                  ],
+                  result: "Wynik: $\\sqrt{25}=5$.",
+                },
+              },
+              {
+                latex: "\\sqrt{a^2}=a\\quad (a\\ge 0)",
+                label: "(12)",
+                accent: "blue",
+                caption: "pierwiastek z kwadratu (dla $a\\ge 0$)",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\sqrt{7^2}$.",
+                  steps: [
+                    "Liczba $7$ jest nieujemna, więc ze wzoru (12) od razu $\\sqrt{7^2}=7$.",
+                    "Dla pewności: $7^2=49$ i $\\sqrt{49}=7$, bo $7\\cdot 7=49$.",
+                  ],
+                  result: "Wynik: $\\sqrt{7^2}=7$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Pierwiastek sześcienny",
+            content:
+              "Liczba $\\sqrt[3]{a}$ to taka liczba, której sześcian jest równy $a$. Czyli $\\sqrt[3]{a}=b$ wtedy i tylko wtedy, gdy $b^3=a$. Tu $a$ **może być ujemne**.",
+            example: {
+              prompt: "Oblicz $\\sqrt[3]{27}$ i $\\sqrt[3]{-1}$.",
+              right:
+                "$3\\cdot 3\\cdot 3=27$, więc $\\sqrt[3]{27}=3$. $(-1)\\cdot(-1)\\cdot(-1)=-1$, więc $\\sqrt[3]{-1}=-1$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "(\\sqrt[3]{a})^3=a",
+                label: "(13)",
+                accent: "blue",
+                caption: "sześcian pierwiastka sześciennego",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\sqrt[3]{8}$ i $\\sqrt[3]{-8}$.",
+                  steps: [
+                    "Szukamy liczby, której sześcian to $8$. Ze wzoru (5): $2\\cdot 2\\cdot 2=8$, więc $\\sqrt[3]{8}=2$.",
+                    "Sprawdzenie: $(\\sqrt[3]{8})^3=2^3=8$.",
+                    "Dla liczby ujemnej: $(-2)\\cdot(-2)\\cdot(-2)=-8$, więc $\\sqrt[3]{-8}=-2$.",
+                    "Pierwiastek **kwadratowy** z liczby ujemnej w liczbach rzeczywistych nie istnieje. Pierwiastek **sześcienny** z liczby ujemnej jak najbardziej istnieje.",
+                  ],
+                  result: "Wynik: $\\sqrt[3]{8}=2$, $\\sqrt[3]{-8}=-2$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawowka",
+            title: "Kilka gotowych wartości",
+            content:
+              "$\\sqrt{1}=1$, $\\sqrt{4}=2$, $\\sqrt{9}=3$, $\\sqrt{16}=4$, $\\sqrt{25}=5$, $\\sqrt{36}=6$, $\\sqrt{49}=7$, $\\sqrt{64}=8$, $\\sqrt{81}=9$, $\\sqrt{100}=10$. Dla sześcianów: $\\sqrt[3]{1}=1$, $\\sqrt[3]{8}=2$, $\\sqrt[3]{27}=3$, $\\sqrt[3]{64}=4$, $\\sqrt[3]{125}=5$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Pierwiastek to nie dzielenie przez $2$",
+            content:
+              "$\\sqrt{16}$ **nie** znaczy $16:2$. To pytanie: *jaka nieujemna liczba razy ona sama daje $16$?* Odpowiedź to $4$, bo $4\\cdot 4=16$. Natomiast $16:2=8$. Inny wynik!",
+          },
+        ],
+      },
+      {
+        number: "4",
+        heading: "Zamiana potęgi na pierwiastek",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Potęga i pierwiastek to **dwa zapisy tego samego**. Kwadrat odwracamy pierwiastkiem kwadratowym, sześcian - pierwiastkiem sześciennym. Możemy też zapisać pierwiastek jako potęgę z ułamkiem w wykładniku.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "a^2=b\\;\\Leftrightarrow\\; a=\\sqrt{b}\\quad (a\\ge 0,\\ b\\ge 0)",
+                label: "(14)",
+                accent: "blue",
+                caption: "kwadrat i pierwiastek kwadratowy",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Zapisz $6^2=36$ za pomocą pierwiastka. Potem z $\\sqrt{81}=9$ wróć do potęgi.",
+                  steps: [
+                    "$6^2=36$ znaczy: sześć do kwadratu daje $36$.",
+                    "Ze wzoru (14) w drugą stronę: $6=\\sqrt{36}$.",
+                    "Teraz odwrotnie. Mamy $\\sqrt{81}=9$, więc ze wzoru (14) $9^2=81$.",
+                    "Kontrola: $9\\cdot 9=81$. Zgadza się.",
+                  ],
+                  result: "Wynik: $\\sqrt{36}=6$ oraz $9^2=81$.",
+                },
+              },
+              {
+                latex: "a^3=b\\;\\Leftrightarrow\\; a=\\sqrt[3]{b}",
+                label: "(15)",
+                accent: "blue",
+                caption: "sześcian i pierwiastek sześcienny",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Zapisz $4^3=64$ za pomocą pierwiastka. Potem z $\\sqrt[3]{-8}=-2$ wróć do potęgi.",
+                  steps: [
+                    "$4^3=64$ znaczy: cztery do sześcianu daje $64$.",
+                    "Ze wzoru (15): $4=\\sqrt[3]{64}$.",
+                    "Odwrotnie: $\\sqrt[3]{-8}=-2$, więc $(-2)^3=-8$.",
+                    "Kontrola: $(-2)\\cdot(-2)\\cdot(-2)=-8$. Zgadza się.",
+                  ],
+                  result: "Wynik: $\\sqrt[3]{64}=4$ oraz $(-2)^3=-8$.",
+                },
+              },
+              {
+                latex: "\\sqrt{a}=a^{1/2}\\quad (a\\ge 0),\\qquad \\sqrt[3]{a}=a^{1/3}",
+                label: "(16)",
+                accent: "blue",
+                caption: "pierwiastek zapisany jako potęga",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Zapisz $\\sqrt{25}$ jako potęgę i $8^{1/3}$ jako pierwiastek. Oblicz oba.",
+                  steps: [
+                    "Ze wzoru (16) pierwiastek kwadratowy to potęga $\\dfrac{1}{2}$: $$\\sqrt{25}=25^{1/2}.$$",
+                    "$5\\cdot 5=25$, więc $\\sqrt{25}=5$. Zatem $25^{1/2}=5$.",
+                    "W drugą stronę: potęga $\\dfrac{1}{3}$ to pierwiastek sześcienny: $$8^{1/3}=\\sqrt[3]{8}.$$",
+                    "$2\\cdot 2\\cdot 2=8$, więc $\\sqrt[3]{8}=2$. Zatem $8^{1/3}=2$.",
+                  ],
+                  result: "Wynik: $\\sqrt{25}=25^{1/2}=5$, $8^{1/3}=\\sqrt[3]{8}=2$.",
+                },
+              },
+              {
+                latex: "a^{m/n}=\\sqrt[n]{a^m}=(\\sqrt[n]{a})^m\\quad (a\\ge 0)",
+                label: "(17)",
+                accent: "blue",
+                caption: "potęga z ułamkiem i pierwiastek",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $8^{2/3}$ na dwa sposoby. Potem zapisz $\\sqrt{9^3}$ jako potęgę i oblicz.",
+                  steps: [
+                    "Ze wzoru (17) wygodniej najpierw wziąć pierwiastek, potem podnieść do potęgi: $$8^{2/3}=(\\sqrt[3]{8})^2.$$",
+                    "$\\sqrt[3]{8}=2$, więc $(2)^2=4$.",
+                    "Drugi sposób: $$8^{2/3}=\\sqrt[3]{8^2}=\\sqrt[3]{64}.$$ $4\\cdot 4\\cdot 4=64$, więc $\\sqrt[3]{64}=4$. Ten sam wynik.",
+                    "Teraz odwrotnie. $\\sqrt{9^3}$ to wzór (17) od strony pierwiastka: $$\\sqrt{9^3}=9^{3/2}=(\\sqrt{9})^3.$$",
+                    "$\\sqrt{9}=3$, więc $3^3=3\\cdot 3\\cdot 3=27$.",
+                  ],
+                  result: "Wynik: $8^{2/3}=4$, $\\sqrt{9^3}=9^{3/2}=27$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawowka",
+            title: "Jak czytać ułamek w wykładniku",
+            content:
+              "W $a^{m/n}$ **mianownik** $n$ mówi, jaki pierwiastek bierzemy. **Licznik** $m$ mówi, do której potęgi podnosimy. W $8^{2/3}$ trójka to pierwiastek sześcienny, dwójka to kwadrat. Zwykle łatwiej najpierw pierwiastek, potem potęga: $(\\sqrt[3]{8})^2$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Nie myl $a^{1/2}$ z $a/2$",
+            content:
+              "$9^{1/2}$ **nie** znaczy $9:2$. To $\\sqrt{9}=3$. Natomiast $9:2=4{,}5$. Inny wynik! Ułamek stoi w **wykładniku**, nie obok podstawy.",
+          },
+        ],
+      },
+      {
+        number: "5",
+        heading: "Działania na pierwiastkach",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Pierwiastki kwadratowe można mnożyć i dzielić. Przy dodawaniu **nie** ma analogicznego wzoru: $\\sqrt{9}+\\sqrt{16}$ to $3+4=7$, a nie $\\sqrt{25}=5$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "\\sqrt{a}\\cdot\\sqrt{b}=\\sqrt{a\\cdot b}\\quad (a\\ge 0,\\ b\\ge 0)",
+                label: "(18)",
+                accent: "blue",
+                caption: "iloczyn pierwiastków kwadratowych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\sqrt{4}\\cdot\\sqrt{9}$.",
+                  steps: [
+                    "Możemy policzyć każdy pierwiastek osobno: $\\sqrt{4}=2$ i $\\sqrt{9}=3$, więc $2\\cdot 3=6$.",
+                    "Ze wzoru (18): $\\sqrt{4}\\cdot\\sqrt{9}=\\sqrt{4\\cdot 9}=\\sqrt{36}$.",
+                    "$\\sqrt{36}=6$, bo $6\\cdot 6=36$. Ten sam wynik.",
+                  ],
+                  result: "Wynik: $\\sqrt{4}\\cdot\\sqrt{9}=6$.",
+                },
+              },
+              {
+                latex: "\\dfrac{\\sqrt{a}}{\\sqrt{b}}=\\sqrt{\\dfrac{a}{b}}\\quad (a\\ge 0,\\ b>0)",
+                label: "(19)",
+                accent: "blue",
+                caption: "iloraz pierwiastków kwadratowych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\dfrac{\\sqrt{50}}{\\sqrt{2}}$.",
+                  steps: [
+                    "Ze wzoru (19) łączymy pierwiastki: $$\\dfrac{\\sqrt{50}}{\\sqrt{2}}=\\sqrt{\\dfrac{50}{2}}=\\sqrt{25}.$$",
+                    "$\\sqrt{25}=5$, bo $5\\cdot 5=25$.",
+                  ],
+                  result: "Wynik: $\\dfrac{\\sqrt{50}}{\\sqrt{2}}=5$.",
+                },
+              },
+              {
+                latex: "\\sqrt{a^2\\cdot b}=a\\sqrt{b}\\quad (a\\ge 0,\\ b\\ge 0)",
+                label: "(20)",
+                accent: "blue",
+                caption: "wyłączanie czynnika przed pierwiastek",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Zapisz $\\sqrt{48}$ w postaci $a\\sqrt{b}$.",
+                  steps: [
+                    "Szukamy największego kwadratu, który dzieli $48$. Sprawdzamy: $16\\cdot 3=48$ i $16=4^2$.",
+                    "Zatem $\\sqrt{48}=\\sqrt{4^2\\cdot 3}$.",
+                    "Ze wzoru (20): $\\sqrt{4^2\\cdot 3}=4\\sqrt{3}$.",
+                    "Kontrola ze wzoru (18): $4\\sqrt{3}=\\sqrt{16}\\cdot\\sqrt{3}=\\sqrt{48}$.",
+                  ],
+                  result: "Wynik: $\\sqrt{48}=4\\sqrt{3}$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Nie dodajemy pierwiastków pod jednym znakiem",
+            content:
+              "$\\sqrt{9}+\\sqrt{16}=3+4=7$. To **nie** jest $\\sqrt{9+16}=\\sqrt{25}=5$. Wzory (18) i (19) działają przy mnożeniu i dzieleniu, nie przy dodawaniu.",
+          },
+        ],
+      },
+      {
+        number: "6",
+        heading: "Przykłady",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Poniżej kilka zadań od początku do końca. Rozwiązanie jest schowane - kliknij, żeby je zobaczyć.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 1",
+            prompt: "Oblicz $5^4$.",
+            steps: [
+              "Ze wzoru (1) zapisujemy iloczyn czterech piątek: $$5^4=5\\cdot 5\\cdot 5\\cdot 5.$$",
+              "Najpierw $5\\cdot 5=25$.",
+              "Dalej $25\\cdot 5=125$.",
+              "Na końcu $125\\cdot 5=625$.",
+            ],
+            result: "$5^4=625$",
+            cleanSolution: ["$5^4=5\\cdot 5\\cdot 5\\cdot 5=625$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 2",
+            prompt: "Oblicz $\\dfrac{2^8}{2^3}$.",
+            steps: [
+              "Podstawy są takie same i różne od zera, więc korzystamy ze wzoru (7): $$\\dfrac{2^8}{2^3}=2^{8-3}=2^5.$$",
+              "Ze wzoru (1): $2^5=2\\cdot 2\\cdot 2\\cdot 2\\cdot 2$.",
+              "Kolejno: $2\\cdot 2=4$, $4\\cdot 2=8$, $8\\cdot 2=16$, $16\\cdot 2=32$.",
+            ],
+            result: "$\\dfrac{2^8}{2^3}=32$",
+            cleanSolution: ["$\\dfrac{2^8}{2^3}=2^{8-3}=2^5=32$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 3",
+            prompt: "Oblicz $\\sqrt{81}$ i $\\sqrt[3]{27}$.",
+            steps: [
+              "Dla $\\sqrt{81}$ szukamy nieujemnej liczby, której kwadrat to $81$.",
+              "$9\\cdot 9=81$ i $9\\ge 0$, więc $\\sqrt{81}=9$.",
+              "Dla $\\sqrt[3]{27}$ szukamy liczby, której sześcian to $27$.",
+              "$3\\cdot 3\\cdot 3=9\\cdot 3=27$, więc $\\sqrt[3]{27}=3$.",
+            ],
+            result: "$\\sqrt{81}=9$, $\\sqrt[3]{27}=3$",
+            cleanSolution: ["$\\sqrt{81}=9$", "$\\sqrt[3]{27}=3$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 4",
+            prompt: "Zapisz $\\sqrt{72}$ w postaci $a\\sqrt{b}$.",
+            steps: [
+              "Szukamy największego kwadratu, który dzieli $72$. Mamy $36\\cdot 2=72$ i $36=6^2$.",
+              "Zatem $\\sqrt{72}=\\sqrt{6^2\\cdot 2}$.",
+              "Ze wzoru (20): $\\sqrt{6^2\\cdot 2}=6\\sqrt{2}$.",
+            ],
+            result: "$\\sqrt{72}=6\\sqrt{2}$",
+            cleanSolution: ["$\\sqrt{72}=\\sqrt{36\\cdot 2}=6\\sqrt{2}$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 5",
+            prompt: "Oblicz $3^2\\cdot 3^3$.",
+            steps: [
+              "Podstawy są takie same, więc ze wzoru (6) dodajemy wykładniki: $$3^2\\cdot 3^3=3^{2+3}=3^5.$$",
+              "Ze wzoru (1): $3^5=3\\cdot 3\\cdot 3\\cdot 3\\cdot 3$.",
+              "Kolejno: $3\\cdot 3=9$, $9\\cdot 3=27$, $27\\cdot 3=81$, $81\\cdot 3=243$.",
+            ],
+            result: "$3^2\\cdot 3^3=243$",
+            cleanSolution: ["$3^2\\cdot 3^3=3^5=243$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 6",
+            prompt: "Oblicz $(-3)^2$ i $-3^2$.",
+            steps: [
+              "Nawias oznacza, że do kwadratu idzie cała liczba $-3$: $$(-3)^2=(-3)\\cdot(-3)=9.$$",
+              "Bez nawiasu najpierw liczymy potęgę, potem bierzemy minus: $$-3^2=-(3\\cdot 3)=-9.$$",
+              "To dwa różne wyniki. Przy liczbie ujemnej nawias jest ważny.",
+            ],
+            result: "$(-3)^2=9$, $-3^2=-9$",
+            cleanSolution: ["$(-3)^2=9$", "$-3^2=-9$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 7",
+            prompt: "Wiadomo, że $5^2=25$. Zapisz to za pomocą pierwiastka. Potem z $\\sqrt{121}=11$ wróć do potęgi.",
+            steps: [
+              "Ze wzoru (14) równanie $5^2=25$ to to samo co $5=\\sqrt{25}$.",
+              "Odwrotnie: $\\sqrt{121}=11$, więc ze wzoru (14) $11^2=121$.",
+              "Kontrola: $11\\cdot 11=121$.",
+            ],
+            result: "$\\sqrt{25}=5$, $11^2=121$",
+            cleanSolution: ["$5^2=25\\;\\Leftrightarrow\\;\\sqrt{25}=5$", "$\\sqrt{121}=11\\;\\Leftrightarrow\\; 11^2=121$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 8",
+            prompt: "Zapisz $\\sqrt{49}$ jako potęgę i $27^{1/3}$ jako pierwiastek. Oblicz oba.",
+            steps: [
+              "Ze wzoru (16): $\\sqrt{49}=49^{1/2}$.",
+              "$7\\cdot 7=49$, więc $\\sqrt{49}=7$. Zatem $49^{1/2}=7$.",
+              "W drugą stronę: $27^{1/3}=\\sqrt[3]{27}$.",
+              "$3\\cdot 3\\cdot 3=27$, więc $\\sqrt[3]{27}=3$. Zatem $27^{1/3}=3$.",
+            ],
+            result: "$\\sqrt{49}=49^{1/2}=7$, $27^{1/3}=\\sqrt[3]{27}=3$",
+            cleanSolution: ["$\\sqrt{49}=49^{1/2}=7$", "$27^{1/3}=\\sqrt[3]{27}=3$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 9",
+            prompt: "Oblicz $16^{3/2}$.",
+            steps: [
+              "Ze wzoru (17) mianownik $2$ to pierwiastek kwadratowy, licznik $3$ to sześcian: $$16^{3/2}=(\\sqrt{16})^3.$$",
+              "$\\sqrt{16}=4$, bo $4\\cdot 4=16$.",
+              "Dalej $4^3=4\\cdot 4\\cdot 4=16\\cdot 4=64$.",
+              "Drugi sposób: $16^{3/2}=\\sqrt{16^3}$. To ten sam wynik, ale liczby są większe, więc pierwszy sposób jest wygodniejszy.",
+            ],
+            result: "$16^{3/2}=64$",
+            cleanSolution: ["$16^{3/2}=(\\sqrt{16})^3=4^3=64$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 10",
+            prompt: "Oblicz $\\sqrt{9}\\cdot\\sqrt{16}$ oraz zapisz $\\sqrt{32}$ w postaci $a\\sqrt{b}$.",
+            steps: [
+              "Ze wzoru (18) albo od razu: $\\sqrt{9}=3$ i $\\sqrt{16}=4$, więc $3\\cdot 4=12$.",
+              "Kontrola: $\\sqrt{9}\\cdot\\sqrt{16}=\\sqrt{144}=12$, bo $12\\cdot 12=144$.",
+              "Dla $\\sqrt{32}$ szukamy największego kwadratu w $32$: $16\\cdot 2=32$ i $16=4^2$.",
+              "Ze wzoru (20): $\\sqrt{32}=\\sqrt{4^2\\cdot 2}=4\\sqrt{2}$.",
+            ],
+            result: "$\\sqrt{9}\\cdot\\sqrt{16}=12$, $\\sqrt{32}=4\\sqrt{2}$",
+            cleanSolution: ["$\\sqrt{9}\\cdot\\sqrt{16}=3\\cdot 4=12$", "$\\sqrt{32}=\\sqrt{16\\cdot 2}=4\\sqrt{2}$"],
+          },
+        ],
+      },
+      {
+        number: "",
+        heading: "Poziom podstawowy",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawa",
+            title: "W przygotowaniu",
+            content: "Ten poziom notatki jest jeszcze w przygotowaniu.",
+          },
+        ],
+      },
+      {
+        number: "",
+        heading: "Poziom rozszerzony",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "W przygotowaniu",
+            content: "Ten poziom notatki jest jeszcze w przygotowaniu.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "artykul-wyrazenia-algebraiczne",
+    title: "Wyrażenia algebraiczne",
+    description:
+      "Redukcja wyrazów podobnych, mnożenie nawiasów, wartość wyrażenia dla podanego x oraz pola i obwody figur ze sklejanych prostokątów. Poziom podstawówki, podstawowy i rozszerzony.",
+    topic: "Wyrażenia algebraiczne",
+    subtopic: "Mnożenie nawiasów i podstawianie",
+    contentModes: ["podstawowka", "podstawa", "rozszerzenie"],
+    levels: ["podstawówka", "podstawowy", "rozszerzony"],
+    readMinutes: 18,
+    relatedTasks: {
+      topicIncludes: ["wyrażen", "algebra"],
+      subtopicIncludes: ["wyrażen", "algebra", "nawias"],
+      questionIncludes: ["wyrażen", "nawias", "obwód", "pole"],
+      limit: 12,
+    },
+    legend: [
+      { label: "Poziom podstawówki", dot: "bg-green-500", contentLevel: "podstawowka" },
+      { label: "Poziom podstawowy", dot: "bg-blue-500", contentLevel: "podstawa" },
+      { label: "Poziom rozszerzony", dot: "bg-blue-300", contentLevel: "rozszerzenie" },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Co to jest wyrażenie algebraiczne",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Wyrażenie algebraiczne to zapis z **liczbami**, **literami** (niewiadomymi) i działaniami. Litera stoi w miejscu liczby, której jeszcze nie znamy albo która może się zmieniać.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Wyrazy podobne",
+            content:
+              "Wyrazy są **podobne**, gdy mają tę samą literę w tej samej potędze. $3x$ i $7x$ są podobne. $3x$ i $3x^2$ **nie** są podobne. $5$ i $-2$ są podobne, bo oba są liczbami bez litery. Wyrazy podobne można **dodawać, odejmować, mnożyć i dzielić**.",
+            example: {
+              prompt: "Które wyrazy w $4x+3+x-1$ są podobne?",
+              right:
+                "$4x$ i $x$ są podobne, więc $4x+x=5x$. Liczby $3$ i $-1$ są podobne, więc $3-1=2$. Całość: $5x+2$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "ax+bx=(a+b)x",
+                label: "(1)",
+                accent: "blue",
+                caption: "dodawanie wyrazów podobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Uprość $5x+3x$.",
+                  steps: [
+                    "Oba wyrazy mają $x$, więc są podobne. Dodajemy liczby stojące przy $x$: $5+3=8$.",
+                    "Zostaje $8x$.",
+                  ],
+                  result: "Wynik: $5x+3x=8x$.",
+                },
+              },
+              {
+                latex: "ax-bx=(a-b)x",
+                label: "(2)",
+                accent: "blue",
+                caption: "odejmowanie wyrazów podobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Uprość $7x-2x+4-1$.",
+                  steps: [
+                    "Najpierw wyrazy z $x$: $7x-2x=(7-2)x=5x$.",
+                    "Potem liczby bez litery: $4-1=3$.",
+                    "Zostaje $5x+3$. Tego już nie sklejamy w jeden wyraz, bo $5x$ ma $x$, a $3$ nie.",
+                  ],
+                  result: "Wynik: $7x-2x+4-1=5x+3$.",
+                },
+              },
+              {
+                latex: "ax\\cdot bx=abx^2",
+                label: "(3)",
+                accent: "blue",
+                caption: "mnożenie wyrazów podobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $3x\\cdot 4x$ oraz $5\\cdot 2x$.",
+                  steps: [
+                    "Przy mnożeniu $3x\\cdot 4x$ mnożymy liczby i litery osobno: $3\\cdot 4=12$ oraz $x\\cdot x=x^2$.",
+                    "Zostaje $12x^2$. To **nie** jest $12x$ - dwa $x$ dają $x^2$.",
+                    "Gdy mnożymy przez liczbę bez $x$: $5\\cdot 2x=10x$. Tu potęga $x$ się nie zmienia.",
+                  ],
+                  result: "Wynik: $3x\\cdot 4x=12x^2$, $5\\cdot 2x=10x$.",
+                },
+              },
+              {
+                latex: "\\dfrac{ax}{bx}=\\dfrac{a}{b}\\quad (x\\neq 0)",
+                label: "(4)",
+                accent: "blue",
+                caption: "dzielenie wyrazów podobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\dfrac{10x}{2x}$ oraz $\\dfrac{12x}{3}$.",
+                  steps: [
+                    "W $\\dfrac{10x}{2x}$ $x$ w liczniku i mianowniku się skraca: $\\dfrac{10}{2}=5$. Zostaje $5$, **nie** $5x$.",
+                    "W $\\dfrac{12x}{3}$ dzielimy tylko liczbę: $12:3=4$. Litera zostaje, więc $4x$.",
+                  ],
+                  result: "Wynik: $\\dfrac{10x}{2x}=5$, $\\dfrac{12x}{3}=4x$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Wyrazy niepodobne",
+            content:
+              "Wyrazy są **niepodobne**, gdy mają inną literę, inną potęgę albo jeden ma literę, a drugi nie. $3x$ i $5x^2$ są niepodobne. $2x$ i $7$ są niepodobne. Niepodobnych **nie dodajemy i nie odejmujemy** - zostają obok siebie, np. $2x+5x^2$. Można je za to **mnożyć i dzielić**: liczby osobno, litery osobno.",
+            example: {
+              prompt: "Czy wolno dodać $2x+5x^2$? A pomnożyć $2x\\cdot 5x^2$?",
+              right:
+                "Dodać nie: zostaje $2x+5x^2$. Pomnożyć tak: $2\\cdot 5=10$ oraz $x\\cdot x^2=x^3$, więc $10x^3$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "ax\\cdot b=abx,\\quad ax\\cdot bx^2=abx^3",
+                accent: "blue",
+                caption: "mnożenie wyrazów niepodobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $3x\\cdot 4$ oraz $2x\\cdot 5x^2$.",
+                  steps: [
+                    "$3x$ i $4$ nie są podobne, ale mnożyć wolno. Liczby: $3\\cdot 4=12$. Litera zostaje, więc $12x$.",
+                    "$2x\\cdot 5x^2$: liczby $2\\cdot 5=10$. Litery $x\\cdot x^2=x^3$. Zostaje $10x^3$.",
+                    "Gdybyśmy **dodawali** $2x+5x^2$, nie wolno sklejać. Zostaje $2x+5x^2$.",
+                  ],
+                  result: "Wynik: $3x\\cdot 4=12x$, $2x\\cdot 5x^2=10x^3$.",
+                },
+              },
+              {
+                latex: "\\dfrac{ax}{b}=\\dfrac{a}{b}x,\\quad \\dfrac{ax^2}{bx}=\\dfrac{a}{b}x\\quad (x\\neq 0)",
+                accent: "blue",
+                caption: "dzielenie wyrazów niepodobnych",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Oblicz $\\dfrac{8x}{2}$ oraz $\\dfrac{12x^2}{3x}$.",
+                  steps: [
+                    "W $\\dfrac{8x}{2}$ dzielimy liczbę: $8:2=4$. Litera zostaje, więc $4x$.",
+                    "W $\\dfrac{12x^2}{3x}$ liczby $12:3=4$. Litery $x^2:x=x$. Zostaje $4x$.",
+                    "Gdyby w mianowniku nie było $x$, a w liczniku było $x^2$, też dzielimy - tylko potęga $x$ się zmniejsza.",
+                  ],
+                  result: "Wynik: $\\dfrac{8x}{2}=4x$, $\\dfrac{12x^2}{3x}=4x$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Nie dodawaj wyrazów niepodobnych",
+            content:
+              "$2x+3$ **nie** jest równe $5x$. $2x$ to dwa $x$, a $3$ to trzy jedynki. To jak $2$ jabłka i $3$ gruszki - nie dostaniesz $5$ jabłek. Zostawiamy $2x+3$. Tak samo $2x+5x^2$ zostaje $2x+5x^2$. Przy mnożeniu wolno: $2x\\cdot 5x^2=10x^3$. Przy dzieleniu też: $\\dfrac{8x^2}{2x}=4x$.",
+          },
+        ],
+      },
+      {
+        number: "2",
+        heading: "Wartość wyrażenia dla $x=\\ldots$",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Bierzemy jedno wyrażenie i liczymy je dla konkretnych liczb. Zadanie: oblicz wartość $2x+5$ najpierw dla $x=3$, a potem dla $x=-2$.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Dla $x=3$",
+            content:
+              "W $2x+5$ jest jedno $x$. Wstawiamy tam $3$, więc $2x$ staje się $2\\cdot 3$. Zostaje $$2\\cdot 3+5.$$",
+          },
+          {
+            type: "steps",
+            contentLevel: "podstawowka",
+            items: [
+              "Mnożenie przed dodawaniem: $2\\cdot 3=6$.",
+              "Potem $6+5=11$.",
+              "Dla $x=3$ wartość $2x+5$ wynosi $11$.",
+            ],
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "2\\cdot 3+5=11",
+                accent: "blue",
+                caption: "wartość $2x+5$ dla $x=3$",
+                contentLevel: "podstawowka",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawowka",
+            title: "Dla $x=-2$",
+            content:
+              "Teraz to samo wyrażenie, ale $x$ jest ujemne. Ujemną liczbę wstawiamy **w nawiasie**, żeby minus nie pomylił się z odejmowaniem: $2x$ staje się $2\\cdot(-2)$. Zostaje $$2\\cdot(-2)+5.$$",
+          },
+          {
+            type: "steps",
+            contentLevel: "podstawowka",
+            items: [
+              "Mnożenie: $2\\cdot(-2)=-4$.",
+              "Potem $-4+5=1$.",
+              "Dla $x=-2$ wartość $2x+5$ wynosi $1$.",
+            ],
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "2\\cdot(-2)+5=1",
+                accent: "blue",
+                caption: "wartość $2x+5$ dla $x=-2$",
+                contentLevel: "podstawowka",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Bez nawiasu minus zjada mnożenie",
+            content:
+              "Gdybyśmy dla $x=-2$ napisali $2-2+5$ zamiast $2\\cdot(-2)+5$, wyszłoby $5$. To zły wynik. $2x$ znaczy **dwa razy $x$**, więc $2\\cdot(-2)=-4$, a nie $2-2$.",
+          },
+        ],
+      },
+      {
+        number: "3",
+        heading: "Mnożenie nawiasów",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Gdy mnożymy przez nawias, **każdy** składnik z zewnątrz mnożymy przez **każdy** składnik w nawiasie. Potem dodajemy wyrazy podobne.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "a(b+c)=ab+ac",
+                label: "(5)",
+                accent: "blue",
+                caption: "liczba razy suma",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Pomnóż $4(x+3)$.",
+                  steps: [
+                    "Czwórka wchodzi do nawiasu i mnoży oba składniki: $$4\\cdot x+4\\cdot 3.$$",
+                    "$4\\cdot x=4x$ i $4\\cdot 3=12$.",
+                    "Zostaje $4x+12$.",
+                  ],
+                  result: "Wynik: $4(x+3)=4x+12$.",
+                },
+              },
+              {
+                latex: "a(b-c)=ab-ac",
+                label: "(6)",
+                accent: "blue",
+                caption: "liczba razy różnica",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Pomnóż $5(2x-1)$.",
+                  steps: [
+                    "Piątka mnoży oba składniki: $$5\\cdot 2x-5\\cdot 1.$$",
+                    "$5\\cdot 2x=10x$ i $5\\cdot 1=5$.",
+                    "Zostaje $10x-5$.",
+                  ],
+                  result: "Wynik: $5(2x-1)=10x-5$.",
+                },
+              },
+              {
+                latex: "(a+b)(c+d)=ac+ad+bc+bd",
+                label: "(7)",
+                accent: "blue",
+                caption: "nawias razy nawias - każdy z każdym",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Pomnóż $(x+2)(x+5)$.",
+                  steps: [
+                    "Pierwsze $x$ mnożymy przez cały drugi nawias: $x\\cdot x+x\\cdot 5=x^2+5x$.",
+                    "Potem dwójka mnoży cały drugi nawias: $2\\cdot x+2\\cdot 5=2x+10$.",
+                    "Składamy: $$x^2+5x+2x+10.$$",
+                    "Wyrazy podobne: $5x+2x=7x$. Zostaje $x^2+7x+10$.",
+                  ],
+                  result: "Wynik: $(x+2)(x+5)=x^2+7x+10$.",
+                },
+              },
+              {
+                latex: "(a+b)(a+b)=a^2+2ab+b^2",
+                label: "(8)",
+                accent: "blue",
+                caption: "ten sam nawias razy siebie",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Pomnóż $(x+3)(x+3)$.",
+                  steps: [
+                    "To wzór (7) z $a=x$ i $b=3$. Każdy z każdym: $$x\\cdot x+x\\cdot 3+3\\cdot x+3\\cdot 3.$$",
+                    "Dostajemy $x^2+3x+3x+9$.",
+                    "Wyrazy podobne: $3x+3x=6x$. Zostaje $x^2+6x+9$.",
+                    "To samo ze wzoru (8): $x^2+2\\cdot x\\cdot 3+3^2=x^2+6x+9$.",
+                  ],
+                  result: "Wynik: $(x+3)(x+3)=x^2+6x+9$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawowka",
+            title: "W drugą stronę - wyłączanie przed nawias",
+            content:
+              "Mnożenie można odwrócić. W $6x+9$ oba wyrazy dzielą się przez $3$, więc $6x+9=3(2x+3)$. Sprawdzenie ze wzoru (5): $3(2x+3)=6x+9$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawowka",
+            title: "Dwójka musi wejść do obu składników",
+            content:
+              "$2(x+3)$ **nie** jest równe $2x+3$. Dwójka mnoży też trójkę: $2(x+3)=2x+6$. Zapomniany składnik to najczęstszy błąd.",
+          },
+        ],
+      },
+      {
+        number: "4",
+        heading: "Pola i obwody",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Bok może być wyrażeniem, np. $x$ albo $x+3$. Pole i obwód zapisujemy najpierw **wzorem**, potem w razie potrzeby podstawiamy liczbę za $x$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawowka",
+            items: [
+              {
+                latex: "P=a\\cdot b,\\quad Obw=2a+2b",
+                label: "(9)",
+                accent: "blue",
+                caption: "prostokąt o bokach $a$ i $b$",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Prostokąt ma boki $x$ i $x+3$. Zapisz pole i obwód. Oblicz dla $x=5$. Drugi prostokąt ma boki $3$ i $2x$ oraz obwód $22$. Znajdź $x$.",
+                  steps: [
+                    {
+                      text: "Rysujemy pierwszy prostokąt i podpisujemy boki.",
+                      figure: {
+                        scale: 26,
+                        parts: [{ x: 0, y: 0, w: 5, h: 3.2 }],
+                        labels: [
+                          { x: 2.5, y: -0.45, text: "$x$" },
+                          { x: -0.75, y: 1.6, text: "$x+3$" },
+                        ],
+                        caption: "Boki $x$ oraz $x+3$.",
+                      },
+                    },
+                    "Ze wzoru (9) pole: $P=x\\cdot(x+3)$. Ze wzoru (5): $x(x+3)=x^2+3x$.",
+                    "Obwód zapisujemy jako $2a+2b$: $$Obw=2\\cdot x+2\\cdot(x+3).$$",
+                    "Dwójka wchodzi do nawiasu: $2x+2x+6=4x+6$.",
+                    {
+                      text: "Dla $x=5$ boki mają $5$ i $8$. Pole: $5\\cdot 8=40$. Obwód: $2\\cdot 5+2\\cdot 8=26$.",
+                      figure: {
+                        scale: 26,
+                        parts: [{ x: 0, y: 0, w: 5, h: 3.2 }],
+                        labels: [
+                          { x: 2.5, y: -0.45, text: "$5$" },
+                          { x: -0.45, y: 1.6, text: "$8$" },
+                        ],
+                        caption: "Po podstawieniu $x=5$.",
+                      },
+                    },
+                    {
+                      text: "Drugi prostokąt ma boki $3$ i $2x$. Obwód: $2\\cdot 3+2\\cdot 2x=6+4x$.",
+                      figure: {
+                        scale: 26,
+                        parts: [{ x: 0, y: 0, w: 2.6, h: 4 }],
+                        labels: [
+                          { x: 1.3, y: -0.45, text: "$3$" },
+                          { x: -0.6, y: 2, text: "$2x$" },
+                        ],
+                        caption: "Boki $3$ oraz $2x$.",
+                      },
+                    },
+                    "Ten obwód wynosi $22$, więc $6+4x=22$. Stąd $4x=16$ i $x=4$.",
+                  ],
+                  result: "Wynik: $P=x^2+3x$, $Obw=4x+6$. Dla $x=5$: $P=40$, $Obw=26$. W drugim zadaniu $x=4$.",
+                },
+              },
+              {
+                latex: "P=a^2,\\quad Obw=4a",
+                label: "(10)",
+                accent: "blue",
+                caption: "kwadrat o boku $a$",
+                contentLevel: "podstawowka",
+                example: {
+                  level: "ósmoklasisty",
+                  prompt: "Kwadrat ma bok $x+1$. Zapisz pole i obwód. Oblicz dla $x=4$.",
+                  steps: [
+                    {
+                      text: "Rysujemy kwadrat i podpisujemy bok $x+1$.",
+                      figure: {
+                        scale: 26,
+                        parts: [{ x: 0, y: 0, w: 3.4, h: 3.4 }],
+                        labels: [
+                          { x: 1.7, y: -0.45, text: "$x+1$" },
+                          { x: -0.75, y: 1.7, text: "$x+1$" },
+                        ],
+                      },
+                    },
+                    "Ze wzoru (10) pole: $P=(x+1)^2$. Ze wzoru (8): $(x+1)^2=x^2+2x+1$.",
+                    "Obwód: $Obw=4(x+1)=4x+4$.",
+                    {
+                      text: "Dla $x=4$ bok ma długość $5$. Pole: $5^2=25$. Obwód: $4\\cdot 5=20$.",
+                      figure: {
+                        scale: 26,
+                        parts: [{ x: 0, y: 0, w: 3.4, h: 3.4 }],
+                        labels: [
+                          { x: 1.7, y: -0.45, text: "$5$" },
+                          { x: -0.4, y: 1.7, text: "$5$" },
+                        ],
+                        caption: "Po podstawieniu $x=4$.",
+                      },
+                    },
+                  ],
+                  result: "Wynik: $P=x^2+2x+1$, $Obw=4x+4$. Dla $x=4$: $P=25$, $Obw=20$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Gdy figura składa się z kilku prostokątów, pole to **suma pól** kawałków. Przy obwodzie liczymy tylko krawędzie na zewnątrz - wewnętrznej krawędzi, którą sklejamy, nie dodajemy. Kliknij kafelek z figurą, żeby zobaczyć pole i obwód.",
+          },
+          {
+            type: "rect-figure",
+            contentLevel: "podstawowka",
+            scale: 30,
+            parts: [
+              { x: 0, y: 0, w: 4, h: 3 },
+              { x: 4, y: 0, w: 3, h: 3 },
+            ],
+            labels: [
+              { x: 2, y: -0.45, text: "$x$" },
+              { x: 5.5, y: -0.45, text: "$5$" },
+              { x: -0.55, y: 1.5, text: "$x+1$" },
+            ],
+            caption:
+              "Dwa prostokąty sklejone bokiem. Lewy ma boki $x$ i $x+1$, prawy $5$ i $x+1$.",
+            example: {
+              level: "ósmoklasisty",
+              prompt: "Zapisz pole i obwód figury. Potem oblicz dla $x=3$.",
+              steps: [
+                {
+                  text: "Dzielimy figurę na dwa prostokąty. Lewy: $P_1=x\\cdot(x+1)=x^2+x$. Prawy: $P_2=5\\cdot(x+1)=5x+5$.",
+                  figure: {
+                    scale: 24,
+                    parts: [
+                      { x: 0, y: 0, w: 4, h: 3 },
+                      { x: 4, y: 0, w: 3, h: 3 },
+                    ],
+                    labels: [
+                      { x: 2, y: -0.45, text: "$x$" },
+                      { x: 5.5, y: -0.45, text: "$5$" },
+                      { x: -0.7, y: 1.5, text: "$x+1$" },
+                      { x: 2, y: 1.5, text: "$P_1$" },
+                      { x: 5.5, y: 1.5, text: "$P_2$" },
+                    ],
+                    caption: "Pole to $P_1+P_2$.",
+                  },
+                },
+                "Pole całości: $P=x^2+x+5x+5=x^2+6x+5$.",
+                {
+                  text: "Przy obwodzie sklejona krawędź chowa się w środku. Całość to jeden prostokąt $x+5$ na $x+1$. Ze wzoru (9): $Obw=2(x+5)+2(x+1)=4x+12$.",
+                  figure: {
+                    scale: 24,
+                    parts: [{ x: 0, y: 0, w: 7, h: 3 }],
+                    labels: [
+                      { x: 3.5, y: -0.45, text: "$x+5$" },
+                      { x: -0.7, y: 1.5, text: "$x+1$" },
+                    ],
+                    caption: "Obwód liczymy po zewnątrz.",
+                  },
+                },
+                "Dla $x=3$ pole: $3^2+6\\cdot 3+5=9+18+5=32$. Obwód: $4\\cdot 3+12=24$.",
+                "Kontrola: boki $8$ i $4$, więc $P=32$ i $Obw=2\\cdot 8+2\\cdot 4=16+8=24$.",
+              ],
+              result: "Wynik: $P=x^2+6x+5$, $Obw=4x+12$. Dla $x=3$: $P=32$, $Obw=24$.",
+            },
+          },
+          {
+            type: "rect-figure",
+            contentLevel: "podstawowka",
+            scale: 26,
+            parts: [
+              { x: 0, y: 0, w: 7, h: 2.2 },
+              { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+            ],
+            outline: [
+              { x: 0, y: 0 },
+              { x: 7, y: 0 },
+              { x: 7, y: 2.2 },
+              { x: 2.8, y: 2.2 },
+              { x: 2.8, y: 5.7 },
+              { x: 0, y: 5.7 },
+            ],
+            labels: [
+              { x: 3.5, y: -0.45, text: "$x+6$" },
+              { x: 7.55, y: 1.1, text: "$2$" },
+              { x: 4.9, y: 2.55, text: "$x+2$" },
+              { x: 3.2, y: 3.95, text: "$x$" },
+              { x: 1.4, y: 6.0, text: "$4$" },
+              { x: -0.7, y: 2.85, text: "$x+2$" },
+            ],
+            caption:
+              "Figura w kształcie litery L. Górny prostokąt ma boki $x+6$ i $2$. Dolny - boki $4$ i $x$.",
+            example: {
+              level: "ósmoklasisty",
+              prompt: "Zapisz pole i obwód figury L. Oblicz dla $x=4$.",
+              steps: [
+                {
+                  text: "Dzielimy L na dwa prostokąty. Górny: $P_1=2\\cdot(x+6)=2x+12$. Dolny: $P_2=4\\cdot x=4x$.",
+                  figure: {
+                    scale: 20,
+                    parts: [
+                      { x: 0, y: 0, w: 7, h: 2.2 },
+                      { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+                    ],
+                    labels: [
+                      { x: 3.5, y: -0.45, text: "$x+6$" },
+                      { x: 7.55, y: 1.1, text: "$2$" },
+                      { x: 1.4, y: 6.0, text: "$4$" },
+                      { x: -0.55, y: 4.0, text: "$x$" },
+                      { x: 3.5, y: 1.1, text: "$P_1$" },
+                      { x: 1.4, y: 3.95, text: "$P_2$" },
+                    ],
+                    caption: "Kreska w środku pokazuje podział na pole.",
+                  },
+                },
+                "Pole: $P=2x+12+4x=6x+12$.",
+                {
+                  text: "Obwód obchodzimy dookoła, bez krawędzi w środku: $$(x+6)+2+(x+2)+x+4+(x+2)=4x+16.$$",
+                  figure: {
+                    scale: 20,
+                    parts: [
+                      { x: 0, y: 0, w: 7, h: 2.2 },
+                      { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+                    ],
+                    outline: [
+                      { x: 0, y: 0 },
+                      { x: 7, y: 0 },
+                      { x: 7, y: 2.2 },
+                      { x: 2.8, y: 2.2 },
+                      { x: 2.8, y: 5.7 },
+                      { x: 0, y: 5.7 },
+                    ],
+                    labels: [
+                      { x: 3.5, y: -0.45, text: "$x+6$" },
+                      { x: 7.55, y: 1.1, text: "$2$" },
+                      { x: 4.9, y: 2.55, text: "$x+2$" },
+                      { x: 3.2, y: 3.95, text: "$x$" },
+                      { x: 1.4, y: 6.0, text: "$4$" },
+                      { x: -0.7, y: 2.85, text: "$x+2$" },
+                    ],
+                    caption: "Liczymy tylko krawędzie na zewnątrz.",
+                  },
+                },
+                "Dla $x=4$ pole: $6\\cdot 4+12=36$. Obwód: $4\\cdot 4+16=32$.",
+              ],
+              result: "Wynik: $P=6x+12$, $Obw=4x+16$. Dla $x=4$: $P=36$, $Obw=32$.",
+            },
+          },
+        ],
+      },
+      {
+        number: "5",
+        heading: "Przykłady",
+        contentLevel: "podstawowka",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawowka",
+            content:
+              "Poniżej zadania od początku do końca. Rozwiązanie jest schowane - kliknij, żeby je zobaczyć.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 1",
+            prompt: "Uprość $8x-3+2x+10$.",
+            steps: [
+              "Wyrazy z $x$: $8x+2x=10x$.",
+              "Liczby: $-3+10=7$.",
+              "Zostaje $10x+7$.",
+            ],
+            result: "$10x+7$",
+            cleanSolution: ["$8x+2x-3+10=10x+7$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 2",
+            prompt: "Oblicz wartość $2x^2-3x+1$ dla $x=4$.",
+            steps: [
+              "Wstawiamy $4$ w miejsce $x$: $$2\\cdot 4^2-3\\cdot 4+1.$$",
+              "Potęga: $4^2=16$, więc $2\\cdot 16=32$.",
+              "Mnożenie: $3\\cdot 4=12$.",
+              "Na końcu: $32-12+1=21$.",
+            ],
+            result: "$21$",
+            cleanSolution: ["$2\\cdot 4^2-3\\cdot 4+1=32-12+1=21$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 3",
+            prompt: "Oblicz wartość $5x-1$ dla $x=-3$.",
+            steps: [
+              "Liczba ujemna idzie w nawias: $$5\\cdot(-3)-1.$$",
+              "$5\\cdot(-3)=-15$.",
+              "Dalej $-15-1=-16$.",
+            ],
+            result: "$-16$",
+            cleanSolution: ["$5\\cdot(-3)-1=-16$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 4",
+            prompt: "Pomnóż $3(2x-5)$ oraz $(x+1)(x+4)$.",
+            steps: [
+              "Ze wzoru (6): $3(2x-5)=3\\cdot 2x-3\\cdot 5=6x-15$.",
+              "Ze wzoru (7) każdy z każdym: $(x+1)(x+4)=x\\cdot x+x\\cdot 4+1\\cdot x+1\\cdot 4$.",
+              "Dostajemy $x^2+4x+x+4$.",
+              "Wyrazy podobne: $4x+x=5x$. Zostaje $x^2+5x+4$.",
+            ],
+            result: "$6x-15$ oraz $x^2+5x+4$",
+            cleanSolution: ["$3(2x-5)=6x-15$", "$(x+1)(x+4)=x^2+5x+4$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 5",
+            prompt: "Prostokąt ma boki $x+2$ i $x+6$. Zapisz pole. Oblicz pole dla $x=2$.",
+            figure: {
+              scale: 24,
+              parts: [{ x: 0, y: 0, w: 5.6, h: 3.2 }],
+              labels: [
+                { x: 2.8, y: -0.45, text: "$x+6$" },
+                { x: -0.75, y: 1.6, text: "$x+2$" },
+              ],
+            },
+            steps: [
+              "Ze wzoru (9): $P=(x+2)(x+6)$.",
+              "Ze wzoru (7): $(x+2)(x+6)=x^2+6x+2x+12=x^2+8x+12$.",
+              {
+                text: "Dla $x=2$ boki mają $4$ i $8$, więc $P=4\\cdot 8=32$. Ze wzoru: $2^2+8\\cdot 2+12=4+16+12=32$.",
+                figure: {
+                  scale: 24,
+                  parts: [{ x: 0, y: 0, w: 5.6, h: 3.2 }],
+                  labels: [
+                    { x: 2.8, y: -0.45, text: "$8$" },
+                    { x: -0.4, y: 1.6, text: "$4$" },
+                  ],
+                  caption: "Po podstawieniu $x=2$.",
+                },
+              },
+            ],
+            result: "$P=x^2+8x+12$. Dla $x=2$: $P=32$",
+            cleanSolution: ["$P=(x+2)(x+6)=x^2+8x+12$", "$x=2\\Rightarrow P=32$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 6",
+            prompt:
+              "Figura L z sekcji 4 ma pole $P=6x+12$ i obwód $Obw=4x+16$. Oblicz pole i obwód dla $x=5$.",
+            figure: {
+              scale: 20,
+              parts: [
+                { x: 0, y: 0, w: 7, h: 2.2 },
+                { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+              ],
+              outline: [
+                { x: 0, y: 0 },
+                { x: 7, y: 0 },
+                { x: 7, y: 2.2 },
+                { x: 2.8, y: 2.2 },
+                { x: 2.8, y: 5.7 },
+                { x: 0, y: 5.7 },
+              ],
+              labels: [
+                { x: 3.5, y: -0.45, text: "$x+6$" },
+                { x: 7.55, y: 1.1, text: "$2$" },
+                { x: 4.9, y: 2.55, text: "$x+2$" },
+                { x: 3.2, y: 3.95, text: "$x$" },
+                { x: 1.4, y: 6.0, text: "$4$" },
+                { x: -0.7, y: 2.85, text: "$x+2$" },
+              ],
+            },
+            steps: [
+              {
+                text: "Wstawiamy $x=5$ do wzoru na pole: $6\\cdot 5+12=30+12=42$.",
+                figure: {
+                  scale: 20,
+                  parts: [
+                    { x: 0, y: 0, w: 7, h: 2.2 },
+                    { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+                  ],
+                  labels: [
+                    { x: 3.5, y: -0.45, text: "$11$" },
+                    { x: 7.55, y: 1.1, text: "$2$" },
+                    { x: 1.4, y: 6.0, text: "$4$" },
+                    { x: -0.45, y: 4.0, text: "$5$" },
+                    { x: 3.5, y: 1.1, text: "$P_1$" },
+                    { x: 1.4, y: 3.95, text: "$P_2$" },
+                  ],
+                  caption: "Góra $2\\cdot 11=22$, dół $4\\cdot 5=20$, razem $42$.",
+                },
+              },
+              "Wstawiamy $x=5$ do wzoru na obwód: $4\\cdot 5+16=20+16=36$.",
+            ],
+            result: "$P=42$, $Obw=36$",
+            cleanSolution: ["$P=6\\cdot 5+12=42$", "$Obw=4\\cdot 5+16=36$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 7",
+            prompt: "Uprość $3x\\cdot 4x+\\dfrac{18x}{6x}$. Potem oblicz wartość dla $x=2$.",
+            steps: [
+              "Ze wzoru (3): $3x\\cdot 4x=12x^2$.",
+              "Ze wzoru (4): $\\dfrac{18x}{6x}=\\dfrac{18}{6}=3$.",
+              "Całość: $12x^2+3$.",
+              "Dla $x=2$: $12\\cdot 2^2+3=12\\cdot 4+3=48+3=51$.",
+            ],
+            result: "$12x^2+3$. Dla $x=2$: $51$",
+            cleanSolution: ["$3x\\cdot 4x+\\dfrac{18x}{6x}=12x^2+3$", "$x=2\\Rightarrow 51$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 8",
+            prompt: "Prostokąt ma boki $x+3$ i $2x$. Jego obwód wynosi $30$. Znajdź $x$, a potem pole.",
+            figure: {
+              scale: 24,
+              parts: [{ x: 0, y: 0, w: 4.8, h: 3.6 }],
+              labels: [
+                { x: 2.4, y: -0.45, text: "$x+3$" },
+                { x: -0.55, y: 1.8, text: "$2x$" },
+              ],
+            },
+            steps: [
+              "Ze wzoru (9): $Obw=2a+2b=2(x+3)+2\\cdot 2x$.",
+              "Liczymy: $2x+6+4x=6x+6$.",
+              "Obwód to $30$, więc $6x+6=30$. Stąd $6x=24$ i $x=4$.",
+              {
+                text: "Boki mają wtedy długości $7$ i $8$. Pole: $P=7\\cdot 8=56$.",
+                figure: {
+                  scale: 24,
+                  parts: [{ x: 0, y: 0, w: 4.8, h: 3.6 }],
+                  labels: [
+                    { x: 2.4, y: -0.45, text: "$7$" },
+                    { x: -0.4, y: 1.8, text: "$8$" },
+                  ],
+                  caption: "Po znalezieniu $x=4$.",
+                },
+              },
+              "Ze wzoru: $P=(x+3)\\cdot 2x=2x(x+3)=2x^2+6x$. Dla $x=4$: $2\\cdot 16+24=56$.",
+            ],
+            result: "$x=4$, $P=56$",
+            cleanSolution: ["$2(x+3)+4x=6x+6=30\\Rightarrow x=4$", "$P=7\\cdot 8=56$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 9",
+            prompt:
+              "Obwód figury L z sekcji 4 wynosi $40$. Znajdź $x$, a potem pole tej figury.",
+            figure: {
+              scale: 20,
+              parts: [
+                { x: 0, y: 0, w: 7, h: 2.2 },
+                { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+              ],
+              outline: [
+                { x: 0, y: 0 },
+                { x: 7, y: 0 },
+                { x: 7, y: 2.2 },
+                { x: 2.8, y: 2.2 },
+                { x: 2.8, y: 5.7 },
+                { x: 0, y: 5.7 },
+              ],
+              labels: [
+                { x: 3.5, y: -0.45, text: "$x+6$" },
+                { x: 7.55, y: 1.1, text: "$2$" },
+                { x: 4.9, y: 2.55, text: "$x+2$" },
+                { x: 3.2, y: 3.95, text: "$x$" },
+                { x: 1.4, y: 6.0, text: "$4$" },
+                { x: -0.7, y: 2.85, text: "$x+2$" },
+              ],
+              caption: "$Obw=4x+16=40$.",
+            },
+            steps: [
+              "Z kafelka z figurą L wiemy, że $Obw=4x+16$.",
+              "Zatem $4x+16=40$. Odejmujemy $16$: $4x=24$, więc $x=6$.",
+              {
+                text: "Pole było $P=6x+12$, więc $P=6\\cdot 6+12=36+12=48$.",
+                figure: {
+                  scale: 20,
+                  parts: [
+                    { x: 0, y: 0, w: 7, h: 2.2 },
+                    { x: 0, y: 2.2, w: 2.8, h: 3.5 },
+                  ],
+                  labels: [
+                    { x: 3.5, y: -0.45, text: "$12$" },
+                    { x: 7.55, y: 1.1, text: "$2$" },
+                    { x: 1.4, y: 6.0, text: "$4$" },
+                    { x: -0.45, y: 4.0, text: "$6$" },
+                    { x: 3.5, y: 1.1, text: "$P_1$" },
+                    { x: 1.4, y: 3.95, text: "$P_2$" },
+                  ],
+                  caption: "Góra $2\\cdot 12=24$, dół $4\\cdot 6=24$, razem $48$.",
+                },
+              },
+            ],
+            result: "$x=6$, $P=48$",
+            cleanSolution: ["$4x+16=40\\Rightarrow x=6$", "$P=6\\cdot 6+12=48$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 10",
+            prompt:
+              "Prostokąt ma boki $2x$ i $x+4$. Z jednego rogu wycinamy kwadrat o boku $2$. Zapisz pole pozostałej figury i oblicz je dla $x=5$.",
+            figure: {
+              scale: 24,
+              parts: [
+                { x: 0, y: 0, w: 6, h: 4.2 },
+                { x: 4, y: 0, w: 2, h: 2, cut: true },
+              ],
+              labels: [
+                { x: 3, y: 4.65, text: "$2x$" },
+                { x: -0.7, y: 2.1, text: "$x+4$" },
+                { x: 5, y: -0.45, text: "$2$" },
+                { x: 6.5, y: 1, text: "$2$" },
+              ],
+              caption: "Kreskowany kwadrat wycinamy.",
+            },
+            steps: [
+              {
+                text: "Najpierw pole całego prostokąta, jeszcze bez wycinania: $P_1=2x\\cdot(x+4)=2x^2+8x$.",
+                figure: {
+                  scale: 24,
+                  parts: [{ x: 0, y: 0, w: 6, h: 4.2 }],
+                  labels: [
+                    { x: 3, y: 4.65, text: "$2x$" },
+                    { x: -0.7, y: 2.1, text: "$x+4$" },
+                  ],
+                  caption: "Duży prostokąt.",
+                },
+              },
+              {
+                text: "Wycięty kwadrat ma bok $2$, więc $P_2=2^2=4$.",
+                figure: {
+                  scale: 24,
+                  parts: [
+                    { x: 0, y: 0, w: 6, h: 4.2, dim: true },
+                    { x: 4, y: 0, w: 2, h: 2, cut: true },
+                  ],
+                  labels: [
+                    { x: 5, y: -0.45, text: "$2$" },
+                    { x: 6.5, y: 1, text: "$2$" },
+                  ],
+                  caption: "To odejmujemy.",
+                },
+              },
+              {
+                text: "Zostaje $P=2x^2+8x-4$.",
+                figure: {
+                  scale: 24,
+                  parts: [
+                    { x: 0, y: 0, w: 6, h: 4.2 },
+                    { x: 4, y: 0, w: 2, h: 2, cut: true },
+                  ],
+                  outline: [
+                    { x: 0, y: 0 },
+                    { x: 4, y: 0 },
+                    { x: 4, y: 2 },
+                    { x: 6, y: 2 },
+                    { x: 6, y: 4.2 },
+                    { x: 0, y: 4.2 },
+                  ],
+                  labels: [
+                    { x: 2, y: -0.45, text: "$2x-2$" },
+                    { x: -0.7, y: 2.1, text: "$x+4$" },
+                  ],
+                  caption: "Pozostała figura.",
+                },
+              },
+              "Dla $x=5$: $2\\cdot 25+8\\cdot 5-4=50+40-4=86$.",
+              "Kontrola: prostokąt $10$ na $9$ ma pole $90$, minus kwadrat $4$ daje $86$.",
+            ],
+            result: "$P=2x^2+8x-4$. Dla $x=5$: $P=86$",
+            cleanSolution: ["$P=2x(x+4)-4=2x^2+8x-4$", "$x=5\\Rightarrow P=86$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawowka",
+            title: "Przykład 11",
+            prompt: "Uprość $2x\\cdot 5x^2+\\dfrac{12x^2}{3x}$. Czy wolno dodać $2x+5x^2$?",
+            steps: [
+              "$2x$ i $5x^2$ są niepodobne, ale mnożyć wolno: $2\\cdot 5=10$ oraz $x\\cdot x^2=x^3$, więc $10x^3$.",
+              "Dzielenie niepodobnych: $\\dfrac{12x^2}{3x}=4x$.",
+              "Całość: $10x^3+4x$. Tego już nie sklejamy, bo $x^3$ i $x$ nie są podobne.",
+              "Dodać $2x+5x^2$ **nie wolno**. Zostaje $2x+5x^2$.",
+            ],
+            result: "$10x^3+4x$. $2x+5x^2$ zostaje bez zmian",
+            cleanSolution: ["$2x\\cdot 5x^2+\\dfrac{12x^2}{3x}=10x^3+4x$", "$2x+5x^2$ nie dodajemy"],
+          },
+        ],
+      },
+      {
+        number: "",
+        heading: "Poziom podstawowy",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawa",
+            title: "W przygotowaniu",
+            content: "Ten poziom notatki jest jeszcze w przygotowaniu.",
+          },
+        ],
+      },
+      {
+        number: "",
+        heading: "Poziom rozszerzony",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "W przygotowaniu",
+            content: "Ten poziom notatki jest jeszcze w przygotowaniu.",
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "artykul-logarytmy",
     title: "Logarytmy",
     unavailable: true,
@@ -2788,20 +4545,19 @@
             prompt:
               "Znajdź wartości parametru $m$, dla których funkcja $f(x)=mx^2+mx+1$ ma dwa różne pierwiastki.",
             steps: [
-              "**I.** Zadanie prosi o **dwa różne** pierwiastki. Takie pierwiastki istnieją wtedy, gdy równanie jest kwadratowe i $\\Delta>0$. Gdyby było tylko „dwa pierwiastki”, wystarczyłoby $\\Delta\\ge 0$.",
-              "Współczynnik przy $x^2$ to $m$. Jeśli $m=0$, to $f(x)=1$ i nie ma równania kwadratowego. Zatem $$m\\neq 0.$$",
-              "Porównujemy $f(x)=mx^2+mx+1$ z $ax^2+bx+c$: $a=m$, $b=m$, $c=1$.",
-              "Liczymy deltę: $$\\Delta=b^2-4ac=m^2-4\\cdot m\\cdot 1=m^2-4m=m(m-4).$$",
-              "Układamy nierówność $$\\Delta>0,$$ czyli $$m(m-4)>0.$$",
+              "Najpierw sprawdzamy, czy w ogóle mamy trójmian kwadratowy. Współczynnik przy $x^2$ to $m$. Jeśli $m=0$, to $f(x)=1$ i nie ma równania kwadratowego, więc nie ma dwóch pierwiastków. Zatem **musi być** $$m\\neq 0.$$ Ten warunek **przyda się później**, gdy będziemy składać odpowiedź.",
+              "Zadanie prosi o **dwa różne** pierwiastki. Takie pierwiastki istnieją wtedy, gdy równanie jest kwadratowe i $\\Delta>0$. Gdyby było tylko „dwa pierwiastki”, wystarczyłoby $\\Delta\\ge 0$.",
+              "Żeby policzyć deltę, musimy odczytać współczynniki z ogólnego zapisu $ax^2+bx+c$. W $f(x)=mx^2+mx+1$ pierwszy składnik to $m\\cdot x^2$, więc $a=m$. Drugi składnik to $m\\cdot x$, więc $b=m$. Na końcu stoi $1$, więc $c=1$.",
+              "Wstawiamy te współczynniki do wzoru na deltę: $$\\Delta=b^2-4ac=m^2-4\\cdot m\\cdot 1=m^2-4m.$$ Wyłączamy $m$ przed nawias: $$\\Delta=m(m-4).$$",
+              "Dwa różne pierwiastki wymagają $\\Delta>0$, więc układamy nierówność $$m(m-4)>0.$$",
               "Iloczyn jest dodatni, gdy oba czynniki są dodatnie albo oba ujemne: $$m>4\\quad\\text{lub}\\quad m<0.$$ Zatem $$m\\in(-\\infty,0)\\cup(4,+\\infty).$$",
-              "**II.** Drugiego warunku na pierwiastki w zadaniu nie ma. Zostaje tylko $m\\neq 0$ z tego, że równanie ma być kwadratowe.",
-              "**III.** Część wspólna I i II: $$\\big((-\\infty,0)\\cup(4,+\\infty)\\big)\\cap\\{m:m\\neq 0\\}.$$ Punkt $m=0$ nie należy do zbioru z I, więc $$m\\in(-\\infty,0)\\cup(4,+\\infty).$$",
+              "Zostaje warunek $m\\neq 0$ z początku. Punkt $m=0$ nie należy do $(-\\infty,0)\\cup(4,+\\infty)$, więc nic nie wycinamy. Ostatecznie $$m\\in(-\\infty,0)\\cup(4,+\\infty).$$",
             ],
             result: "$m\\in(-\\infty,0)\\cup(4,+\\infty)$",
             cleanSolution: [
-              "I:\\quad $m\\neq 0$,\\quad $\\Delta=m(m-4)>0\\ \\Rightarrow\\ m\\in(-\\infty,0)\\cup(4,+\\infty)$",
-              "II:\\quad brak dodatkowego warunku",
-              "III:\\quad $m\\in(-\\infty,0)\\cup(4,+\\infty)$",
+              "$m\\neq 0$",
+              "$\\Delta=m(m-4)>0\\ \\Rightarrow\\ m\\in(-\\infty,0)\\cup(4,+\\infty)$",
+              "$m=0$ nie leży w tym zbiorze, więc $m\\in(-\\infty,0)\\cup(4,+\\infty)$",
             ],
           },
           {
@@ -3101,6 +4857,520 @@
     ],
   },
   {
+    id: "artykul-granice-ciagow",
+    title: "Granice ciągów",
+    unavailable: true,
+    description:
+      "Jak liczyć granice ciągów: stosunek najwyższych potęg, wzór na różnicę a-b oraz twierdzenie o trzech ciągach. Poziom rozszerzony.",
+    topic: "Ciągi",
+    subtopic: "Granice ciągów",
+    contentModes: ["rozszerzenie"],
+    levels: ["rozszerzony"],
+    readMinutes: 18,
+    relatedTasks: {
+      topicIncludes: ["ciąg", "granic"],
+      subtopicIncludes: ["granic", "ciąg"],
+      questionIncludes: ["lim", "granica", "n\\to", "ciąg"],
+      limit: 12,
+    },
+    legend: [
+      {
+        label: "Poziom rozszerzony",
+        dot: "bg-violet-400",
+        contentLevel: "rozszerzenie",
+      },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Granica ciągu",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "rozszerzenie",
+            title: "Idea",
+            content:
+              "Granica ciągu mówi, **do jakiej liczby zbliżają się wyrazy**, gdy numer wyrazu $n$ rośnie bez ograniczenia. Nie musimy znać wszystkich wyrazów. Wystarczy, że dla dużych $n$ wyrazy są coraz bliżej tej liczby.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "rozszerzenie",
+            title: "Zapis",
+            content:
+              "Jeśli wyrazy ciągu $(a_n)$ zbliżają się do liczby $g$, piszemy $$\\lim_{n\\to\\infty}a_n=g.$$ Mówimy wtedy, że ciąg jest **zbieżny** do $g$. Liczba $g$ to **granica** ciągu.",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Poniżej trzy przykłady. Na wykresie każdy punkt to **jeden wyraz** ciągu: w poziomie numer $n$, w pionie wartość $a_n$. Przerywana linia (jeśli jest) to granica, do której wyrazy się zbliżają.",
+          },
+          {
+            type: "sequence-plots",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                title: "Przykład 1",
+                formula: "$a_n=\\dfrac{1}{n}$",
+                terms: "Wyrazy: $1,\\ \\dfrac{1}{2},\\ \\dfrac{1}{3},\\ \\dfrac{1}{4},\\ \\ldots$",
+                caption: "Punkty schodzą do osi $n$. Ciąg jest **zbieżny**: $\\lim_{n\\to\\infty}a_n=0$.",
+                limit: 0,
+                yMin: 0,
+                yMax: 1.2,
+                points: [
+                  { n: 1, a: 1 },
+                  { n: 2, a: 0.5 },
+                  { n: 3, a: 0.333 },
+                  { n: 4, a: 0.25 },
+                  { n: 5, a: 0.2 },
+                  { n: 6, a: 0.167 },
+                  { n: 7, a: 0.143 },
+                  { n: 8, a: 0.125 },
+                  { n: 9, a: 0.111 },
+                  { n: 10, a: 0.1 },
+                ],
+              },
+              {
+                title: "Przykład 2",
+                formula: "$a_n=n$",
+                terms: "Wyrazy: $1,\\ 2,\\ 3,\\ 4,\\ 5,\\ \\ldots$",
+                caption: "Punkty idą coraz wyżej. Ciąg jest **rozbieżny** do $+\\infty$: $\\lim_{n\\to\\infty}a_n=+\\infty$.",
+                yMin: 0,
+                yMax: 11,
+                points: [
+                  { n: 1, a: 1 },
+                  { n: 2, a: 2 },
+                  { n: 3, a: 3 },
+                  { n: 4, a: 4 },
+                  { n: 5, a: 5 },
+                  { n: 6, a: 6 },
+                  { n: 7, a: 7 },
+                  { n: 8, a: 8 },
+                  { n: 9, a: 9 },
+                  { n: 10, a: 10 },
+                ],
+              },
+              {
+                title: "Przykład 3",
+                formula: "$a_n=(-1)^n$",
+                terms: "Wyrazy: $-1,\\ 1,\\ -1,\\ 1,\\ -1,\\ \\ldots$",
+                caption: "Punkty skaczą między $-1$ a $1$ i nigdzie nie osiadają. Ciąg **nie ma granicy** (nawet niewłaściwej).",
+                yMin: -1.5,
+                yMax: 1.5,
+                points: [
+                  { n: 1, a: -1 },
+                  { n: 2, a: 1 },
+                  { n: 3, a: -1 },
+                  { n: 4, a: 1 },
+                  { n: 5, a: -1 },
+                  { n: 6, a: 1 },
+                  { n: 7, a: -1 },
+                  { n: 8, a: 1 },
+                  { n: 9, a: -1 },
+                  { n: 10, a: 1 },
+                ],
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "Zbieżny, rozbieżny, granica niewłaściwa",
+            content:
+              "Jeśli wyrazy rosną nieograniczenie, piszemy $\\lim_{n\\to\\infty}a_n=+\\infty$. Jeśli maleją nieograniczenie, $\\lim_{n\\to\\infty}a_n=-\\infty$. To są **granice niewłaściwe**: ciąg jest wtedy **rozbieżny**. Ciąg może też nie mieć ani granicy skończonej, ani $\\pm\\infty$, jak w przykładzie 3.",
+          },
+        ],
+      },
+      {
+        number: "2",
+        heading: "Podstawowe granice i działania",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Z tych granic korzystamy cały czas. Resztę zadań sprowadzamy właśnie do nich.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                latex: "\\lim_{n\\to\\infty}\\dfrac{1}{n}=0",
+                label: "(1)",
+                accent: "violet",
+                caption: "odwrotność numeru wyrazu",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\dfrac{1}{n}$.",
+                  steps: [
+                    "Kolejne wyrazy to $1,\\ \\dfrac{1}{2},\\ \\dfrac{1}{3},\\ \\dfrac{1}{4},\\ \\ldots$",
+                    "Są coraz bliżej $0$, więc ze wzoru (1) granica jest $0$.",
+                  ],
+                  result: "Wynik: $0$.",
+                },
+              },
+              {
+                latex: "\\lim_{n\\to\\infty}\\dfrac{1}{n^k}=0\\quad (k>0)",
+                label: "(2)",
+                accent: "violet",
+                caption: "odwrotność potęgi $n$",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\dfrac{1}{n^2}$.",
+                  steps: [
+                    "Tu $k=2>0$, więc to wzór (2).",
+                    "Wyrazy $\\dfrac{1}{n^2}$ maleją jeszcze szybciej niż $\\dfrac{1}{n}$, więc granica jest $0$.",
+                  ],
+                  result: "Wynik: $0$.",
+                },
+              },
+              {
+                latex: "\\lim_{n\\to\\infty}\\sqrt[n]{a}=1\\quad (a>0)",
+                label: "(3)",
+                accent: "violet",
+                caption: "pierwiastek $n$-tego stopnia",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\sqrt[n]{5}$.",
+                  steps: [
+                    "Tu $a=5>0$, więc wolno użyć wzoru (3).",
+                    "Pierwiastek $n$-tego stopnia ze stałej dodatniej dąży do $1$.",
+                  ],
+                  result: "Wynik: $1$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Jeśli $\\lim_{n\\to\\infty}a_n=A$ oraz $\\lim_{n\\to\\infty}b_n=B$ i obie granice są **skończone**, to wolno działać „po kawałkach”:",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                latex: "\\lim_{n\\to\\infty}(a_n+b_n)=A+B",
+                label: "(4)",
+                accent: "violet",
+                caption: "granica sumy",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\left(2+\\dfrac{1}{n}\\right)$.",
+                  steps: [
+                    "Rozbijamy na sumę: $2+\\dfrac{1}{n}$.",
+                    "Stała $2$ ma granicę $2$. Ze wzoru (1) jest $\\dfrac{1}{n}\\to 0$.",
+                    "Ze wzoru (4): $2+0=2$.",
+                  ],
+                  result: "Wynik: $2$.",
+                },
+              },
+              {
+                latex: "\\lim_{n\\to\\infty}(a_n\\cdot b_n)=A\\cdot B",
+                label: "(5)",
+                accent: "violet",
+                caption: "granica iloczynu",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\left(2+\\dfrac{1}{n}\\right)\\left(3-\\dfrac{1}{n}\\right)$.",
+                  steps: [
+                    "Z poprzedniego przykładu $2+\\dfrac{1}{n}\\to 2$. Analogicznie $3-\\dfrac{1}{n}\\to 3$.",
+                    "Obie granice są skończone, więc ze wzoru (5) iloczyn dąży do $2\\cdot 3=6$.",
+                  ],
+                  result: "Wynik: $6$.",
+                },
+              },
+              {
+                latex: "\\lim_{n\\to\\infty}\\dfrac{a_n}{b_n}=\\dfrac{A}{B}\\quad (B\\neq 0)",
+                label: "(6)",
+                accent: "violet",
+                caption: "granica ilorazu",
+                contentLevel: "rozszerzenie",
+                exampleOpen: true,
+                example: {
+                  level: "rozszerzony",
+                  prompt: "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\dfrac{2+\\dfrac{1}{n}}{5-\\dfrac{1}{n}}$.",
+                  steps: [
+                    "Licznik: $2+\\dfrac{1}{n}\\to 2$. Mianownik: $5-\\dfrac{1}{n}\\to 5$.",
+                    "Granica mianownika jest $5\\neq 0$, więc wolno użyć wzoru (6): $\\dfrac{2}{5}$.",
+                  ],
+                  result: "Wynik: $\\dfrac{2}{5}$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "To samo dla różnicy i stałej",
+            content:
+              "Granica różnicy to $A-B$. Stałą wolno wyciągnąć przed granicę: $\\lim_{n\\to\\infty}(c\\cdot a_n)=c\\cdot A$. Na przykład $\\lim_{n\\to\\infty}\\left(4-\\dfrac{1}{n}\\right)=4$ oraz $\\lim_{n\\to\\infty}\\dfrac{3}{n}=3\\cdot 0=0$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "Symbole nieoznaczone",
+            content:
+              "Wzory (4)-(6) wymagają **skończonych** granic. Nie wolno dzielić, gdy granica mianownika jest zerem. Zapisów typu $$\\dfrac{\\infty}{\\infty},\\qquad \\dfrac{0}{0},\\qquad \\infty-\\infty,\\qquad 0\\cdot\\infty$$ **nie liczymy** jako liczb. To **symbole nieoznaczone**: sygnał, że wzór trzeba najpierw przekształcić i dopiero potem brać granicę. Na przykład $\\dfrac{n^2+1}{2n^2}$ wygląda na $\\dfrac{\\infty}{\\infty}$, a $\\sqrt{n^2+n}-n$ wygląda na $\\infty-\\infty$.",
+          },
+        ],
+      },
+      {
+        number: "3",
+        heading: "Stosunek najwyższych potęg",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Gdy $a_n$ jest **ilorazem wielomianów** względem $n$, dzielimy licznik i mianownik przez **najwyższą potęgę $n$ występującą w mianowniku**. Potem korzystamy z (1) i (2): każdy składnik $\\dfrac{1}{n^k}$ znika.",
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "Dlaczego dzielimy przez najwyższą potęgę",
+            content:
+              "Dla dużych $n$ w wielomianie rządzi składnik z największą potęgą. Reszta jest przy nim coraz mniejsza. Po podzieleniu zostają liczby (współczynniki) i ułamki $\\dfrac{1}{n^k}$, których granica jest $0$.",
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "Skrót: porównaj stopnie",
+            content:
+              "Niech licznik ma stopień $k$ i współczynnik wiodący $a$, a mianownik stopień $m$ i współczynnik wiodący $b$.",
+          },
+          {
+            type: "list",
+            contentLevel: "rozszerzenie",
+            items: [
+              "Gdy $k<m$, granica jest $0$.",
+              "Gdy $k=m$, granica jest $\\dfrac{a}{b}$.",
+              "Gdy $k>m$, granica jest $+\\infty$ albo $-\\infty$ (znak bierzemy z $\\dfrac{a}{b}$).",
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "To jest skrót, nie pierwszy krok",
+            content:
+              "W zadaniu i tak **rozpisz dzielenie** przez $n^m$. Skrót ze stopniami jest do sprawdzenia wyniku, a nie zamiast rachunku.",
+          },
+        ],
+      },
+      {
+        number: "4",
+        heading: "Różnica $a-b$ ze wzoru $a^2-b^2$",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Gdy we wzorze widać różnicę, która przy $n\\to\\infty$ wygląda na $\\infty-\\infty$ (często z pierwiastkami), używamy wzoru na różnicę kwadratów **od tyłu**: z $a^2-b^2=(a-b)(a+b)$ dostajemy $a-b$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                latex: "a-b=\\dfrac{a^2-b^2}{a+b}",
+                label: "(7)",
+                accent: "violet",
+                caption: "różnica ze wzoru $a^2-b^2$",
+                contentLevel: "rozszerzenie",
+              },
+              {
+                latex: "\\sqrt{a}-\\sqrt{b}=\\dfrac{a-b}{\\sqrt{a}+\\sqrt{b}}\\quad (a\\ge 0,\\ b\\ge 0)",
+                label: "(8)",
+                accent: "violet",
+                caption: "to samo dla pierwiastków",
+                contentLevel: "rozszerzenie",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "why",
+            collapsible: true,
+            contentLevel: "rozszerzenie",
+            title: "Skąd się bierze wzór (7)",
+            content:
+              "Ze wzoru skróconego mnożenia $a^2-b^2=(a-b)(a+b)$. Dzielimy obie strony przez $a+b$ (gdy $a+b\\neq 0$) i zostaje (7). W praktyce **mnożymy i dzielimy** $a-b$ przez sprzężenie $a+b$: $$a-b=\\dfrac{(a-b)(a+b)}{a+b}=\\dfrac{a^2-b^2}{a+b}.$$",
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "Kiedy tego używać",
+            content:
+              "Typowy kształt to $\\sqrt{\\text{coś z }n}-n$ albo $\\sqrt{n+1}-\\sqrt{n}$. Po zastosowaniu (7) albo (8) w liczniku zostaje zwykły wielomian i wracamy do stosunku najwyższych potęg.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "$\\infty-\\infty$ to nie zero",
+            content:
+              "Nie wolno napisać $\\sqrt{n^2+n}-n\\to\\infty-\\infty=0$. To nieoznaczoność. Najpierw wzór (7) albo (8), potem granica.",
+          },
+        ],
+      },
+      {
+        number: "5",
+        heading: "Twierdzenie o trzech ciągach",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "rozszerzenie",
+            title: "Twierdzenie",
+            content:
+              "Jeżeli od pewnego miejsca zachodzi $$a_n\\le b_n\\le c_n$$ oraz $$\\lim_{n\\to\\infty}a_n=\\lim_{n\\to\\infty}c_n=g,$$ to także $$\\lim_{n\\to\\infty}b_n=g.$$",
+          },
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Środkowy ciąg jest **zaciśnięty** między dwoma ciągami, które idą do tej samej granicy. Nie ma gdzie uciec: sam też musi iść do $g$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "rozszerzenie",
+            items: [
+              {
+                latex:
+                  "a_n\\le b_n\\le c_n\\ \\text{oraz}\\ \\lim a_n=\\lim c_n=g\\ \\Longrightarrow\\ \\lim b_n=g",
+                label: "(9)",
+                accent: "violet",
+                caption: "twierdzenie o trzech ciągach",
+                contentLevel: "rozszerzenie",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "Po co to w zadaniach",
+            content:
+              "Najczęściej ściskamy ciąg między dwoma ciągami idącymi do $0$, np. $-\\dfrac{1}{n}$ i $\\dfrac{1}{n}$. Tak liczymy granice z $(-1)^n$, bo ten ciąg **sam nie ma granicy**, ale po podzieleniu przez $n$ już tak.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "rozszerzenie",
+            title: "Oba skrajne ciągi muszą mieć tę samą granicę",
+            content:
+              "Jeśli $a_n\\to 0$, a $c_n\\to 1$, twierdzenie nic nie daje. Środkowy ciąg może iść do czegokolwiek między $0$ a $1$, albo w ogóle nie mieć granicy.",
+          },
+        ],
+      },
+      {
+        number: "6",
+        heading: "Przykłady",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "rozszerzenie",
+            content:
+              "Rozwiążemy razem trzy proste zadania. Każde pokazuje inny sposób liczenia granicy.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 1",
+            prompt:
+              "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\dfrac{2n^2+3n-1}{5n^2-n+4}$.",
+            steps: [
+              "W liczniku i mianowniku są wielomiany. Najwyższa potęga $n$ w mianowniku to $n^2$. Dzielimy licznik i mianownik przez $n^2$.",
+              "Licznik: $$\\dfrac{2n^2+3n-1}{n^2}=2+\\dfrac{3}{n}-\\dfrac{1}{n^2}.$$",
+              "Mianownik: $$\\dfrac{5n^2-n+4}{n^2}=5-\\dfrac{1}{n}+\\dfrac{4}{n^2}.$$",
+              "Zatem $$\\dfrac{2n^2+3n-1}{5n^2-n+4}=\\dfrac{2+\\dfrac{3}{n}-\\dfrac{1}{n^2}}{5-\\dfrac{1}{n}+\\dfrac{4}{n^2}}.$$",
+              "Ze wzoru (1) mamy $\\dfrac{1}{n}\\to 0$. Ze wzoru (2) mamy $\\dfrac{1}{n^2}\\to 0$.",
+              "Licznik dąży do $2+3\\cdot 0-0=2$. Mianownik dąży do $5-0+4\\cdot 0=5$.",
+              "Granica mianownika jest $5\\neq 0$, więc wolno użyć wzoru (6) na granicę ilorazu: $$\\lim_{n\\to\\infty}\\dfrac{2n^2+3n-1}{5n^2-n+4}=\\dfrac{2}{5}.$$",
+              "Stopnie licznika i mianownika są równe (oba $2$), a stosunek współczynników wiodących to $\\dfrac{2}{5}$. To zgadza się z wynikiem.",
+            ],
+            result: "$\\dfrac{2}{5}$",
+            cleanSolution: [
+              "$\\dfrac{2n^2+3n-1}{5n^2-n+4}=\\dfrac{2+\\dfrac{3}{n}-\\dfrac{1}{n^2}}{5-\\dfrac{1}{n}+\\dfrac{4}{n^2}}\\to\\dfrac{2}{5}$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 2",
+            prompt:
+              "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\left(\\sqrt{n^2+n}-n\\right)$.",
+            steps: [
+              "Dla dużych $n$ oba składniki są duże, więc widać nieoznaczoność typu $\\infty-\\infty$. Używamy wzoru (7) z $a=\\sqrt{n^2+n}$ oraz $b=n$.",
+              "Sprzężenie to $a+b=\\sqrt{n^2+n}+n$. Mnożymy i dzielimy przez nie: $$\\sqrt{n^2+n}-n=\\dfrac{\\left(\\sqrt{n^2+n}-n\\right)\\left(\\sqrt{n^2+n}+n\\right)}{\\sqrt{n^2+n}+n}.$$",
+              "W liczniku jest różnica kwadratów: $$\\left(\\sqrt{n^2+n}\\right)^2-n^2=(n^2+n)-n^2=n.$$",
+              "Zatem $$\\sqrt{n^2+n}-n=\\dfrac{n}{\\sqrt{n^2+n}+n}.$$",
+              "Dzielimy licznik i mianownik przez $n$: $$\\dfrac{n}{\\sqrt{n^2+n}+n}=\\dfrac{1}{\\dfrac{\\sqrt{n^2+n}}{n}+1}.$$",
+              "Pierwiastek w mianowniku: $$\\dfrac{\\sqrt{n^2+n}}{n}=\\sqrt{\\dfrac{n^2+n}{n^2}}=\\sqrt{1+\\dfrac{1}{n}},$$ bo $n>0$.",
+              "Dostajemy $$\\sqrt{n^2+n}-n=\\dfrac{1}{\\sqrt{1+\\dfrac{1}{n}}+1}.$$",
+              "Ze wzoru (1) jest $\\dfrac{1}{n}\\to 0$, więc $\\sqrt{1+\\dfrac{1}{n}}\\to\\sqrt{1}=1$.",
+              "Stąd $$\\lim_{n\\to\\infty}\\left(\\sqrt{n^2+n}-n\\right)=\\dfrac{1}{1+1}=\\dfrac{1}{2}.$$",
+            ],
+            result: "$\\dfrac{1}{2}$",
+            cleanSolution: [
+              "$\\sqrt{n^2+n}-n=\\dfrac{n}{\\sqrt{n^2+n}+n}=\\dfrac{1}{\\sqrt{1+\\dfrac{1}{n}}+1}\\to\\dfrac{1}{2}$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "rozszerzenie",
+            title: "Przykład 3",
+            prompt:
+              "Oblicz $\\displaystyle\\lim_{n\\to\\infty}\\dfrac{(-1)^n}{n}$.",
+            steps: [
+              "Ciąg $(-1)^n$ nie ma granicy: wyrazy skaczą między $-1$ a $1$. Nie wolno więc liczyć tej granicy jako ilorazu dwóch granic.",
+              "Dla każdego $n$ zachodzi $$-1\\le(-1)^n\\le 1.$$",
+              "Numer wyrazu $n$ jest dodatni, więc po podzieleniu nierówności przez $n$ znak się nie zmienia: $$-\\dfrac{1}{n}\\le\\dfrac{(-1)^n}{n}\\le\\dfrac{1}{n}.$$",
+              "Lewy ciąg: $\\lim_{n\\to\\infty}\\left(-\\dfrac{1}{n}\\right)=0$ ze wzoru (1).",
+              "Prawy ciąg: $\\lim_{n\\to\\infty}\\dfrac{1}{n}=0$ ze wzoru (1).",
+              "Mamy $a_n=-\\dfrac{1}{n}$, $b_n=\\dfrac{(-1)^n}{n}$, $c_n=\\dfrac{1}{n}$ oraz $\\lim a_n=\\lim c_n=0$.",
+              "Z twierdzenia o trzech ciągach (9) dostajemy $$\\lim_{n\\to\\infty}\\dfrac{(-1)^n}{n}=0.$$",
+            ],
+            result: "$0$",
+            cleanSolution: [
+              "$-\\dfrac{1}{n}\\le\\dfrac{(-1)^n}{n}\\le\\dfrac{1}{n}$,\\quad $-\\dfrac{1}{n}\\to 0$,\\quad $\\dfrac{1}{n}\\to 0$",
+              "z (9): $\\dfrac{(-1)^n}{n}\\to 0$",
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  {
     id: "artykul-funkcja-liniowa",
     title: "Funkcja liniowa",
     unavailable: true,
@@ -3203,6 +5473,26 @@ export function isArticleUnavailable(article) {
   return Boolean(article?.unavailable);
 }
 
+export const ARTICLE_CONTENT_MODE_ORDER = ["podstawowka", "podstawa", "rozszerzenie"];
+
+export function isArticleContentMode(value) {
+  return ARTICLE_CONTENT_MODE_ORDER.includes(value);
+}
+
+export function articleContentModeLabel(mode) {
+  if (mode === "podstawowka") return "Podstawówka";
+  if (mode === "rozszerzenie") return "Rozszerzenie";
+  return "Podstawa";
+}
+
+export function articleExampleLevelLabel(level) {
+  if (level === "rozszerzony") return "Rozszerzenie";
+  if (level === "ósmoklasisty" || level === "podstawówka" || level === "podstawowka") {
+    return "Podstawówka";
+  }
+  return "Podstawa";
+}
+
 export function getArticleContentModes(article) {
   if (!article) return ["podstawa"];
   if (Array.isArray(article.contentModes) && article.contentModes.length > 0) {
@@ -3216,21 +5506,23 @@ export function parseArticleContentModesParam(value, availableModes) {
   const raw = String(value || "")
     .split(",")
     .map((part) => part.trim())
-    .filter((part) => part === "podstawa" || part === "rozszerzenie")
+    .filter((part) => isArticleContentMode(part))
     .filter((part) => available.includes(part));
   if (raw.length > 0) return [...new Set(raw)];
+  if (available.includes("podstawowka")) return ["podstawowka"];
   if (available.includes("podstawa")) return ["podstawa"];
   return [available[0]];
 }
 
 export function defaultArticleContentModes(article) {
   const available = getArticleContentModes(article);
+  if (available.includes("podstawowka")) return ["podstawowka"];
   if (available.includes("podstawa")) return ["podstawa"];
   return [available[0]];
 }
 
 function resolveNodeContentLevel(node, inherited = "podstawa") {
-  if (node?.contentLevel === "podstawa" || node?.contentLevel === "rozszerzenie") {
+  if (isArticleContentMode(node?.contentLevel)) {
     return node.contentLevel;
   }
   return inherited;

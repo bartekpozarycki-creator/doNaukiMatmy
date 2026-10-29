@@ -9,6 +9,7 @@ import { createPageUrl } from "@/utils";
 import { sampleCoursesByLevel, allSampleCourses } from "@/utils/sample-courses";
 import {
   sampleArticles,
+  articleContentModeLabel,
   defaultArticleContentModes,
   getArticleContentModes,
   isArticleUnavailable,
@@ -16,6 +17,22 @@ import {
 import { fetchNotes } from "@/utils/notes";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
+
+function articleContentModeChipClass(mode, active, unavailable) {
+  if (unavailable) {
+    return "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500";
+  }
+  if (!active) {
+    return "border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400";
+  }
+  if (mode === "rozszerzenie") {
+    return "border-violet-500 bg-violet-100 text-violet-800 dark:border-violet-400 dark:bg-violet-950/50 dark:text-violet-200";
+  }
+  if (mode === "podstawowka") {
+    return "border-green-500 bg-green-100 text-green-800 dark:border-green-400 dark:bg-green-950/50 dark:text-green-200";
+  }
+  return "border-blue-500 bg-blue-100 text-blue-800 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200";
+}
 
 const levelTheme = {
   podstawówka: {
@@ -252,7 +269,6 @@ function ArticleCard({ item, onOpen }) {
         <div className="flex min-h-[1.75rem] flex-wrap gap-2">
           {availableModes.map((mode) => {
             const active = selectedModes.includes(mode);
-            const isRozszerzenie = mode === "rozszerzenie";
             return (
               <button
                 key={mode}
@@ -264,16 +280,10 @@ function ArticleCard({ item, onOpen }) {
                 }}
                 className={cn(
                   "rounded-md border px-2.5 py-1 text-xs font-semibold leading-none transition",
-                  unavailable
-                    ? "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-500"
-                    : active
-                    ? isRozszerzenie
-                      ? "border-violet-500 bg-violet-100 text-violet-800 dark:border-violet-400 dark:bg-violet-950/50 dark:text-violet-200"
-                      : "border-blue-500 bg-blue-100 text-blue-800 dark:border-blue-400 dark:bg-blue-950/50 dark:text-blue-200"
-                    : "border-slate-200 bg-white text-slate-500 hover:border-slate-300 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-400",
+                  articleContentModeChipClass(mode, active, unavailable),
                 )}
               >
-                {isRozszerzenie ? "Rozszerzenie" : "Podstawa"}
+                {articleContentModeLabel(mode)}
               </button>
             );
           })}

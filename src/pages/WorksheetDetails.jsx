@@ -1497,18 +1497,6 @@ export default function WorksheetDetailsPage() {
             <span className="tabular-nums">
               {headerTitle}
             </span>
-            {answerKeyUrl && !showResults ? (
-              <button
-                type="button"
-                onClick={() => openAnswerKeyAtQuestion(question)}
-                disabled={answerKeyLoading}
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/30 bg-white/15 text-white backdrop-blur-sm transition-colors hover:bg-white/30 disabled:cursor-not-allowed disabled:opacity-50"
-                title={`Klucz CKE — zadanie ${displayNr}`}
-                aria-label={`Pokaż klucz CKE dla pytania ${displayNr}`}
-              >
-                <KeyRound className="h-4 w-4" />
-              </button>
-            ) : null}
           </h2>
         </div>
         <CardContent className="space-y-7 p-6 sm:p-8">
@@ -1657,10 +1645,7 @@ export default function WorksheetDetailsPage() {
                         Zobacz schemat oceniania CKE i przykładowe rozwiązania
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
-                        <CkeSolutionText
-                          text={question.odpowiedz_tekstowa}
-                          naszaOdpowiedz={question.nasza_odpowiedz}
-                        />
+                        <CkeSolutionText text={question.odpowiedz_tekstowa} />
                       </AccordionContent>
                     </AccordionItem>
                   </Accordion>
@@ -1725,34 +1710,58 @@ export default function WorksheetDetailsPage() {
                   entry?.graded &&
                   earnedPts > 0 &&
                   earnedPts < maxPts;
+                const hasTekstowa = Boolean(question.odpowiedz_tekstowa?.trim());
 
                 return (
-                  <motion.div
-                    key={`feedback-${question.id}`}
-                    initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                    className={`rounded-xl px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md ${
-                      fullCredit
-                        ? "bg-emerald-600 shadow-emerald-600/25"
-                        : partialOpen
-                          ? "bg-amber-600 shadow-amber-600/25"
-                          : "bg-rose-600 shadow-rose-600/25"
-                    }`}
-                  >
-                    {fullCredit ? (
-                      "Dobrze!"
-                    ) : partialOpen ? (
-                      "Częściowo poprawnie — sprawdź pola powyżej."
-                    ) : hasOpenParts(question) ? (
-                      "Sprawdź poprawki przy polach powyżej."
-                    ) : (
-                      <span>
-                        Błąd. Poprawna odpowiedź:{" "}
-                        <MathText text={question.correct_answer} />
-                      </span>
-                    )}
-                  </motion.div>
+                  <div className="space-y-4">
+                    <motion.div
+                      key={`feedback-${question.id}`}
+                      initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
+                      className={`rounded-xl px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md ${
+                        fullCredit
+                          ? "bg-emerald-600 shadow-emerald-600/25"
+                          : partialOpen
+                            ? "bg-amber-600 shadow-amber-600/25"
+                            : "bg-rose-600 shadow-rose-600/25"
+                      }`}
+                    >
+                      {fullCredit ? (
+                        "Dobrze!"
+                      ) : partialOpen ? (
+                        "Częściowo poprawnie — sprawdź pola powyżej."
+                      ) : hasOpenParts(question) ? (
+                        "Sprawdź poprawki przy polach powyżej."
+                      ) : (
+                        <span>
+                          Błąd. Poprawna odpowiedź:{" "}
+                          <MathText text={question.correct_answer} />
+                        </span>
+                      )}
+                    </motion.div>
+                    {hasTekstowa ? (
+                      <Accordion
+                        type="single"
+                        collapsible
+                        className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
+                      >
+                        <AccordionItem
+                          value={`cke-${question.id}`}
+                          className="border-0"
+                        >
+                          <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
+                            Zobacz rozwiązanie
+                          </AccordionTrigger>
+                          <AccordionContent className="px-4 pb-4">
+                            <CkeSolutionText
+                              text={question.odpowiedz_tekstowa}
+                            />
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    ) : null}
+                  </div>
                 );
               })()
             )}
