@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   Download,
@@ -30,6 +29,7 @@ import {
   X,
   ArrowLeft,
   History,
+  Tag,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -110,32 +110,44 @@ const listRecursive = async (bucket, prefix) => {
 const levelTheme = {
   podstawowy: {
     label: "Matura podstawowa",
+    levelLine: "Poziom podstawowy",
+    examKind: "Egzamin maturalny",
     gradient: "from-blue-400 to-blue-600",
+    solid: "bg-blue-600",
     badge: "border-blue-500 text-blue-700 dark:text-blue-400",
     btn: "bg-blue-600 hover:bg-blue-700",
     outline:
       "text-blue-700 dark:text-blue-200 border-blue-300 dark:border-blue-500",
-    soft: "bg-blue-50 dark:bg-blue-900/20",
+    soft: "bg-blue-50 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200",
+    icon: "text-blue-600 dark:text-blue-300",
     text: "text-blue-700 dark:text-blue-300",
   },
   rozszerzony: {
     label: "Matura rozszerzona",
+    levelLine: "Poziom rozszerzony",
+    examKind: "Egzamin maturalny",
     gradient: "from-purple-400 to-purple-600",
+    solid: "bg-purple-600",
     badge: "border-purple-500 text-purple-700 dark:text-purple-400",
     btn: "bg-purple-600 hover:bg-purple-700",
     outline:
       "text-purple-700 dark:text-purple-200 border-purple-300 dark:border-purple-500",
-    soft: "bg-purple-50 dark:bg-purple-900/20",
+    soft: "bg-purple-50 text-purple-800 dark:bg-purple-950/50 dark:text-purple-200",
+    icon: "text-purple-600 dark:text-purple-300",
     text: "text-purple-700 dark:text-purple-300",
   },
   ósmoklasisty: {
-    label: "Egzamin ósmoklasisty",
+    label: "Ósma klasa",
+    levelLine: "Egzamin ósmoklasisty",
+    examKind: "Egzamin ósmoklasisty",
     gradient: "from-green-400 to-green-600",
+    solid: "bg-green-600",
     badge: "border-green-500 text-green-700 dark:text-green-400",
     btn: "bg-green-600 hover:bg-green-700",
     outline:
       "text-green-700 dark:text-green-200 border-green-300 dark:border-green-500",
-    soft: "bg-green-50 dark:bg-green-900/20",
+    soft: "bg-green-50 text-green-800 dark:bg-green-950/50 dark:text-green-200",
+    icon: "text-green-600 dark:text-green-300",
     text: "text-green-700 dark:text-green-300",
   },
 };
@@ -174,6 +186,28 @@ const formatFilePart = (value) => {
   const cleaned = cleanFilePart(value);
   if (!cleaned) return "";
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const formatSheetType = (value) => {
+  const raw = cleanFilePart(value);
+  if (!raw) return "Arkusz";
+  const spaced = raw
+    .replace(/([a-ząćęłńóśźż])([A-ZĄĆĘŁŃÓŚŹŻ])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim();
+  const known = {
+    "osma klasa": "Ósma klasa",
+    "ósma klasa": "Ósma klasa",
+  };
+  if (known[spaced.toLowerCase()]) return known[spaced.toLowerCase()];
+  return spaced
+    .split(" ")
+    .map((word, index) =>
+      index === 0
+        ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+        : word.toLowerCase(),
+    )
+    .join(" ");
 };
 
 const getFormulaYear = (value) => {
@@ -297,47 +331,47 @@ const skeletonClass = "bg-slate-200 dark:bg-slate-700";
 
 function WorksheetCardSkeleton() {
   return (
-    <Card className="h-full overflow-hidden border-0 bg-white shadow-none dark:bg-slate-800">
-      <Skeleton className={`h-1.5 w-full rounded-none ${skeletonClass}`} />
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1 space-y-3">
-            <Skeleton className={`h-6 w-[78%] ${skeletonClass}`} />
-            <div className="mt-0 flex items-center gap-2">
-              <Skeleton
-                className={`h-4 w-4 shrink-0 rounded-full ${skeletonClass}`}
-              />
-              <Skeleton className={`h-4 w-32 ${skeletonClass}`} />
-            </div>
-          </div>
-          <Skeleton
-            className={`h-7 w-[7.5rem] shrink-0 rounded-full ${skeletonClass}`}
-          />
+    <Card className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+        <Skeleton className={`h-10 w-full rounded-none ${skeletonClass}`} />
+        <Skeleton className={`h-20 w-full rounded-none ${skeletonClass}`} />
+        <Skeleton className={`h-12 w-full rounded-none ${skeletonClass}`} />
+        <div className="grid grid-cols-2 sm:grid-cols-4">
+          {Array.from({ length: 4 }, (_, index) => (
+            <Skeleton
+              key={`sheet-meta-skel-${index}`}
+              className={`h-16 rounded-none ${skeletonClass}`}
+            />
+          ))}
         </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <Skeleton className={`h-7 w-28 rounded-full ${skeletonClass}`} />
-          <Skeleton className={`h-7 w-20 rounded-full ${skeletonClass}`} />
-        </div>
-        <div className="min-h-6">
-          <Skeleton className={`h-4 w-[11rem] ${skeletonClass}`} />
-        </div>
-        <div className="flex gap-2">
-          <Skeleton className={`h-10 flex-1 rounded-md ${skeletonClass}`} />
-          <Skeleton
-            className={`h-10 w-10 shrink-0 rounded-md ${skeletonClass}`}
-          />
-        </div>
-      </CardContent>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <Skeleton className={`h-12 flex-1 rounded-lg ${skeletonClass}`} />
+        <Skeleton className={`h-12 w-12 shrink-0 rounded-lg ${skeletonClass}`} />
+      </div>
     </Card>
+  );
+}
+
+function SheetMetaItem({ icon: Icon, label, value, iconClass }) {
+  return (
+    <div className="flex min-w-0 items-start gap-2 px-3 py-3">
+      <Icon className={`mt-0.5 h-4 w-4 shrink-0 ${iconClass}`} />
+      <div className="min-w-0">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          {label}
+        </p>
+        <p className="truncate text-sm font-bold text-slate-900 dark:text-white">
+          {value}
+        </p>
+      </div>
+    </div>
   );
 }
 
 function WorksheetCard({
   worksheet,
   theme,
-  formulaClass,
   resultColor,
   percent,
   attempt,
@@ -411,126 +445,149 @@ function WorksheetCard({
     setAbandonDialogOpen(false);
   };
 
+  const sheetTitle = worksheet.displayTitle || worksheet.title || "Arkusz";
+  const dateLabel = [worksheet.month, worksheet.year].filter(Boolean).join(" ") || "—";
+  const taskLabel = worksheet.taskCount ? String(worksheet.taskCount) : "—";
+  const resultLabel = started ? "Postęp" : "Wynik";
+  const resultValue = started
+    ? attempt?.questionCount
+      ? `${attempt.answeredCount ?? 0}/${attempt.questionCount}`
+      : "W toku"
+    : attempt
+      ? `${percent}%`
+      : "—";
+
   return (
-    <Card className="group relative h-full overflow-hidden border-0 bg-white transition-all duration-300 hover:shadow-xl dark:bg-slate-800">
-      <div className={`h-1.5 bg-gradient-to-r ${theme.gradient}`} />
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <CardTitle className="text-lg leading-tight text-slate-900 dark:text-white">
-              {worksheet.displayTitle || worksheet.title}
-            </CardTitle>
-            <div className="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-slate-400">
-              <Calendar className={`w-4 h-4 ${theme.text}`} />
-              <span>{worksheet.month || "Brak miesiąca"}</span>
-              <span>•</span>
-              <span>{worksheet.year || "Brak roku"}</span>
-            </div>
+    <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-600">
+        <div className="flex min-w-0 flex-wrap">
+          <div className={`${theme.solid} flex shrink-0 items-stretch text-white`}>
+            <span className="flex items-center px-3 py-2.5 text-xs font-bold sm:px-3.5 sm:text-sm">
+              {theme.examKind}
+            </span>
+            <span className="flex items-center border-l border-white/35 px-3 py-2.5 text-xs italic sm:px-3.5 sm:text-sm">
+              Formuła {worksheet.formula || "—"}
+            </span>
           </div>
-          <Badge variant="outline" className={`${theme.badge} shrink-0`}>
-            {theme.label}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="flex flex-wrap gap-2">
-          <span
-            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${formulaClass}`}
+          <div
+            className={`${theme.soft} flex min-w-[7.5rem] flex-1 items-center justify-end px-3 text-[10px] font-bold uppercase tracking-wider sm:px-4 sm:text-[11px]`}
           >
-            Formuła {worksheet.formula || "brak"}
-          </span>
-          <span className="inline-flex items-center rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:text-slate-200">
-            {worksheet.type || "Arkusz"}
-          </span>
+            {theme.label}
+          </div>
         </div>
-        <div className="min-h-6">
-          {started ? (
-            <div className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
-              <Clock className="h-4 w-4 shrink-0" />
-              <span className="font-medium">
-                Rozpoczęty
-                {attempt?.questionCount
-                  ? ` • ${attempt.answeredCount ?? 0}/${attempt.questionCount} odpowiedzi`
-                  : ""}
-                {attempt?.updatedAt
-                  ? ` • ${new Date(attempt.updatedAt).toLocaleDateString("pl-PL")}`
-                  : ""}
-              </span>
-            </div>
-          ) : attempt ? (
-            <div className={`flex items-center gap-2 text-sm ${resultColor}`}>
-              <CheckCircle className={`h-4 w-4 ${resultColor}`} />
-              <span className="font-medium">
-                Ostatni wynik: {percent}% •{" "}
-                {new Date(attempt.date).toLocaleDateString("pl-PL")}
-              </span>
-            </div>
-          ) : null}
+        <div className={`${theme.solid} px-4 py-4 sm:px-5 sm:py-5`}>
+          <h2 className="text-2xl font-extrabold uppercase leading-none tracking-wide text-white sm:text-3xl">
+            {sheetTitle}
+          </h2>
         </div>
-        <div className="flex flex-nowrap items-stretch gap-2">
-          {started ? (
-            <div className="flex min-w-0 flex-1 gap-2">
-              <Button
-                className={`h-10 min-h-10 flex-1 gap-1 px-2 text-sm ${theme.btn}`}
-                disabled={!worksheet.taskCount}
-                onClick={openWorksheet}
-              >
-                <ArrowLeft className="h-4 w-4 shrink-0" />
-                Wróć
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className={`h-10 min-h-10 flex-1 gap-1 px-2 text-sm bg-white hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 ${theme.outline}`}
-                onClick={() => setAbandonDialogOpen(true)}
-              >
-                <X className="h-4 w-4 shrink-0" />
-                Porzuć
-              </Button>
-            </div>
-          ) : (
+        <div className="border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-600 dark:bg-slate-900 sm:px-5">
+          <p className={`text-base font-semibold sm:text-lg ${theme.text}`}>
+            {theme.levelLine}
+          </p>
+        </div>
+        <div className="grid grid-cols-2 divide-slate-200 dark:divide-slate-600 sm:grid-cols-4 sm:divide-x">
+          <SheetMetaItem
+            icon={Calendar}
+            label="Data"
+            value={dateLabel}
+            iconClass={theme.icon}
+          />
+          <div className="border-l border-slate-200 dark:border-slate-600 sm:border-l-0">
+            <SheetMetaItem
+              icon={FileText}
+              label="Zadania"
+              value={taskLabel}
+              iconClass={theme.icon}
+            />
+          </div>
+          <div className="border-t border-slate-200 dark:border-slate-600 sm:border-t-0">
+            <SheetMetaItem
+              icon={started ? Clock : CheckCircle}
+              label={resultLabel}
+              value={resultValue}
+              iconClass={
+                started
+                  ? "text-amber-600 dark:text-amber-300"
+                  : attempt
+                    ? resultColor
+                    : theme.icon
+              }
+            />
+          </div>
+          <div className="border-l border-t border-slate-200 dark:border-slate-600 sm:border-t-0">
+            <SheetMetaItem
+              icon={Tag}
+              label="Typ"
+              value={formatSheetType(worksheet.type)}
+              iconClass={theme.icon}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-3 flex items-stretch gap-2">
+        {started ? (
+          <>
             <Button
-              className={`h-10 min-h-10 flex-1 ${theme.btn}`}
+              className={`h-12 min-h-12 flex-1 gap-2 rounded-lg text-base font-semibold ${theme.btn}`}
               disabled={!worksheet.taskCount}
               onClick={openWorksheet}
             >
-              <Play className="h-4 w-4" />
-              Rozpocznij
+              <ArrowLeft className="h-4 w-4 shrink-0" />
+              Wróć do arkusza
             </Button>
-          )}
-          {attemptHistory.length > 0 ? (
             <Button
               type="button"
               variant="outline"
-              size="icon"
-              title="Pokaż historię arkusza"
-              aria-label="Pokaż historię arkusza"
-              onClick={() => setHistoryDialogOpen(true)}
-              className={`h-10 w-10 shrink-0 bg-white hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 ${theme.outline}`}
+              className="h-12 min-h-12 rounded-lg border-slate-200 px-3 text-sm dark:border-slate-600"
+              onClick={() => setAbandonDialogOpen(true)}
             >
-              <History className="w-4 h-4" />
+              <X className="h-4 w-4" />
+              Porzuć
             </Button>
-          ) : null}
+          </>
+        ) : (
+          <Button
+            className={`h-12 min-h-12 flex-1 gap-2 rounded-lg text-base font-semibold ${theme.btn}`}
+            disabled={!worksheet.taskCount}
+            onClick={openWorksheet}
+          >
+            <Play className="h-4 w-4 fill-current" />
+            Rozpocznij arkusz
+          </Button>
+        )}
+        {attemptHistory.length > 0 ? (
           <Button
             type="button"
             variant="outline"
             size="icon"
-            disabled={!worksheet.file_url}
-            title={
-              worksheet.file_url
-                ? "Pobierz arkusz egzaminacyjny (PDF)"
-                : "Brak pliku PDF tego arkusza w magazynie Supabase"
-            }
-            aria-label="Pobierz arkusz egzaminacyjny"
-            onClick={() =>
-              worksheet.file_url && window.open(worksheet.file_url, "_blank")
-            }
-            className={`h-10 w-10 shrink-0 bg-white hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600 ${theme.outline}`}
+            title="Pokaż historię arkusza"
+            aria-label="Pokaż historię arkusza"
+            onClick={() => setHistoryDialogOpen(true)}
+            className={`h-12 w-12 shrink-0 rounded-lg border-0 ${theme.soft}`}
           >
-            <Download className="w-4 h-4" />
+            <History className="h-4 w-4" />
           </Button>
-        </div>
-      </CardContent>
+        ) : null}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          disabled={!worksheet.file_url}
+          title={
+            worksheet.file_url
+              ? "Pobierz arkusz egzaminacyjny (PDF)"
+              : "Brak pliku PDF tego arkusza w magazynie Supabase"
+          }
+          aria-label="Pobierz arkusz egzaminacyjny"
+          onClick={() =>
+            worksheet.file_url && window.open(worksheet.file_url, "_blank")
+          }
+          className={`h-12 w-12 shrink-0 rounded-lg border-0 ${theme.soft} disabled:opacity-40`}
+        >
+          <Download className="h-4 w-4" />
+        </Button>
+      </div>
 
       <AlertDialog open={abandonDialogOpen} onOpenChange={setAbandonDialogOpen}>
         <AlertDialogContent className="overflow-hidden border-slate-200 p-0 dark:border-slate-700">
@@ -703,7 +760,6 @@ function WorksheetCard({
 function WorksheetGridTile({
   worksheet,
   theme,
-  formulaClass,
   resultColor,
   percent,
   attempt,
@@ -719,7 +775,6 @@ function WorksheetGridTile({
     <WorksheetCard
       worksheet={worksheet}
       theme={theme}
-      formulaClass={formulaClass}
       resultColor={resultColor}
       percent={percent}
       attempt={attempt}
@@ -1086,12 +1141,6 @@ export default function WorksheetsPage() {
             : filteredWorksheets.map((worksheet) => {
                 const theme =
                   levelTheme[worksheet.level] || levelTheme.podstawowy;
-                const isMaturaFormula2015 =
-                  worksheet.level !== "ósmoklasisty" &&
-                  worksheet.formulaYear === 2015;
-                const formulaClass = isMaturaFormula2015
-                  ? "border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-600 dark:bg-blue-950/40 dark:text-blue-200"
-                  : "border-gray-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200";
                 const attempt = getAttempt(worksheet.id);
                 const started = isWorksheetStarted(attempt);
                 const completed = isWorksheetCompleted(attempt);
@@ -1106,7 +1155,6 @@ export default function WorksheetsPage() {
                     key={`${worksheet.id}-${progressTick}`}
                     worksheet={worksheet}
                     theme={theme}
-                    formulaClass={formulaClass}
                     resultColor={resultColor}
                     percent={percent}
                     attempt={completed || started ? attempt : null}

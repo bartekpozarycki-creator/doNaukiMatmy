@@ -43,6 +43,7 @@ import { useWorksheetScores } from "@/hooks/use-worksheet-scores";
 import { publicSupabase } from "@/supabase-config.js";
 import {
   attachWorksheetStemContext,
+  pickOdpowiedzTekstowa,
   CLOSED_WORKSHEET_QUESTION_INSTRUCTION,
   formatStemSubtaskTitle,
   formatTaskNr,
@@ -92,11 +93,12 @@ const worksheetLevelTheme = {
     label: "Matura podstawowa",
     paperBand: "bg-gradient-to-r from-blue-500 to-blue-600",
     paperBandDark: "dark:from-blue-600 dark:to-blue-700",
+    taskBand: "bg-[#c5d9f8]",
     headerText: "text-white",
     accentText: "text-blue-700 dark:text-blue-300",
     accentBorder: "border-blue-500",
-    selectedChoice: "border-blue-600 bg-blue-50 ring-blue-200 dark:border-blue-400 dark:bg-blue-950/40 dark:ring-blue-900/60",
-    hoverChoice: "hover:border-blue-400 hover:bg-blue-50/60 dark:hover:border-blue-500 dark:hover:bg-blue-950/30",
+    selectedChoice: "bg-blue-100 dark:bg-blue-950/50",
+    hoverChoice: "hover:bg-blue-50 dark:hover:bg-blue-950/35",
     button: "bg-blue-600 hover:bg-blue-700",
     switch: "data-[state=checked]:bg-blue-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
     dialogStrip: "bg-gradient-to-r from-blue-500 to-blue-600",
@@ -106,11 +108,12 @@ const worksheetLevelTheme = {
     label: "Matura rozszerzona",
     paperBand: "bg-gradient-to-r from-purple-500 to-purple-600",
     paperBandDark: "dark:from-purple-600 dark:to-purple-700",
+    taskBand: "bg-[#d7b6ee]",
     headerText: "text-white",
     accentText: "text-purple-700 dark:text-purple-300",
     accentBorder: "border-purple-500",
-    selectedChoice: "border-purple-600 bg-purple-50 ring-purple-200 dark:border-purple-400 dark:bg-purple-950/40 dark:ring-purple-900/60",
-    hoverChoice: "hover:border-purple-400 hover:bg-purple-50/60 dark:hover:border-purple-500 dark:hover:bg-purple-950/30",
+    selectedChoice: "bg-purple-100 dark:bg-purple-950/50",
+    hoverChoice: "hover:bg-purple-50 dark:hover:bg-purple-950/35",
     button: "bg-purple-600 hover:bg-purple-700",
     switch: "data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
     dialogStrip: "bg-gradient-to-r from-purple-500 to-purple-600",
@@ -120,11 +123,12 @@ const worksheetLevelTheme = {
     label: "Egzamin ósmoklasisty",
     paperBand: "bg-gradient-to-r from-emerald-500 to-green-600",
     paperBandDark: "dark:from-emerald-600 dark:to-green-700",
+    taskBand: "bg-[#b7e4c8]",
     headerText: "text-white",
     accentText: "text-green-700 dark:text-green-300",
     accentBorder: "border-green-500",
-    selectedChoice: "border-green-600 bg-green-50 ring-green-200 dark:border-green-400 dark:bg-green-950/40 dark:ring-green-900/60",
-    hoverChoice: "hover:border-green-400 hover:bg-green-50/60 dark:hover:border-green-500 dark:hover:bg-green-950/30",
+    selectedChoice: "bg-green-100 dark:bg-green-950/50",
+    hoverChoice: "hover:bg-green-50 dark:hover:bg-green-950/35",
     button: "bg-green-600 hover:bg-green-700",
     switch: "data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-slate-300 dark:data-[state=unchecked]:bg-slate-600",
     dialogStrip: "bg-gradient-to-r from-emerald-500 to-green-600",
@@ -312,9 +316,9 @@ function WorksheetDetailsSkeleton({ examTheme }) {
         </CardContent>
       </Card>
 
-      <Card className="mb-6 overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-3`}>
-          <Skeleton className={`h-6 w-56 rounded-md ${skeletonOnBandClass}`} />
+      <Card className="mb-6 overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className={`${examTheme.taskBand} px-4 py-2.5 sm:px-5`}>
+          <Skeleton className="h-5 w-48 rounded-sm bg-slate-900/20" />
         </div>
         <CardContent className="space-y-7 p-6 sm:p-8">
           <Skeleton className={`h-6 w-full max-w-lg ${skeletonClass}`} />
@@ -323,11 +327,11 @@ function WorksheetDetailsSkeleton({ examTheme }) {
             <Skeleton className={`h-5 w-[94%] ${skeletonClass}`} />
             <Skeleton className={`h-5 w-[80%] ${skeletonClass}`} />
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="flex gap-1">
             {Array.from({ length: 4 }, (_, i) => (
               <Skeleton
                 key={`choice-skel-${i}`}
-                className={`h-14 rounded-xl ${skeletonClass}`}
+                className={`h-8 min-w-0 flex-1 rounded-md ${skeletonClass}`}
               />
             ))}
           </div>
@@ -376,6 +380,24 @@ const formatDisplayPart = (value) => {
   if (!value) return "";
   const cleaned = String(value).trim();
   return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+};
+
+const choicePlainLength = (option) => {
+  const { text } = splitOptionLabel(option, 0);
+  return String(text)
+    .replace(/\\[a-zA-Z]+/g, "")
+    .replace(/[$\\{}^_]/g, "")
+    .replace(/\s+/g, " ")
+    .trim().length;
+};
+
+const areChoicesLong = (options) => {
+  if (!Array.isArray(options) || options.length === 0) return false;
+  const longest = options.reduce(
+    (max, option) => Math.max(max, choicePlainLength(option)),
+    0,
+  );
+  return longest >= 14;
 };
 
 const splitOptionLabel = (option, index) => {
@@ -1352,9 +1374,9 @@ export default function WorksheetDetailsPage() {
   ]);
 
   const reviewCorrectChoiceClass =
-    "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-200 dark:border-emerald-400 dark:bg-emerald-950/50 dark:ring-emerald-900/60";
+    "bg-emerald-100 dark:bg-emerald-950/50";
   const reviewWrongPickChoiceClass =
-    "border-rose-400 bg-rose-50 ring-2 ring-rose-200 dark:border-rose-500 dark:bg-rose-950/40 dark:ring-rose-900/50";
+    "bg-rose-100 dark:bg-rose-950/45";
 
   const renderChoice = (question, option, index, type = "single_choice") => {
     const value = type === "true_false" ? option : option;
@@ -1370,13 +1392,16 @@ export default function WorksheetDetailsPage() {
     const optionLabel = splitOptionLabel(option, index);
     const justChecked = Boolean(practiceMode && checkedQuestionIds[question.id]);
 
-    let choiceClassName =
-      "border-slate-300 dark:border-slate-600 " + examTheme.hoverChoice;
+    const longChoices =
+      type === "single_choice" && areChoicesLong(question.options);
+
+    let choiceClassName = examTheme.hoverChoice;
     if (answerRevealed) {
       if (isCorrectOption) choiceClassName = reviewCorrectChoiceClass;
       else if (isUserWrongPick) choiceClassName = reviewWrongPickChoiceClass;
+      else choiceClassName = "";
     } else if (isSelected) {
-      choiceClassName = `${examTheme.selectedChoice} ring-2`;
+      choiceClassName = examTheme.selectedChoice;
     }
 
     let choiceAnimate = { scale: 1, x: 0, boxShadow: "0 0 0 0 rgba(0,0,0,0)" };
@@ -1420,14 +1445,22 @@ export default function WorksheetDetailsPage() {
         }}
         initial={justChecked ? { scale: 1, x: 0 } : false}
         animate={choiceAnimate}
-        className={`flex min-h-14 items-center gap-3 rounded-xl border bg-white px-4 py-3 transition-colors dark:bg-slate-900/70 ${
+        className={`flex items-center gap-1.5 rounded-md border-0 px-2 py-1.5 text-sm transition-colors ${
+          /(^|\s)bg-/.test(choiceClassName) ? "" : "bg-transparent"
+        } ${
+          type === "single_choice"
+            ? longChoices
+              ? "w-full"
+              : "min-w-0 flex-1"
+            : ""
+        } ${
           reviewMode || answerRevealed ? "cursor-default" : "cursor-pointer"
         } ${choiceClassName}`}
       >
-        <span className={`text-lg font-bold ${examTheme.accentText}`}>
+        <span className={`shrink-0 text-sm font-bold ${examTheme.accentText}`}>
           {type === "true_false" ? option : `${optionLabel.letter}.`}
         </span>
-        <span className="flex-1 leading-relaxed text-base text-slate-950 dark:text-white">
+        <span className="min-w-0 leading-snug text-sm text-slate-950 dark:text-white">
           <MathText
             text={type === "true_false" ? option : optionLabel.text}
             className="math-text-ui--flow"
@@ -1479,8 +1512,8 @@ export default function WorksheetDetailsPage() {
     const maxPts = getQuestionMaxPoints(question);
     const isGraded = scoreEntry?.graded && scoreEntry.earned != null;
     const pointsLabel = isGraded
-      ? `${scoreEntry.earned}/${maxPts} pkt`
-      : `0–${maxPts} pkt`;
+      ? `${scoreEntry.earned}/${maxPts}`
+      : `0–${maxPts}`;
     const displayNr = formatTaskNr(question.question_number);
     const headerTitle = question.stem
       ? `${formatStemSubtaskTitle(question.stem.question_number ?? question.stem.nr, question.question_number)}. (${pointsLabel})`
@@ -1489,14 +1522,10 @@ export default function WorksheetDetailsPage() {
     return (
       <div key={question.id} className="mb-6">
         {showStem ? renderStemIntro(question.stem) : null}
-      <Card className="overflow-hidden border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-        <div className={`${examTheme.paperBand} ${examTheme.paperBandDark} px-5 py-3 shadow-sm`}>
-          <h2
-            className={`flex flex-wrap items-center gap-2 text-xl font-extrabold ${examTheme.headerText}`}
-          >
-            <span className="tabular-nums">
-              {headerTitle}
-            </span>
+      <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className={`${examTheme.taskBand} px-4 py-2 sm:px-5`}>
+          <h2 className="text-lg font-bold leading-snug text-slate-950">
+            <span className="tabular-nums">{headerTitle}</span>
           </h2>
         </div>
         <CardContent className="space-y-7 p-6 sm:p-8">
@@ -1606,7 +1635,11 @@ export default function WorksheetDetailsPage() {
           <div
             role="radiogroup"
             aria-label={`Odpowiedzi do zadania ${question.question_number}`}
-            className={`grid gap-4 sm:grid-cols-2 ${
+            className={`flex w-full min-w-0 ${
+              areChoicesLong(question.options)
+                ? "flex-col gap-0.5"
+                : "gap-1 overflow-x-auto"
+            } ${
               reviewMode || (practiceMode && checkedQuestionIds[question.id])
                 ? "pointer-events-none"
                 : ""
@@ -1632,139 +1665,138 @@ export default function WorksheetDetailsPage() {
 
         {practiceMode && (
           <div className="space-y-4 border-t border-slate-200 pt-6 dark:border-slate-700">
-            {isSimpleOpenQuestion(question) ? (
-              <div className="space-y-4">
-                {question.odpowiedz_tekstowa?.trim() ? (
-                  <Accordion
-                    type="single"
-                    collapsible
-                    className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
-                  >
-                    <AccordionItem value={`cke-${question.id}`} className="border-0">
-                      <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
-                        Zobacz schemat oceniania CKE i przykładowe rozwiązania
-                      </AccordionTrigger>
-                      <AccordionContent className="px-4 pb-4">
-                        <CkeSolutionText text={question.odpowiedz_tekstowa} />
-                      </AccordionContent>
-                    </AccordionItem>
-                  </Accordion>
-                ) : (
-                  <Button
-                    type="button"
-                    onClick={() => openAnswerKeyAtQuestion(question)}
-                    disabled={!canCheckQuestion(question, answers)}
-                    className={finishButtonClass}
-                  >
-                    Sprawdź odpowiedź
-                  </Button>
-                )}
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
-                  <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                    Przyznij sobie punkty:
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    {Array.from(
-                      { length: getQuestionMaxPoints(question) + 1 },
-                      (_, pts) => (
-                        <Button
-                          key={pts}
-                          type="button"
-                          size="sm"
-                          variant={
-                            (selfAwardedPoints[question.id] ?? 0) === pts
-                              ? "default"
-                              : "outline"
-                          }
-                          onClick={() => handleSetSelfPoints(question.id, pts)}
-                          className={
-                            (selfAwardedPoints[question.id] ?? 0) === pts
-                              ? `${examTheme.button} text-white`
-                              : "border-slate-300 dark:border-slate-600"
-                          }
-                        >
-                          {pts}
-                        </Button>
-                      ),
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : !checkedQuestionIds[question.id] ? (
-              <Button
-                type="button"
-                onClick={() => handleCheckQuestion(question.id)}
-                disabled={!canCheckQuestion(question, answers)}
-                className={finishButtonClass}
-              >
-                Sprawdź odpowiedź
-              </Button>
-            ) : (
-              (() => {
-                const entry = scoring.questionScores[question.id];
-                const maxPts = getQuestionMaxPoints(question);
-                const earnedPts = entry?.graded ? entry.earned : 0;
-                const fullCredit = entry?.graded && entry.correct;
-                const partialOpen =
-                  hasOpenParts(question) &&
-                  entry?.graded &&
-                  earnedPts > 0 &&
-                  earnedPts < maxPts;
-                const hasTekstowa = Boolean(question.odpowiedz_tekstowa?.trim());
+            {(() => {
+              const tekstowa = pickOdpowiedzTekstowa(question);
+              const checked = Boolean(checkedQuestionIds[question.id]);
+              const showTekstowa =
+                Boolean(tekstowa) &&
+                (isSimpleOpenQuestion(question) || checked);
 
-                return (
-                  <div className="space-y-4">
-                    <motion.div
-                      key={`feedback-${question.id}`}
-                      initial={{ opacity: 0, y: 12, scale: 0.96 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 26 }}
-                      className={`rounded-xl px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md ${
-                        fullCredit
-                          ? "bg-emerald-600 shadow-emerald-600/25"
-                          : partialOpen
-                            ? "bg-amber-600 shadow-amber-600/25"
-                            : "bg-rose-600 shadow-rose-600/25"
-                      }`}
-                    >
-                      {fullCredit ? (
-                        "Dobrze!"
-                      ) : partialOpen ? (
-                        "Częściowo poprawnie — sprawdź pola powyżej."
-                      ) : hasOpenParts(question) ? (
-                        "Sprawdź poprawki przy polach powyżej."
-                      ) : (
-                        <span>
-                          Błąd. Poprawna odpowiedź:{" "}
-                          <MathText text={question.correct_answer} />
-                        </span>
-                      )}
-                    </motion.div>
-                    {hasTekstowa ? (
-                      <Accordion
-                        type="single"
-                        collapsible
-                        className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
-                      >
-                        <AccordionItem
-                          value={`cke-${question.id}`}
-                          className="border-0"
+              return (
+                <>
+                  {isSimpleOpenQuestion(question) ? (
+                    <div className="space-y-4">
+                      {!tekstowa ? (
+                        <Button
+                          type="button"
+                          onClick={() => openAnswerKeyAtQuestion(question)}
+                          disabled={!canCheckQuestion(question, answers)}
+                          className={finishButtonClass}
                         >
-                          <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
-                            Zobacz rozwiązanie
-                          </AccordionTrigger>
-                          <AccordionContent className="px-4 pb-4">
-                            <CkeSolutionText
-                              text={question.odpowiedz_tekstowa}
-                            />
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    ) : null}
-                  </div>
-                );
-              })()
-            )}
+                          Sprawdź odpowiedź
+                        </Button>
+                      ) : null}
+                      <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900/50">
+                        <p className="mb-3 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                          Przyznaj sobie punkty:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from(
+                            { length: getQuestionMaxPoints(question) + 1 },
+                            (_, pts) => (
+                              <Button
+                                key={pts}
+                                type="button"
+                                size="sm"
+                                variant={
+                                  (selfAwardedPoints[question.id] ?? 0) === pts
+                                    ? "default"
+                                    : "outline"
+                                }
+                                onClick={() =>
+                                  handleSetSelfPoints(question.id, pts)
+                                }
+                                className={
+                                  (selfAwardedPoints[question.id] ?? 0) === pts
+                                    ? `${examTheme.button} text-white`
+                                    : "border-slate-300 dark:border-slate-600"
+                                }
+                              >
+                                {pts}
+                              </Button>
+                            ),
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : !checked ? (
+                    <Button
+                      type="button"
+                      onClick={() => handleCheckQuestion(question.id)}
+                      disabled={!canCheckQuestion(question, answers)}
+                      className={finishButtonClass}
+                    >
+                      Sprawdź odpowiedź
+                    </Button>
+                  ) : (
+                    (() => {
+                      const entry = scoring.questionScores[question.id];
+                      const maxPts = getQuestionMaxPoints(question);
+                      const earnedPts = entry?.graded ? entry.earned : 0;
+                      const fullCredit = entry?.graded && entry.correct;
+                      const partialOpen =
+                        hasOpenParts(question) &&
+                        entry?.graded &&
+                        earnedPts > 0 &&
+                        earnedPts < maxPts;
+
+                      return (
+                        <motion.div
+                          key={`feedback-${question.id}`}
+                          initial={{ opacity: 0, y: 12, scale: 0.96 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          transition={{
+                            type: "spring",
+                            stiffness: 420,
+                            damping: 26,
+                          }}
+                          className={`rounded-xl px-4 py-3.5 text-center text-sm font-semibold text-white shadow-md ${
+                            fullCredit
+                              ? "bg-emerald-600 shadow-emerald-600/25"
+                              : partialOpen
+                                ? "bg-amber-600 shadow-amber-600/25"
+                                : "bg-rose-600 shadow-rose-600/25"
+                          }`}
+                        >
+                          {fullCredit ? (
+                            "Dobrze!"
+                          ) : partialOpen ? (
+                            "Częściowo poprawnie — sprawdź pola powyżej."
+                          ) : hasOpenParts(question) ? (
+                            "Sprawdź poprawki przy polach powyżej."
+                          ) : (
+                            <span>
+                              Błąd. Poprawna odpowiedź:{" "}
+                              <MathText text={question.correct_answer} />
+                            </span>
+                          )}
+                        </motion.div>
+                      );
+                    })()
+                  )}
+
+                  {showTekstowa ? (
+                    <Accordion
+                      type="single"
+                      collapsible
+                      className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
+                    >
+                      <AccordionItem
+                        value={`cke-${question.id}`}
+                        className="border-0"
+                      >
+                        <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
+                          Zobacz rozwiązanie
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <CkeSolutionText text={tekstowa} />
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
         )}
 

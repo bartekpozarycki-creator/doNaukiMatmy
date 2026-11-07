@@ -438,6 +438,17 @@ export function normalizeDbPoziom(raw) {
   return v;
 }
 
+export function pickOdpowiedzTekstowa(rowOrQuestion) {
+  if (!rowOrQuestion || typeof rowOrQuestion !== "object") return null;
+  const raw =
+    rowOrQuestion.odpowiedz_tekstowa ??
+    rowOrQuestion.odpowiedzTekstowa ??
+    null;
+  if (raw == null) return null;
+  const text = String(raw).trim();
+  return text !== "" ? text : null;
+}
+
 export function mapDbTaskRow(row) {
   if (!row) return null;
 
@@ -521,11 +532,7 @@ export function mapDbTaskRow(row) {
         : null,
     openParts: parseOpenParts(row.open_parts),
     videoUrl: pickVideoUrlFromRow(row),
-    odpowiedzTekstowa:
-      typeof row.odpowiedz_tekstowa === "string" &&
-      row.odpowiedz_tekstowa.trim() !== ""
-        ? row.odpowiedz_tekstowa.trim()
-        : null,
+    odpowiedzTekstowa: pickOdpowiedzTekstowa(row),
   };
 }
 
@@ -610,6 +617,7 @@ export function mapDbTaskToWorksheetQuestion(task, worksheetId, fallbackNumber) 
     image_url: task.imageUrl ?? null,
     video_url: task.videoUrl ?? null,
     odpowiedz_tekstowa: task.odpowiedzTekstowa ?? null,
+    odpowiedzTekstowa: task.odpowiedzTekstowa ?? null,
     stem: null,
   };
 }

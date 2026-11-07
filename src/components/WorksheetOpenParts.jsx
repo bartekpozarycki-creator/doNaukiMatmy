@@ -9,6 +9,84 @@ import {
   openPartAnswerKey,
 } from "@/utils/open-parts";
 
+const PF_PLACEHOLDER = /p\s*lub\s*f/i;
+const PF_LETTERS = ["P", "F"];
+
+function isPfPart(part) {
+  return PF_PLACEHOLDER.test(String(part?.placeholder ?? ""));
+}
+
+function normalizePfChoice(value) {
+  const v = String(value ?? "").trim().toLowerCase();
+  if (v === "p" || v === "prawda" || v === "true") return "P";
+  if (v === "f" || v === "fałsz" || v === "falsz" || v === "false") return "F";
+  return "";
+}
+
+function PfChoiceTable({ question, parts, answersMap, onPartChange, disabled, showFeedback }) {
+  return (
+    <div className="overflow-hidden border border-slate-800 dark:border-slate-400">
+      {parts.map((part, index) => {
+        const value = getOpenPartValue(answersMap, question.id, part.id);
+        const selected = normalizePfChoice(value);
+        const expected = normalizePfChoice(part.expected);
+
+        return (
+          <div
+            key={part.id}
+            className={`grid grid-cols-[minmax(0,1fr)_3rem_3rem] ${
+              index > 0 ? "border-t border-slate-800 dark:border-slate-400" : ""
+            }`}
+          >
+            <div className="flex items-center px-3 py-2.5 text-base leading-relaxed text-slate-950 dark:text-slate-100">
+              <MathText text={part.label} className="math-text-ui--flow" />
+            </div>
+            {PF_LETTERS.map((letter) => {
+              const isSelected = selected === letter;
+              const isCorrectCell = showFeedback && expected === letter;
+              const isWrongCell =
+                showFeedback && isSelected && Boolean(expected) && expected !== letter;
+              let cellClass =
+                "bg-white text-slate-950 dark:bg-slate-900 dark:text-white";
+              if (!disabled) {
+                cellClass += " hover:bg-slate-50 dark:hover:bg-slate-800";
+              }
+              if (isCorrectCell) {
+                cellClass = "bg-emerald-600 text-white";
+              } else if (isWrongCell) {
+                cellClass = "bg-rose-600 text-white";
+              } else if (isSelected) {
+                cellClass = "bg-slate-900 text-white dark:bg-white dark:text-slate-950";
+              }
+
+              return (
+                <button
+                  key={letter}
+                  type="button"
+                  disabled={disabled}
+                  aria-pressed={isSelected}
+                  aria-label={`${letter}. ${part.label}`}
+                  onClick={() => {
+                    if (disabled) return;
+                    onPartChange(
+                      question.id,
+                      part.id,
+                      isSelected ? "" : letter,
+                    );
+                  }}
+                  className={`flex min-h-12 items-center justify-center border-l border-slate-800 text-base font-semibold transition-colors disabled:cursor-default dark:border-slate-400 ${cellClass}`}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function WorksheetOpenParts({
   question,
   answersMap,
@@ -19,6 +97,19 @@ export default function WorksheetOpenParts({
   if (!hasOpenParts(question)) return null;
 
   const parts = getOpenPartsList(question);
+
+  if (parts.every(isPfPart)) {
+    return (
+      <PfChoiceTable
+        question={question}
+        parts={parts}
+        answersMap={answersMap}
+        onPartChange={onPartChange}
+        disabled={disabled}
+        showFeedback={showFeedback}
+      />
+    );
+  }
 
   return (
     <ol className="list-none space-y-5">

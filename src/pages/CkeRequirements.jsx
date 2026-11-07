@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ExternalLink } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import MathText from "@/components/MathText";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ckeRequirementSections } from "@/utils/cke-requirements";
 import { getNotebookPageStyle } from "@/utils/notebook-page-style";
+import { createPageUrl } from "@/utils";
 import { cn } from "@/lib/utils";
 import {
   CLOUD_SYNC_KEYS,
@@ -188,11 +190,20 @@ function RequirementList({ items, sectionId, scope, struckIds, onToggle, onlyUns
 }
 
 export default function CkeRequirementsPage() {
+  const navigate = useNavigate();
   const { isDark } = useTheme();
   const { user } = useAuth();
   const pageStyle = getNotebookPageStyle(isDark);
   const [struckIds, setStruckIds] = useState(() => new Set());
   const [onlyUnstruck, setOnlyUnstruck] = useState(false);
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+    navigate(createPageUrl("Worksheets"));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -256,6 +267,14 @@ export default function CkeRequirementsPage() {
     <div className="min-h-full py-8" style={pageStyle}>
       <div className="mx-auto max-w-4xl space-y-8 px-4 sm:px-6 lg:px-8">
         <div className="space-y-2">
+          <button
+            type="button"
+            onClick={handleBack}
+            className="mb-2 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 transition hover:text-blue-600 dark:text-slate-300 dark:hover:text-blue-300"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Powrót
+          </button>
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">
             Oficjalne wymagania CKE
           </h1>

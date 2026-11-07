@@ -10,7 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 
 const inputClassName =
-  "h-11 rounded-lg border-slate-200 bg-white pl-3 pr-3 text-slate-900 shadow-none placeholder:text-slate-400 focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/20 dark:border-slate-600 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500";
+  "h-11 rounded-xl border-slate-200/80 bg-white/90 pl-3.5 pr-3.5 text-slate-900 shadow-none placeholder:text-slate-400 focus-visible:border-blue-400 focus-visible:ring-2 focus-visible:ring-blue-500/25 dark:border-slate-600 dark:bg-slate-950/70 dark:text-white dark:placeholder:text-slate-500 dark:focus-visible:border-blue-500";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -92,122 +92,173 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-4.5rem)] items-center justify-center bg-slate-50 px-4 py-12 dark:bg-slate-950">
-      <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-8">
-        <div className="mb-6 flex items-center gap-3">
-          <img src="/app-icon.png" alt="" className="h-10 w-10 rounded-xl object-contain" />
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              {isRegister ? "Załóż konto" : "Zaloguj się"}
-            </h1>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {isRegister ? "Zapisuj swój postęp nauki" : "Wróć do nauki matematyki"}
-            </p>
-          </div>
-        </div>
-
-        <div className="mb-5 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1 dark:bg-slate-800">
-          {[
-            { value: "login", label: "Zaloguj" },
-            { value: "register", label: "Załóż konto" },
-          ].map((item) => (
-            <button
-              key={item.value}
-              type="button"
-              onClick={() => {
-                setTab(item.value);
-                setError(null);
-              }}
-              className={cn(
-                "rounded-md py-2 text-sm font-semibold transition-colors",
-                tab === item.value
-                  ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
-                  : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
-              )}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-
-        <form className="space-y-4" onSubmit={handleAuth}>
-          {isRegister ? (
-            <div className="space-y-1.5">
-              <Label htmlFor="full_name" className="text-sm text-slate-700 dark:text-slate-300">
-                Imię i nazwisko
-              </Label>
-              <Input
-                id="full_name"
-                name="full_name"
-                type="text"
-                placeholder="Jan Kowalski"
-                required
-                className={inputClassName}
-              />
+    <div className="relative flex min-h-[calc(100vh-4.5rem)] items-center justify-center overflow-hidden px-4 py-12">
+      <div className="absolute inset-0 -z-20 bg-slate-950" />
+      <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_#1e3a8a_0%,_transparent_55%),radial-gradient(ellipse_at_bottom_right,_#0f172a_0%,_#020617_70%)]" />
+      <div
+        className="absolute inset-0 -z-10 opacity-[0.18]"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(148,163,184,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.35) 1px, transparent 1px)",
+          backgroundSize: "48px 48px",
+          maskImage: "radial-gradient(ellipse at center, black 20%, transparent 75%)",
+        }}
+      />
+      <div className="w-full max-w-sm">
+        <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/95 shadow-2xl shadow-slate-950/40 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/90">
+          <div className="border-b border-slate-200/70 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 dark:border-slate-700/60 sm:px-8">
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white/15 ring-1 ring-white/25">
+                <img src="/app-icon.png" alt="" className="h-9 w-9 object-contain" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-100/90">
+                  Matematyka
+                </p>
+                <h1 className="text-xl font-bold tracking-tight text-white">
+                  <span className="relative inline-grid">
+                    <span className="invisible col-start-1 row-start-1 whitespace-nowrap">
+                      Załóż konto
+                    </span>
+                    <span className="col-start-1 row-start-1 whitespace-nowrap">
+                      {isRegister ? "Załóż konto" : "Zaloguj się"}
+                    </span>
+                  </span>
+                </h1>
+              </div>
             </div>
-          ) : null}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="email" className="text-sm text-slate-700 dark:text-slate-300">
-              Email
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="twoj@email.pl"
-              required
-              className={inputClassName}
-            />
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="password" className="text-sm text-slate-700 dark:text-slate-300">
-              Hasło
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                name="password"
-                type={showPass ? "text" : "password"}
-                placeholder="Minimum 6 znaków"
-                required
-                className={cn(inputClassName, "pr-11")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPass(!showPass)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
-                aria-label={showPass ? "Ukryj hasło" : "Pokaż hasło"}
+          <div className="p-6 sm:p-8">
+            <p className="mb-5 min-h-5 text-sm text-slate-500 dark:text-slate-400">
+              {isRegister ? "Zapisuj swój postęp nauki." : "Wróć do nauki matematyki."}
+            </p>
+
+            <div className="mb-5 grid grid-cols-2 gap-1 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80">
+              {[
+                { value: "login", label: "Zaloguj" },
+                { value: "register", label: "Załóż konto" },
+              ].map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  onClick={() => {
+                    setTab(item.value);
+                    setError(null);
+                  }}
+                  className={cn(
+                    "rounded-lg py-2 text-sm font-semibold transition-colors",
+                    tab === item.value
+                      ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white"
+                      : "text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200",
+                  )}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+
+            <form className="flex flex-col" onSubmit={handleAuth}>
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows] duration-200 ease-out",
+                  isRegister ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                )}
               >
-                {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-              </button>
-            </div>
+                <div className="overflow-hidden">
+                  <div className="mb-4 space-y-1.5">
+                    <Label
+                      htmlFor="full_name"
+                      className="text-sm text-slate-700 dark:text-slate-300"
+                    >
+                      Imię i nazwisko
+                    </Label>
+                    <Input
+                      id="full_name"
+                      name="full_name"
+                      type="text"
+                      placeholder="Jan Kowalski"
+                      required={isRegister}
+                      disabled={!isRegister}
+                      tabIndex={isRegister ? 0 : -1}
+                      className={inputClassName}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-4 space-y-1.5">
+                <Label htmlFor="email" className="text-sm text-slate-700 dark:text-slate-300">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="twoj@email.pl"
+                  required
+                  className={inputClassName}
+                />
+              </div>
+
+              <div className="mb-4 space-y-1.5">
+                <Label htmlFor="password" className="text-sm text-slate-700 dark:text-slate-300">
+                  Hasło
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPass ? "text" : "password"}
+                    placeholder="Minimum 6 znaków"
+                    required
+                    className={cn(inputClassName, "pr-11")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                    aria-label={showPass ? "Ukryj hasło" : "Pokaż hasło"}
+                  >
+                    {showPass ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div
+                className={cn(
+                  "grid transition-[grid-template-rows] duration-200 ease-out",
+                  error ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+                )}
+              >
+                <div className="overflow-hidden">
+                  {error ? (
+                    <p className="mb-4 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
+                      {error}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="h-11 w-full rounded-xl bg-blue-600 text-base font-semibold text-white shadow-lg shadow-blue-600/25 hover:bg-blue-700"
+              >
+                {loading ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Przetwarzanie...
+                  </span>
+                ) : isRegister ? (
+                  "Załóż konto"
+                ) : (
+                  "Zaloguj się"
+                )}
+              </Button>
+            </form>
           </div>
-
-          {error ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300">
-              {error}
-            </p>
-          ) : null}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="h-11 w-full rounded-lg bg-blue-600 text-base font-semibold text-white hover:bg-blue-700"
-          >
-            {loading ? (
-              <span className="inline-flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Przetwarzanie...
-              </span>
-            ) : isRegister ? (
-              "Załóż konto"
-            ) : (
-              "Zaloguj się"
-            )}
-          </Button>
-        </form>
+        </div>
       </div>
     </div>
   );
