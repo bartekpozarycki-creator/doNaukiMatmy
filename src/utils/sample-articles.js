@@ -1,4 +1,28 @@
-﻿export const sampleArticles = [
+﻿function parameterSchemeBlocks({ intro, tasks }) {
+  return [
+    {
+      type: "subheading",
+      contentLevel: "podstawa",
+      title: "Rozważania z parametrem",
+    },
+    {
+      type: "text",
+      contentLevel: "podstawa",
+      content: intro,
+    },
+    ...(tasks || []).map((task, index) => ({
+      type: "guided-example",
+      contentLevel: "podstawa",
+      title: task.title || `Zadanie ${index + 1}`,
+      prompt: task.prompt,
+      steps: task.steps,
+      result: task.result,
+      cleanSolution: task.cleanSolution,
+    })),
+  ];
+}
+
+export const sampleArticles = [
   {
     id: "artykul-potegi-i-pierwiastki",
     title: "Potęgi i pierwiastki",
@@ -4251,20 +4275,6 @@
         ],
       },
       {
-        number: "6",
-        heading: "Zadania maturalne",
-        blocks: [
-          {
-            type: "text",
-            content:
-              "Poniżej **zadania maturalne** powiązane z logarytmami. Kliknij kafelek, aby otworzyć pełne zadanie.",
-          },
-          {
-            type: "related-matura-tasks",
-          },
-        ],
-      },
-      {
         number: "7",
         heading: "Podsumowanie",
         blocks: [
@@ -5373,14 +5383,13 @@
   {
     id: "artykul-funkcja-liniowa",
     title: "Funkcja liniowa",
-    unavailable: true,
     description:
-      "Postać $f(x)=ax+b$, wykres i podstawowe własności. Na razie tylko poziom podstawowy.",
+      "Wzór ax+b, wykres, nachylenie, proste równoległe i prostopadłe, przecięcie oraz interpretacja geometryczna układu równań.",
     topic: "Funkcje",
     subtopic: "Funkcja liniowa",
-    contentModes: ["podstawa"],
-    levels: ["podstawowy"],
-    readMinutes: 6,
+    contentModes: ["podstawa", "rozszerzenie"],
+    levels: ["podstawowy", "rozszerzony"],
+    readMinutes: 24,
     relatedTasks: {
       topicIncludes: ["funkcja liniowa", "liniow"],
       subtopicIncludes: ["funkcja liniowa", "liniow"],
@@ -5389,75 +5398,1465 @@
     },
     legend: [
       { label: "Poziom podstawowy", dot: "bg-blue-500", contentLevel: "podstawa" },
+      { label: "Poziom rozszerzony", dot: "bg-blue-300", contentLevel: "rozszerzenie" },
     ],
     sections: [
       {
         number: "1",
-        heading: "Definicja",
+        heading: "Wzór i współczynniki",
+        contentLevel: "podstawa",
         blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Definicja",
+          },
           {
             type: "callout",
             variant: "definition",
+            contentLevel: "podstawa",
             title: "Funkcja liniowa",
             content:
-              "Funkcją liniową nazywamy funkcję daną wzorem $$f(x)=ax+b,$$ gdzie $a$ i $b$ są ustalonymi liczbami rzeczywistymi.",
+              "Funkcją liniową nazywamy funkcję daną wzorem $$f(x)=ax+b,$$ gdzie $a$ i $b$ są ustalonymi liczbami rzeczywistymi. Dziedzina to zwykle $\\mathbb{R}$.",
+            example: {
+              prompt: "W $f(x)=3x-2$ wskaż $a$ i $b$. Oblicz $f(4)$.",
+              right:
+                "$a=3$, $b=-2$. Wartość: $f(4)=3\\cdot 4-2=12-2=10$.",
+            },
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Współczynniki",
           },
           {
             type: "list",
+            contentLevel: "podstawa",
             items: [
-              "Współczynnik $a$ to **współczynnik kierunkowy**.",
-              "Współczynnik $b$ to **wyraz wolny** (punkt przecięcia z osią $OY$).",
+              "Współczynnik $a$ to **współczynnik kierunkowy**. Stoi przy $x$ we wzorze $ax+b$.",
+              "Współczynnik $b$ to **wyraz wolny** - to wysokość, na której prosta przecina oś $OY$.",
             ],
           },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Współczynnik kierunkowy jest tylko jeden",
+            content:
+              "Współczynnik $a$ to wszystko, co stoi przy $x$ po wyciągnięciu $x$ przed nawias. Gdy we wzorze są dwa wyrażenia z $x$, na przykład $7mx$ i $2x$, najpierw grupujemy: $$f(x)=7mx+2x+1=(7m+2)x+1.$$ Wtedy $a=7m+2$, nie $a=7m$. Podobnie $f(x)=3x+mx-4=(3+m)x-4$, więc $a=3+m$.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Gdy we wzorze jest parametr, najpierw zbieramy wyrazy z $x$ i odczytujemy $a$ oraz $b$ jako wyrażenia. Potem układamy warunek z zadania i rozwiązujemy go względem parametru.",
+            tasks: [
+              {
+                prompt: "Wyznacz $a$ i $b$ dla $f(x)=(2m-1)x+m-4$.",
+                steps: [
+                  "Wyraz z $x$ to $(2m-1)x$, więc $a=2m-1$.",
+                  "Wyraz wolny to $m-4$, więc $b=m-4$.",
+                ],
+                result: "$a=2m-1$, $b=m-4$",
+                cleanSolution: ["$a=2m-1$", "$b=m-4$"],
+              },
+              {
+                prompt: "Dla jakiego $m$ funkcja $f(x)=(m-5)x+2$ jest stała?",
+                steps: [
+                  "Funkcja stała ma $a=0$. Tu $a=m-5$.",
+                  "Równanie: $m-5=0$, więc $m=5$.",
+                  "Dla $m=5$ mamy $f(x)=2$. To funkcja stała.",
+                ],
+                result: "$m=5$",
+                cleanSolution: ["$a=m-5=0$", "$m=5$", "$f(x)=2$"],
+              },
+            ],
+          }),
         ],
       },
       {
         number: "2",
-        heading: "Wykres",
+        heading: "Wykres i przecięcia z osiami",
+        contentLevel: "podstawa",
         blocks: [
           {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Przecięcie z osią $OY$",
+          },
+          {
             type: "text",
+            contentLevel: "podstawa",
             content:
-              "Wykresem funkcji liniowej jest **prosta**. Do narysowania wykresu wystarczą zwykle dwa punkty, np. przecięcia z osiami.",
+              "Wykresem funkcji liniowej jest **prosta**. Do narysowania wystarczą dwa punkty. Najwygodniejsze są przecięcia z osiami. Prosta przecina oś $OY$ w punkcie $(0,b)$, bo $f(0)=b$.",
           },
           {
             type: "formula-list",
+            contentLevel: "podstawa",
             items: [
               {
                 latex: "f(0)=b",
                 label: "(1)",
                 accent: "blue",
                 caption: "przecięcie z osią $OY$: punkt $(0,b)$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Dla $f(x)=2x+1$ znajdź punkt przecięcia z osią $OY$.",
+                  steps: [
+                    "Wstawiamy $x=0$: $f(0)=2\\cdot 0+1=1$.",
+                    "Ze wzoru (1) punkt to $(0,1)$.",
+                  ],
+                  result: "Wynik: $(0,1)$.",
+                },
               },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Miejsce zerowe",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawa",
+            title: "Miejsce zerowe",
+            content:
+              "Miejscem zerowym funkcji $f$ nazywamy liczbę $x_0$ spełniającą $f(x_0)=0$. Na wykresie to punkt przecięcia z osią $OX$. Dla $f(x)=ax+b$ przy $a\\neq 0$ jest dokładnie jedno miejsce zerowe: $x_0=-\\dfrac{b}{a}$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
               {
-                latex: "ax+b=0 \\quad (a\\neq 0)",
+                latex: "ax+b=0\\quad (a\\neq 0)",
                 label: "(2)",
                 accent: "blue",
-                caption: "przecięcie z osią $OX$: punkt $\\left(-\\dfrac{b}{a},0\\right)$",
+                caption: "miejsce zerowe, przecięcie z osią $OX$: punkt $\\left(-\\dfrac{b}{a},0\\right)$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Dla $f(x)=2x+1$ znajdź miejsce zerowe.",
+                  steps: [
+                    "Rozwiązujemy $2x+1=0$, więc $2x=-1$ i $x=-\\dfrac{1}{2}$.",
+                    "Ze wzoru (2) punkt to $\\left(-\\dfrac{1}{2},0\\right)$.",
+                  ],
+                  result: "Wynik: $\\left(-\\dfrac{1}{2},0\\right)$.",
+                },
               },
             ],
           },
           {
             type: "callout",
-            variant: "insight",
-            title: "Zapamiętaj",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Gdy $a=0$",
             content:
-              "Jeśli $a=0$, to $f(x)=b$ jest funkcją **stałą** - wykresem jest prosta równoległa do osi $OX$.",
+              "Wzór (2) wymaga $a\\neq 0$. Gdy $a=0$ i $b\\neq 0$, funkcja jest stała i **nie ma** miejsca zerowego. Gdy $a=0$ i $b=0$, $f(x)=0$ dla każdego $x$.",
           },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Przecięcia z osiami",
+                formula: "$f(x)=2x+1$",
+                a: 2,
+                b: 1,
+                xMin: -3,
+                xMax: 3,
+                yMin: -3,
+                yMax: 5,
+                points: [
+                  { x: 0, y: 1, label: "$(0,1)$", dx: 18, dy: 16 },
+                  { x: -0.5, y: 0, label: "$\\left(-\\frac{1}{2},0\\right)$", dx: 12, dy: 16 },
+                ],
+                caption: "Oś $OY$: $(0,b)=(0,1)$. Miejsce zerowe na osi $OX$: $\\left(-\\dfrac{1}{2},0\\right)$.",
+              },
+            ],
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Miejsce zerowe $x_0$ oznacza $f(x_0)=0$. Przecięcie z osią $OY$ to wartość $b$. Wstawiamy warunek z zadania i rozwiązujemy względem parametru.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakiej wartości parametru $m$ funkcja $y=mx+3$ ma miejsce zerowe równe $7$?",
+                steps: [
+                  "Miejsce zerowe $7$ znaczy $f(7)=0$, więc $7m+3=0$.",
+                  "Stąd $7m=-3$ i $m=-\\dfrac{3}{7}$.",
+                  "Sprawdzenie: $a=m=-\\dfrac{3}{7}\\neq 0$, więc miejsce zerowe istnieje.",
+                  "Punkt na osi $OX$ to $(7,0)$.",
+                ],
+                result: "$m=-\\dfrac{3}{7}$",
+                cleanSolution: [
+                  "$7m+3=0$",
+                  "$m=-\\dfrac{3}{7}$",
+                  "$a\\neq 0$",
+                ],
+              },
+              {
+                prompt: "Dla jakiego $m$ funkcja $f(x)=2x+m$ przecina oś $OY$ w punkcie $(0,5)$?",
+                steps: [
+                  "Przecięcie z $OY$ to $b$. Tu $b=m$.",
+                  "Punkt $(0,5)$ oznacza $b=5$, więc $m=5$.",
+                  "Wzór: $f(x)=2x+5$.",
+                ],
+                result: "$m=5$",
+                cleanSolution: ["$b=m=5$", "$f(x)=2x+5$"],
+              },
+            ],
+          }),
         ],
       },
       {
         number: "3",
-        heading: "Monotoniczność",
+        heading: "Monotoniczność i nachylenie",
+        contentLevel: "podstawa",
         blocks: [
           {
-            type: "list",
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Kąt nachylenia",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Tangens kąta nachylenia prostej do dodatniej osi $OX$ to współczynnik kierunkowy.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
             items: [
-              "Gdy $a>0$, funkcja jest **rosnąca**.",
-              "Gdy $a<0$, funkcja jest **malejąca**.",
-              "Gdy $a=0$, funkcja jest **stała**.",
+              {
+                latex: "a=\\mathrm{tg}\\,\\alpha",
+                label: "(3)",
+                accent: "blue",
+                caption: "kąt nachylenia prostej do osi $OX$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Prosta tworzy z osią $OX$ kąt $45^\\circ$. Jaki jest współczynnik kierunkowy? A gdy kąt wynosi $135^\\circ$?",
+                  steps: [
+                    "Ze wzoru (3): $a=\\mathrm{tg}\\,45^\\circ=1$.",
+                    "Dla $135^\\circ$: $\\mathrm{tg}\\,135^\\circ=\\mathrm{tg}\\,(180^\\circ-45^\\circ)=-1$.",
+                    "Znak się zgadza: kąt ostry ($45^\\circ$) daje $a>0$ i prostą rosnącą. Kąt rozwarty ($135^\\circ$) daje $a<0$ i prostą malejącą.",
+                  ],
+                  result: "Wynik: $a=1$ dla $45^\\circ$, $a=-1$ dla $135^\\circ$.",
+                },
+              },
             ],
           },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Kąt nachylenia",
+                formula: "$a=\\mathrm{tg}\\,\\alpha$, tutaj $y=x$ i $\\alpha=45^\\circ$",
+                a: 1,
+                b: 0,
+                xMin: -1,
+                xMax: 4,
+                yMin: -1,
+                yMax: 4,
+                showAngle: true,
+                showTriangle: true,
+                triangleX: 0,
+                triangleRun: 1,
+                caption: "Trójkąt ma przyprostokątne $1$ i $1$, więc $\\mathrm{tg}\\,\\alpha=\\dfrac{1}{1}=1=a$.",
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Rosnąca, malejąca, stała",
+          },
+          {
+            type: "list",
+            contentLevel: "podstawa",
+            items: [
+              "Gdy $a>0$, kąt $\\alpha$ jest ostry i funkcja jest **rosnąca**.",
+              "Gdy $a<0$, kąt $\\alpha$ jest rozwarty i funkcja jest **malejąca**.",
+              "Gdy $a=0$, prosta jest pozioma, $\\alpha=0^\\circ$ i funkcja jest **stała**.",
+              "Dla $\\alpha=90^\\circ$ tangens nie istnieje - pionowa prosta nie jest wykresem funkcji liniowej.",
+            ],
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Rosnąca",
+                formula: "$f(x)=2x+1$",
+                a: 2,
+                b: 1,
+                xMin: -3,
+                xMax: 3,
+                yMin: -3,
+                yMax: 5,
+                points: [
+                  { x: 0, y: 1, label: "$(0,1)$", dx: 18, dy: 16 },
+                  { x: -0.5, y: 0, label: "$\\left(-\\frac{1}{2},0\\right)$", dx: 12, dy: 16 },
+                ],
+                caption: "$a=2>0$, więc prosta idzie w górę. $b=1$, więc przecina oś $OY$ w $(0,1)$.",
+              },
+              {
+                title: "Malejąca",
+                formula: "$f(x)=-\\dfrac{1}{2}x+2$",
+                a: -0.5,
+                b: 2,
+                xMin: -3,
+                xMax: 5,
+                yMin: -2,
+                yMax: 5,
+                points: [
+                  { x: 0, y: 2, label: "$(0,2)$", dx: 14, dy: -22 },
+                  { x: 4, y: 0, label: "$(4,0)$", dx: -52, dy: 12 },
+                ],
+                caption: "$a=-\\dfrac{1}{2}<0$, więc prosta idzie w dół. Miejsce zerowe: $x=4$.",
+              },
+              {
+                title: "Stała",
+                formula: "$f(x)=3$",
+                a: 0,
+                b: 3,
+                xMin: -3,
+                xMax: 3,
+                yMin: -1,
+                yMax: 5,
+                points: [{ x: 0, y: 3, label: "$(0,3)$", dx: 14, dy: -24 }],
+                caption: "$a=0$, więc $f(x)=3$ jest funkcją stałą. Wykres jest równoległy do osi $OX$.",
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Proste równoległe i prostopadłe",
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Proste równoległe",
+                formula: "$y=2x+1$ oraz $y=2x-2$",
+                xMin: -3,
+                xMax: 3,
+                yMin: -4,
+                yMax: 5,
+                lines: [
+                  { a: 2, b: 1, color: "#2563eb" },
+                  { a: 2, b: -2, color: "#db2777" },
+                ],
+                caption: "To samo $a$, więc ten sam kąt $\\alpha$ do osi $OX$. Proste są **równoległe**.",
+              },
+              {
+                title: "Proste prostopadłe",
+                formula: "$y=x-1$ oraz $y=-x+3$",
+                xMin: -1,
+                xMax: 5,
+                yMin: -1,
+                yMax: 5,
+                showRightAngle: true,
+                lines: [
+                  { a: 1, b: -1, color: "#2563eb" },
+                  { a: -1, b: 3, color: "#db2777" },
+                ],
+                caption: "$a_1\\cdot a_2=1\\cdot(-1)=-1$. Kąt przy przecięciu jest prosty.",
+              },
+            ],
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "a_1=a_2",
+                label: "(4)",
+                accent: "blue",
+                caption: "proste równoległe - ten sam kąt nachylenia",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Czy wykresy $f(x)=3x-1$ i $g(x)=3x+4$ są równoległe?",
+                  steps: [
+                    "Porównujemy współczynniki kierunkowe: $a_f=3$ i $a_g=3$.",
+                    "Ze wzoru (4) są równe, więc kąt nachylenia jest ten sam i proste są równoległe.",
+                    "Wyrazy wolne są różne ($-1$ i $4$), więc to nie jest ta sama prosta.",
+                  ],
+                  result: "Wynik: tak, są równoległe i różne.",
+                },
+              },
+              {
+                latex: "a_1\\cdot a_2=-1",
+                label: "(5)",
+                accent: "blue",
+                caption: "proste prostopadłe, równoważnie $a_2=-\\dfrac{1}{a_1}$ gdy $a_1\\neq 0$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Czy wykresy $f(x)=2x-3$ i $g(x)=-\\dfrac{1}{2}x+1$ są prostopadłe? A $f(x)=2x-3$ i $h(x)=2x+5$?",
+                  steps: [
+                    "Dla $f$ i $g$: $a_f\\cdot a_g=2\\cdot\\left(-\\dfrac{1}{2}\\right)=-1$. Ze wzoru (5) proste są prostopadłe.",
+                    "Dla $f$ i $h$: $a_f=a_h=2$, więc ze wzoru (4) są równoległe, nie prostopadłe.",
+                  ],
+                  result: "Wynik: $f$ i $g$ są prostopadłe. $f$ i $h$ są równoległe.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Pozioma i pionowa",
+            content:
+              "Gdy $a=0$, prosta jest pozioma. Prosta do niej prostopadła byłaby pionowa, a pionowa nie jest wykresem funkcji liniowej. Wzoru (5) wtedy nie stosujemy: iloczyn $0\\cdot a_2$ nigdy nie wynosi $-1$.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Znak $a$ decyduje, czy funkcja rośnie, maleje, czy jest stała. Równoległość i prostopadłość też sprowadzają się do warunków na współczynnik kierunkowy.",
+            tasks: [
+              {
+                prompt: "Dla jakich $m$ funkcja $f(x)=(m-3)x+1$ jest rosnąca?",
+                steps: [
+                  "Tu $a=m-3$. Funkcja rosnąca, gdy $a>0$.",
+                  "Nierówność: $m-3>0$, więc $m>3$.",
+                  "Dla $m=3$ byłaby stała, dla $m<3$ malejąca.",
+                ],
+                result: "$m>3$",
+                cleanSolution: ["$a=m-3>0$", "$m>3$"],
+              },
+              {
+                prompt:
+                  "Dla jakiego $m$ prosta $y=(2m+1)x$ jest prostopadła do $y=2x-5$?",
+                steps: [
+                  "Ze wzoru (5): $(2m+1)\\cdot 2=-1$.",
+                  "Stąd $4m+2=-1$, $4m=-3$ i $m=-\\dfrac{3}{4}$.",
+                  "Sprawdzenie: $a=2\\cdot\\left(-\\dfrac{3}{4}\\right)+1=-\\dfrac{1}{2}\\neq 0$. Wzór (5) wolno stosować.",
+                ],
+                result: "$m=-\\dfrac{3}{4}$",
+                cleanSolution: [
+                  "$(2m+1)\\cdot 2=-1$",
+                  "$m=-\\dfrac{3}{4}$",
+                ],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "4",
+        heading: "Przecięcie prostych i układ równań",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Punkt przecięcia",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Weźmy $f(x)=x+1$ oraz $g(x)=-2x+7$. Szukamy punktu, który leży na obu wykresach. W takim punkcie wartości są równe, więc $$x+1=-2x+7.$$ Stąd $3x=6$ i $x=2$. Wtedy $y=2+1=3$. Punkt przecięcia to $(2,3)$.",
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Punkt przecięcia",
+                formula: "$y=x+1$ oraz $y=-2x+7$",
+                xMin: -1,
+                xMax: 5,
+                yMin: -2,
+                yMax: 8,
+                lines: [
+                  { a: 1, b: 1, color: "#2563eb" },
+                  { a: -2, b: 7, color: "#db2777" },
+                ],
+                points: [{ x: 2, y: 3, label: "$(2,3)$", dx: 20, dy: 6 }],
+                caption: "Sprawdzenie w $g$: $-2\\cdot 2+7=3$. Oba wykresy przechodzą przez $(2,3)$.",
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Interpretacja geometryczna układu",
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawa",
+            title: "Wniosek",
+            content:
+              "Gdy $a_1\\neq a_2$, proste przecinają się w dokładnie jednym punkcie. Przyrównujemy prawe strony $$a_1x+b_1=a_2x+b_2,$$ liczymy $x$, a potem $y$ z dowolnego wzoru.",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawa",
+            title: "Interpretacja geometryczna układu",
+            content:
+              "Układ $$\\begin{cases} y=a_1x+b_1 \\\\ y=a_2x+b_2 \\end{cases}$$ to dwa równania i dwie proste. Rozwiązaniem są pary $(x,y)$, które leżą **na obu** prostych naraz, czyli punkty przecięcia wykresów.",
+          },
+          {
+            type: "list",
+            contentLevel: "podstawa",
+            items: [
+              "Gdy $a_1\\neq a_2$, proste przecinają się w jednym punkcie. Układ ma **jedno rozwiązanie**.",
+              "Gdy $a_1=a_2$ i $b_1=b_2$, oba równania opisują **tę samą prostą**. Układ ma **nieskończenie wiele** rozwiązań.",
+              "Gdy $a_1=a_2$ i $b_1\\neq b_2$, proste są równoległe i różne. Nie mają punktu wspólnego, układ jest **sprzeczny** (brak rozwiązań).",
+            ],
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Jedno rozwiązanie",
+                formula: "$y=x+1$, $y=-x+3$",
+                xMin: -2,
+                xMax: 4,
+                yMin: -1,
+                yMax: 5,
+                lines: [
+                  { a: 1, b: 1, color: "#2563eb" },
+                  { a: -1, b: 3, color: "#db2777" },
+                ],
+                points: [{ x: 1, y: 2, label: "$(1,2)$", dx: 18, dy: 6 }],
+                caption: "$a_1\\neq a_2$. Jeden punkt wspólny, jedna para spełniająca układ.",
+              },
+              {
+                title: "Nieskończenie wiele",
+                formula: "$y=\\dfrac{1}{2}x+1$",
+                a: 0.5,
+                b: 1,
+                xMin: -3,
+                xMax: 3,
+                yMin: -1,
+                yMax: 4,
+                caption: "Te same $a$ i $b$: to jedna prosta. Każdy jej punkt jest rozwiązaniem.",
+              },
+              {
+                title: "Brak rozwiązań",
+                formula: "$y=x+2$ oraz $y=x-1$",
+                xMin: -3,
+                xMax: 3,
+                yMin: -3,
+                yMax: 4,
+                lines: [
+                  { a: 1, b: 2, color: "#2563eb" },
+                  { a: 1, b: -1, color: "#db2777" },
+                ],
+                caption: "To samo $a$, różne $b$. Proste równoległe, pusty zbiór rozwiązań.",
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Równoległe to nie zawsze pusto",
+            content:
+              "Sam warunek $a_1=a_2$ nie rozstrzyga układu. Trzeba jeszcze porównać wyrazy wolne. Przy $b_1=b_2$ jest nieskończenie wiele rozwiązań, przy $b_1\\neq b_2$ zero.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Liczba rozwiązań układu dwóch prostych zależy od $a$ i $b$. Przy parametrze porównujemy te współczynniki po kolei.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakich $m$ wykresy $f(x)=mx+2$ i $g(x)=2x+m$ przecinają się w dokładnie jednym punkcie?",
+                steps: [
+                  "Tu $a_f=m$, $a_g=2$. Współczynniki są różne, gdy $m\\neq 2$.",
+                  "Dla $m\\neq 2$ proste nie są równoległe, więc jest jeden punkt przecięcia.",
+                  "Dla $m=2$: $f(x)=2x+2$ i $g(x)=2x+2$. To ta sama prosta, nieskończenie wiele punktów.",
+                ],
+                result: "$m\\neq 2$",
+                cleanSolution: ["$a_f=m$, $a_g=2$", "jeden punkt, gdy $m\\neq 2$"],
+              },
+              {
+                prompt:
+                  "Dla jakiego $m$ układ $y=mx+2$, $y=2x+m$ ma nieskończenie wiele rozwiązań?",
+                steps: [
+                  "Potrzebujemy tej samej prostej: $a_1=a_2$ i $b_1=b_2$.",
+                  "$m=2$ oraz $2=m$. Oba warunki to $m=2$.",
+                  "Dla $m=2$ oba równania to $y=2x+2$.",
+                ],
+                result: "$m=2$",
+                cleanSolution: ["$m=2$ i $2=m$", "$m=2$"],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "5",
+        heading: "Wyznaczanie wzoru",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Z dwóch punktów",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Żeby zapisać $f(x)=ax+b$, potrzebujemy $a$ i $b$. Często znamy dwa punkty na wykresie albo nachylenie i jeden punkt.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "a=\\dfrac{y_2-y_1}{x_2-x_1}\\quad (x_1\\neq x_2)",
+                label: "(6)",
+                accent: "blue",
+                caption: "współczynnik kierunkowy z dwóch punktów",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Prosta przechodzi przez $A=(1,3)$ i $B=(3,7)$. Znajdź wzór $f(x)$.",
+                  steps: [
+                    "Ze wzoru (6): $a=\\dfrac{7-3}{3-1}=\\dfrac{4}{2}=2$.",
+                    "Wzór ma postać $f(x)=2x+b$. Punkt $A$ leży na prostej, więc $3=2\\cdot 1+b$.",
+                    "Stąd $3=2+b$ i $b=1$.",
+                    "Sprawdzenie na $B$: $2\\cdot 3+1=7$. Zgadza się.",
+                  ],
+                  result: "Wynik: $f(x)=2x+1$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Z nachylenia i punktu",
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawa",
+            title: "Z nachylenia i punktu",
+            content:
+              "Jeśli znamy $a$ i punkt $(x_0,y_0)$, wstawiamy do $y_0=ax_0+b$ i wyliczamy $b$. Nie trzeba drugiego punktu. Na przykład: $a=3$ i punkt $(2,1)$. Wtedy $1=3\\cdot 2+b$, więc $1=6+b$ i $b=-5$. Wzór: $f(x)=3x-5$.",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Nie myl kolejności w liczniku",
+            content:
+              "W $\\dfrac{y_2-y_1}{x_2-x_1}$ obie różnice idą w **tę samą stronę**: drugi minus pierwszy. Jeśli zamienisz tylko jeden znak, $a$ wyjdzie z przeciwnym znakiem i prosta pójdzie w złą stronę.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Parametr może stać w punkcie, przez który ma przejść prosta, albo w nachyleniu. Najpierw wzór (6) albo dany współczynnik $a$, potem $b$.",
+            tasks: [
+              {
+                prompt:
+                  "Prosta przechodzi przez $(0,m)$ i $(2,4)$. Dla jakiego $m$ współczynnik kierunkowy wynosi $1$?",
+                steps: [
+                  "Ze wzoru (6): $a=\\dfrac{4-m}{2-0}=\\dfrac{4-m}{2}$.",
+                  "Warunek $a=1$: $\\dfrac{4-m}{2}=1$, więc $4-m=2$ i $m=2$.",
+                  "Wtedy $b=m=2$ (punkt $(0,m)$). Wzór: $f(x)=x+2$.",
+                  "Sprawdzenie: $2\\cdot 1+2=4$. Punkt $(2,4)$ leży na prostej.",
+                ],
+                result: "$m=2$, $f(x)=x+2$",
+                cleanSolution: [
+                  "$a=\\dfrac{4-m}{2}=1$",
+                  "$m=2$",
+                  "$f(x)=x+2$",
+                ],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "6",
+        heading: "Przykłady",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Poniżej zadania od początku do końca. Rozwiązanie jest schowane - kliknij, żeby je zobaczyć.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 1",
+            prompt: "Dana jest $f(x)=-3x+6$. Podaj $a$, $b$, miejsce zerowe i $f(2)$. Czy funkcja jest rosnąca?",
+            steps: [
+              "$a=-3$, $b=6$.",
+              "Miejsce zerowe ze wzoru (2): $x=-\\dfrac{6}{-3}=2$, więc punkt $(2,0)$.",
+              "$f(2)=-3\\cdot 2+6=-6+6=0$. To się zgadza z miejscem zerowym.",
+              "$a=-3<0$, więc funkcja jest **malejąca**, nie rosnąca.",
+            ],
+            result: "$a=-3$, $b=6$, miejsce zerowe $x=2$, $f(2)=0$, funkcja malejąca",
+            cleanSolution: [
+              "$a=-3$, $b=6$",
+              "$-3x+6=0\\Rightarrow x=2$",
+              "$f(2)=0$, malejąca",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 2",
+            prompt: "Narysuj wykres $f(x)=\\dfrac{1}{2}x-1$ za pomocą przecięć z osiami.",
+            steps: [
+              "Oś $OY$ ze wzoru (1): $f(0)=-1$, punkt $(0,-1)$.",
+              "Oś $OX$ ze wzoru (2): $\\dfrac{1}{2}x-1=0$, więc $\\dfrac{1}{2}x=1$ i $x=2$. Punkt $(2,0)$.",
+              {
+                text: "Zaznaczamy oba punkty i prowadzimy prostą.",
+                lineGraph: {
+                  a: 0.5,
+                  b: -1,
+                  xMin: -2,
+                  xMax: 4,
+                  yMin: -3,
+                  yMax: 3,
+                  width: 280,
+                  height: 240,
+                  points: [
+                    { x: 0, y: -1, label: "$(0,-1)$", dx: 14, dy: 12 },
+                    { x: 2, y: 0, label: "$(2,0)$", dx: 12, dy: 14 },
+                  ],
+                },
+              },
+              "$a=\\dfrac{1}{2}>0$, więc prosta rośnie, łagodnie.",
+            ],
+            result: "Punkty $(0,-1)$ i $(2,0)$. Funkcja rosnąca.",
+            cleanSolution: ["$(0,-1)$, $(2,0)$", "$a=\\dfrac{1}{2}>0$ rosnąca"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 3",
+            prompt: "Prosta przechodzi przez punkty $A=(-2,1)$ i $B=(2,5)$. Wyznacz wzór funkcji liniowej.",
+            steps: [
+              "Ze wzoru (6): $a=\\dfrac{5-1}{2-(-2)}=\\dfrac{4}{4}=1$.",
+              "Szukamy $b$ z punktu $A$: $1=1\\cdot(-2)+b$, więc $1=-2+b$ i $b=3$.",
+              "Wzór: $f(x)=x+3$.",
+              "Sprawdzenie na $B$: $2+3=5$. Zgadza się.",
+            ],
+            result: "$f(x)=x+3$",
+            cleanSolution: ["$a=\\dfrac{5-1}{2-(-2)}=1$", "$1=-2+b\\Rightarrow b=3$", "$f(x)=x+3$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 4",
+            prompt:
+              "Funkcja $f$ jest liniowa, $f(0)=4$ oraz jest równoległa do $g(x)=-2x+1$. Zapisz wzór $f$.",
+            steps: [
+              "Równoległość ze wzoru (4): $a_f=a_g=-2$.",
+              "$f(0)=4$ to przecięcie z osią $OY$, więc ze wzoru (1) $b=4$.",
+              "Wzór: $f(x)=-2x+4$.",
+              {
+                text: "To samo $a$, różne $b$: wykresy są równoległe i różne.",
+                lineGraph: {
+                  xMin: -2,
+                  xMax: 4,
+                  yMin: -3,
+                  yMax: 6,
+                  width: 280,
+                  height: 240,
+                  lines: [
+                    { a: -2, b: 1, color: "#2563eb" },
+                    { a: -2, b: 4, color: "#db2777" },
+                  ],
+                  points: [
+                    { x: 0, y: 1, label: "$(0,1)$", dx: 14, dy: -22 },
+                    { x: 0, y: 4, label: "$(0,4)$", dx: 14, dy: -22 },
+                  ],
+                },
+              },
+            ],
+            result: "$f(x)=-2x+4$",
+            cleanSolution: ["$a=-2$ z równoległości", "$b=4$", "$f(x)=-2x+4$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 5",
+            prompt:
+              "Wyznacz punkt przecięcia wykresów $f(x)=x+1$ i $g(x)=-2x+7$.",
+            steps: [
+              "W punkcie przecięcia $f(x)=g(x)$, więc $x+1=-2x+7$.",
+              "Stąd $3x=6$ i $x=2$.",
+              "Wstawiamy do $f$: $y=2+1=3$. Sprawdzenie w $g$: $-2\\cdot 2+7=3$.",
+              {
+                text: "Punkt przecięcia to $(2,3)$. To jednocześnie jedyne rozwiązanie układu $y=x+1$, $y=-2x+7$.",
+                lineGraph: {
+                  xMin: -1,
+                  xMax: 5,
+                  yMin: -2,
+                  yMax: 8,
+                  width: 280,
+                  height: 240,
+                  lines: [
+                    { a: 1, b: 1, color: "#2563eb" },
+                    { a: -2, b: 7, color: "#db2777" },
+                  ],
+                  points: [{ x: 2, y: 3, label: "$(2,3)$", dx: 20, dy: 6 }],
+                },
+              },
+            ],
+            result: "$(2,3)$",
+            cleanSolution: ["$x+1=-2x+7\\Rightarrow x=2$", "$y=3$", "$(2,3)$"],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 6",
+            prompt:
+              "Wykres $f$ jest prostopadły do $g(x)=2x+1$ i przechodzi przez punkt $(0,3)$. Zapisz wzór $f$.",
+            steps: [
+              "Ze wzoru (5): $a_f\\cdot 2=-1$, więc $a_f=-\\dfrac{1}{2}$.",
+              "Punkt $(0,3)$ to przecięcie z osią $OY$, więc ze wzoru (1) $b=3$.",
+              "Wzór: $f(x)=-\\dfrac{1}{2}x+3$.",
+              {
+                text: "Iloczyn współczynników: $-\\dfrac{1}{2}\\cdot 2=-1$, więc proste są prostopadłe.",
+                lineGraph: {
+                  xMin: -2,
+                  xMax: 4,
+                  yMin: -1,
+                  yMax: 5,
+                  width: 280,
+                  height: 260,
+                  showRightAngle: true,
+                  lines: [
+                    { a: 2, b: 1, color: "#2563eb" },
+                    { a: -0.5, b: 3, color: "#db2777" },
+                  ],
+                  points: [{ x: 0, y: 3, label: "$(0,3)$", dx: 14, dy: -24 }],
+                },
+              },
+            ],
+            result: "$f(x)=-\\dfrac{1}{2}x+3$",
+            cleanSolution: [
+              "$a\\cdot 2=-1\\Rightarrow a=-\\dfrac{1}{2}$",
+              "$b=3$",
+              "$f(x)=-\\dfrac{1}{2}x+3$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Przykład 7",
+            prompt:
+              "Ile rozwiązań ma układ $\\begin{cases} y=3x-1 \\\\ y=3x+2 \\end{cases}$? Podaj interpretację geometryczną.",
+            steps: [
+              "Współczynniki kierunkowe: $a_1=3$ i $a_2=3$, więc $a_1=a_2$.",
+              "Wyrazy wolne: $b_1=-1$ i $b_2=2$ są różne.",
+              "Proste są równoległe i różne. Nie mają punktu wspólnego.",
+              {
+                text: "Interpretacja geometryczna: dwa wykresy nigdy się nie przetną, więc układ jest sprzeczny.",
+                lineGraph: {
+                  xMin: -2,
+                  xMax: 3,
+                  yMin: -5,
+                  yMax: 8,
+                  width: 280,
+                  height: 240,
+                  lines: [
+                    { a: 3, b: -1, color: "#2563eb" },
+                    { a: 3, b: 2, color: "#db2777" },
+                  ],
+                  points: [
+                    { x: 0, y: -1, label: "$(0,-1)$", dx: 14, dy: 12 },
+                    { x: 0, y: 2, label: "$(0,2)$", dx: 14, dy: 12 },
+                  ],
+                },
+              },
+            ],
+            result: "Brak rozwiązań. Proste równoległe i różne.",
+            cleanSolution: [
+              "$a_1=a_2=3$, $b_1\\neq b_2$",
+              "proste równoległe i różne",
+              "układ sprzeczny",
+            ],
+          },
+        ],
+      },
+      {
+        number: "",
+        heading: "Poziom rozszerzony",
+        contentLevel: "rozszerzenie",
+        blocks: [
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "rozszerzenie",
+            title: "W przygotowaniu",
+            content: "Ten poziom notatki jest jeszcze w przygotowaniu.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "artykul-funkcja-kwadratowa",
+    title: "Funkcja kwadratowa",
+    description:
+      "Postać ogólna, wyróżnik, miejsca zerowe, parabola, postać kanoniczna i iloczynowa.",
+    topic: "Funkcje",
+    subtopic: "Funkcja kwadratowa",
+    contentModes: ["podstawa"],
+    levels: ["podstawowy"],
+    readMinutes: 14,
+    relatedTasks: {
+      topicIncludes: ["funkcja kwadratowa", "kwadratow"],
+      subtopicIncludes: ["funkcja kwadratowa", "własności funkcji kwadratowej", "kwadratow"],
+      questionIncludes: ["funkcja kwadratowa", "parabola", "ax^2", "trójmian"],
+      limit: 12,
+    },
+    legend: [
+      { label: "Poziom podstawowy", dot: "bg-blue-500", contentLevel: "podstawa" },
+    ],
+    sections: [
+      {
+        number: "1",
+        heading: "Postać ogólna",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Definicja",
+          },
+          {
+            type: "callout",
+            variant: "definition",
+            contentLevel: "podstawa",
+            title: "Funkcja kwadratowa",
+            content:
+              "Funkcją kwadratową nazywamy funkcję daną wzorem $$f(x)=ax^2+bx+c,$$ gdzie $a,b,c\\in\\mathbb{R}$ oraz $a\\neq 0$. Dziedzina to zwykle $\\mathbb{R}$.",
+            example: {
+              prompt: "W $f(x)=2x^2-3x+1$ wskaż $a$, $b$ i $c$. Oblicz $f(2)$.",
+              right:
+                "$a=2$, $b=-3$, $c=1$. Wartość: $f(2)=2\\cdot 4-3\\cdot 2+1=8-6+1=3$.",
+            },
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "f(x)=ax^2+bx+c\\quad (a\\neq 0)",
+                label: "(1)",
+                accent: "blue",
+                caption: "postać ogólna funkcji kwadratowej",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Czy $f(x)=5x-1$ jest funkcją kwadratową? A $g(x)=-x^2+4$?",
+                  steps: [
+                    "W $f$ nie ma $x^2$, więc to funkcja liniowa, nie kwadratowa.",
+                    "W $g$ jest $a=-1\\neq 0$, $b=0$, $c=4$. To funkcja kwadratowa.",
+                  ],
+                  result: "Wynik: $f$ nie, $g$ tak.",
+                },
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Warunek $a\\neq 0$",
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Musi być $a\\neq 0$",
+            content:
+              "Jeśli $a=0$, wzór $bx+c$ opisuje funkcję liniową (albo stałą). Żeby mówić o funkcji kwadratowej, współczynnik przy $x^2$ nie może zniknąć.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Funkcja jest kwadratowa tylko gdy $a\\neq 0$. Parametr często siedzi właśnie we współczynniku przy $x^2$.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakich $m$ wzór $f(x)=(m-1)x^2+3x-2$ opisuje funkcję kwadratową?",
+                steps: [
+                  "Tu $a=m-1$, $b=3$, $c=-2$.",
+                  "Potrzebujemy $a\\neq 0$, więc $m-1\\neq 0$ i $m\\neq 1$.",
+                  "Dla $m=1$ zostaje $f(x)=3x-2$, czyli funkcja liniowa.",
+                ],
+                result: "$m\\neq 1$",
+                cleanSolution: ["$a=m-1\\neq 0$", "$m\\neq 1$"],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "2",
+        heading: "Wyróżnik",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Wyróżnik $\\Delta$ (delta) trójmianu kwadratowego $ax^2+bx+c$ mówi, ile miejsc zerowych ma funkcja.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "\\Delta=b^2-4ac",
+                label: "(2)",
+                accent: "blue",
+                caption: "wyróżnik trójmianu kwadratowego",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Oblicz $\\Delta$ dla $f(x)=x^2-5x+6$.",
+                  steps: [
+                    "Tu $a=1$, $b=-5$, $c=6$.",
+                    "Ze wzoru (2): $\\Delta=(-5)^2-4\\cdot 1\\cdot 6=25-24=1$.",
+                  ],
+                  result: "Wynik: $\\Delta=1$.",
+                },
+              },
+            ],
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Najpierw liczymy $\\Delta$ jako wyrażenie z parametrem. Potem znak $\\Delta$ mówi, ile miejsc zerowych będzie.",
+            tasks: [
+              {
+                prompt:
+                  "Dana jest $f(x)=x^2+mx+1$. Dla jakich $m$ wyróżnik jest dodatni, równy zero, ujemny?",
+                steps: [
+                  "$a=1\\neq 0$, $b=m$, $c=1$. Ze wzoru (2): $\\Delta=m^2-4$.",
+                  "$\\Delta>0$: $m^2-4>0$, więc $|m|>2$, czyli $m\\in(-\\infty,-2)\\cup(2,\\infty)$.",
+                  "$\\Delta=0$: $m^2=4$, więc $m=2$ lub $m=-2$.",
+                  "$\\Delta<0$: $|m|<2$, czyli $m\\in(-2,2)$.",
+                ],
+                result:
+                  "$\\Delta>0$ dla $|m|>2$, $\\Delta=0$ dla $m=\\pm 2$, $\\Delta<0$ dla $|m|<2$",
+                cleanSolution: [
+                  "$\\Delta=m^2-4$",
+                  "$|m|>2$, $m=\\pm 2$, $|m|<2$",
+                ],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "3",
+        heading: "Miejsca zerowe",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Wzory",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Miejsca zerowe funkcji $f(x)=ax^2+bx+c$ to rozwiązania rzeczywiste równania kwadratowego $$ax^2+bx+c=0.$$ Ich liczba zależy od znaku $\\Delta$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "x_1=\\dfrac{-b-\\sqrt{\\Delta}}{2a},\\quad x_2=\\dfrac{-b+\\sqrt{\\Delta}}{2a}",
+                label: "(3)",
+                accent: "blue",
+                caption: "dwa miejsca zerowe, gdy $\\Delta>0$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Znajdź miejsca zerowe $f(x)=x^2-5x+6$.",
+                  steps: [
+                    "Ze wzoru (2): $\\Delta=25-24=1>0$, więc są dwa miejsca zerowe.",
+                    "Ze wzoru (3): $x_1=\\dfrac{5-1}{2}=2$, $x_2=\\dfrac{5+1}{2}=3$.",
+                  ],
+                  result: "Wynik: $x=2$ oraz $x=3$.",
+                },
+              },
+              {
+                latex: "x_1=x_2=-\\dfrac{b}{2a}",
+                label: "(4)",
+                accent: "blue",
+                caption: "jedno miejsce zerowe, gdy $\\Delta=0$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Znajdź miejsca zerowe $f(x)=x^2-4x+4$.",
+                  steps: [
+                    "$\\Delta=16-16=0$, więc jest dokładnie jedno miejsce zerowe.",
+                    "Ze wzoru (4): $x=-\\dfrac{-4}{2}=2$.",
+                  ],
+                  result: "Wynik: $x=2$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Znak $\\Delta$",
+          },
+          {
+            type: "list",
+            contentLevel: "podstawa",
+            items: [
+              "Gdy $\\Delta>0$, są **dwa** różne miejsca zerowe. Wzór (3).",
+              "Gdy $\\Delta=0$, jest **dokładnie jedno** miejsce zerowe. Wzór (4).",
+              "Gdy $\\Delta<0$, **nie ma** miejsc zerowych w liczbach rzeczywistych.",
+            ],
+          },
+          {
+            type: "callout",
+            variant: "insight",
+            contentLevel: "podstawa",
+            title: "Jedno miejsce zerowe to wierzchołek",
+            content:
+              "Gdy $\\Delta=0$, jedyne miejsce zerowe jest w wierzchołku: $x_1=x_2=p=-\\dfrac{b}{2a}$. Parabola wtedy **dotyka** osi $OX$.",
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Wykresy",
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Dwa miejsca zerowe",
+                formula: "$f(x)=x^2-x-2$, $\\Delta=9$",
+                parabola: true,
+                a: 1,
+                b: -1,
+                c: -2,
+                xMin: -3,
+                xMax: 4,
+                yMin: -4,
+                yMax: 5,
+                points: [
+                  { x: -1, y: 0, label: "$(-1,0)$", dx: -56, dy: -22 },
+                  { x: 2, y: 0, label: "$(2,0)$", dx: 12, dy: -22 },
+                ],
+                caption: "$\\Delta>0$: parabola przecina oś $OX$ w dwóch punktach.",
+              },
+              {
+                title: "Jedno miejsce zerowe",
+                formula: "$f(x)=x^2-2x+1$, $\\Delta=0$",
+                parabola: true,
+                a: 1,
+                b: -2,
+                c: 1,
+                xMin: -1,
+                xMax: 3,
+                yMin: -1,
+                yMax: 5,
+                points: [{ x: 1, y: 0, label: "$(1,0)$", dx: 12, dy: -22 }],
+                caption: "$\\Delta=0$: parabola **dotyka** osi $OX$ w wierzchołku.",
+              },
+              {
+                title: "Brak miejsc zerowych",
+                formula: "$f(x)=x^2+1$, $\\Delta=-4$",
+                parabola: true,
+                a: 1,
+                b: 0,
+                c: 1,
+                xMin: -3,
+                xMax: 3,
+                yMin: -1,
+                yMax: 6,
+                points: [{ x: 0, y: 1, label: "$W=(0,1)$", dx: 14, dy: -24 }],
+                caption: "$\\Delta<0$: parabola leży całkiem nad osią $OX$.",
+              },
+            ],
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Jeśli miejsce zerowe ma być równe danej liczbie $x_0$, wstawiamy $f(x_0)=0$ i rozwiązujemy względem parametru. Potem sprawdzamy $\\Delta$ i $a\\neq 0$.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakiej wartości parametru $m$ funkcja $f(x)=x^2-mx+2$ ma miejsce zerowe równe $2$?",
+                steps: [
+                  "Warunek $f(2)=0$: $4-2m+2=0$, więc $6=2m$ i $m=3$.",
+                  "Dla $m=3$: $a=1\\neq 0$, $\\Delta=9-8=1>0$. Są dwa miejsca zerowe.",
+                  "Ze wzoru (3): $x=\\dfrac{3\\pm 1}{2}$, czyli $x=2$ oraz $x=1$.",
+                  "Liczba $2$ rzeczywiście jest miejscem zerowym.",
+                ],
+                result: "$m=3$",
+                cleanSolution: ["$f(2)=0\\Rightarrow m=3$", "$\\Delta=1>0$", "$x=2$ i $x=1$"],
+              },
+              {
+                prompt:
+                  "Dla jakich $m$ funkcja $f(x)=x^2+mx+1$ ma dokładnie jedno miejsce zerowe?",
+                steps: [
+                  "Jedno miejsce zerowe, gdy $\\Delta=0$ i $a\\neq 0$.",
+                  "$a=1\\neq 0$, $\\Delta=m^2-4$.",
+                  "$m^2-4=0$, więc $m=2$ lub $m=-2$.",
+                ],
+                result: "$m=2$ lub $m=-2$",
+                cleanSolution: ["$\\Delta=m^2-4=0$", "$m=\\pm 2$"],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "4",
+        heading: "Wykres: parabola",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Wierzchołek",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Wykresem funkcji kwadratowej jest **parabola** o wierzchołku $W=(p,q)$.",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "p=-\\dfrac{b}{2a}",
+                label: "(5)",
+                accent: "blue",
+                caption: "pierwsza współrzędna wierzchołka",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Dla $f(x)=x^2-4x+3$ znajdź $p$.",
+                  steps: [
+                    "$a=1$, $b=-4$.",
+                    "Ze wzoru (5): $p=-\\dfrac{-4}{2}=2$.",
+                  ],
+                  result: "Wynik: $p=2$.",
+                },
+              },
+              {
+                latex: "q=-\\dfrac{\\Delta}{4a}",
+                label: "(6)",
+                accent: "blue",
+                caption: "druga współrzędna wierzchołka, też $q=f(p)$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Dla $f(x)=x^2-4x+3$ znajdź $q$.",
+                  steps: [
+                    "$\\Delta=16-12=4$. Ze wzoru (6): $q=-\\dfrac{4}{4}=-1$.",
+                    "Sprawdzenie: $f(2)=4-8+3=-1$. To samo.",
+                  ],
+                  result: "Wynik: $q=-1$, więc $W=(2,-1)$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Ramiona, oś i przecięcie z $OY$",
+          },
+          {
+            type: "list",
+            contentLevel: "podstawa",
+            items: [
+              "Ramiona paraboli są skierowane **do góry**, gdy $a>0$.",
+              "Ramiona paraboli są skierowane **do dołu**, gdy $a<0$.",
+              "Oś symetrii paraboli ma równanie $x=p$.",
+              "Punkt przecięcia z osią $OY$ to $(0,c)$.",
+              "Współrzędną $q$ można też policzyć jako wartość funkcji: $q=f(p)$.",
+            ],
+          },
+          {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Ramiona w górę",
+                formula: "$f(x)=x^2-2x-1$, $a>0$",
+                parabola: true,
+                a: 1,
+                b: -2,
+                c: -1,
+                xMin: -2,
+                xMax: 4,
+                yMin: -3,
+                yMax: 5,
+                showAxis: true,
+                points: [
+                  { x: 1, y: -2, label: "$W=(1,-2)$", dx: 14, dy: -24 },
+                  { x: 0, y: -1, label: "$(0,-1)$", dx: -62, dy: -22 },
+                ],
+                caption: "$a=1>0$. Oś $x=1$. Przecięcie z $OY$: $(0,-1)$.",
+              },
+              {
+                title: "Ramiona w dół",
+                formula: "$f(x)=-x^2+4x-1$, $a<0$",
+                parabola: true,
+                a: -1,
+                b: 4,
+                c: -1,
+                xMin: -1,
+                xMax: 5,
+                yMin: -5,
+                yMax: 5,
+                showAxis: true,
+                points: [
+                  { x: 2, y: 3, label: "$W=(2,3)$", dx: 14, dy: -24 },
+                  { x: 0, y: -1, label: "$(0,-1)$", dx: -62, dy: 12 },
+                ],
+                caption: "$a=-1<0$. Oś $x=2$. Przecięcie z $OY$: $(0,-1)$.",
+              },
+            ],
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Znak $a$ ustala ramiona. Wierzchołek liczymy ze wzorów (5) i (6), też z parametrem.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakich $m$ ramiona paraboli $f(x)=(m-2)x^2-4x+1$ są skierowane do góry?",
+                steps: [
+                  "Tu $a=m-2$. Ramiona w górę, gdy $a>0$.",
+                  "Nierówność: $m-2>0$, więc $m>2$.",
+                  "Dla $m=2$ współczynnik $a$ znika i to już nie jest parabola.",
+                ],
+                result: "$m>2$",
+                cleanSolution: ["$a=m-2>0$", "$m>2$"],
+              },
+              {
+                prompt:
+                  "Dla $f(x)=mx^2-4x+1$ przy $m\\neq 0$ znajdź $m$, dla którego $p=1$.",
+                steps: [
+                  "Ze wzoru (5): $p=\\dfrac{4}{2m}=\\dfrac{2}{m}$.",
+                  "Warunek $p=1$: $\\dfrac{2}{m}=1$, więc $m=2$.",
+                  "Wtedy $q=f(1)=2-4+1=-1$. Wierzchołek to $(1,-1)$.",
+                ],
+                result: "$m=2$, $W=(1,-1)$",
+                cleanSolution: ["$p=\\dfrac{2}{m}=1$", "$m=2$", "$W=(1,-1)$"],
+              },
+            ],
+          }),
+        ],
+      },
+      {
+        number: "5",
+        heading: "Postać kanoniczna i iloczynowa",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Oprócz postaci ogólnej funkcję kwadratową zapisuje się jeszcze na dwa sposoby. W postaci kanonicznej widać wierzchołek. W postaci iloczynowej widać miejsca zerowe.",
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Postać kanoniczna",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "f(x)=a(x-p)^2+q",
+                label: "(7)",
+                accent: "blue",
+                caption: "postać kanoniczna",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Zapisz $f(x)=x^2-4x+3$ w postaci kanonicznej.",
+                  steps: [
+                    "Z (5) i (6): $p=2$, $q=-1$.",
+                    "Ze wzoru (7): $f(x)=(x-2)^2-1$.",
+                  ],
+                  result: "Wynik: $f(x)=(x-2)^2-1$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Postać iloczynowa",
+          },
+          {
+            type: "formula-list",
+            contentLevel: "podstawa",
+            items: [
+              {
+                latex: "f(x)=a(x-x_1)(x-x_2)",
+                label: "(8)",
+                accent: "blue",
+                caption: "postać iloczynowa, gdy $\\Delta\\ge 0$",
+                contentLevel: "podstawa",
+                example: {
+                  level: "podstawowy",
+                  prompt: "Zapisz $f(x)=x^2-4x+3$ w postaci iloczynowej.",
+                  steps: [
+                    "$\\Delta=4>0$, miejsca zerowe $x_1=1$, $x_2=3$.",
+                    "Ze wzoru (8): $f(x)=(x-1)(x-3)$.",
+                  ],
+                  result: "Wynik: $f(x)=(x-1)(x-3)$.",
+                },
+              },
+            ],
+          },
+          {
+            type: "callout",
+            variant: "pitfall",
+            contentLevel: "podstawa",
+            title: "Iloczynowa nie zawsze istnieje",
+            content:
+              "Postać iloczynowa jest tylko wtedy, gdy $\\Delta\\ge 0$, bo potrzebujemy miejsc zerowych $x_1$ i $x_2$. Gdy $\\Delta=0$, oba miejsca zerowe są równe i wzór to $f(x)=a(x-x_1)^2$.",
+          },
+          ...parameterSchemeBlocks({
+            intro:
+              "Postać kanoniczna istnieje zawsze przy $a\\neq 0$. Iloczynowa tylko wtedy, gdy $\\Delta\\ge 0$. Parametr wchodzi do $p$, $q$ albo do miejsc zerowych.",
+            tasks: [
+              {
+                prompt:
+                  "Dla jakich $m$ funkcję $f(x)=x^2+mx+1$ można zapisać w postaci iloczynowej?",
+                steps: [
+                  "$a=1\\neq 0$, $\\Delta=m^2-4$.",
+                  "Postać iloczynowa, gdy $\\Delta\\ge 0$, czyli $m^2-4\\ge 0$.",
+                  "Stąd $|m|\\ge 2$, czyli $m\\in(-\\infty,-2]\\cup[2,\\infty)$.",
+                  "Dla $m=2$: $f(x)=(x+1)^2$. Dla $m=-2$: $f(x)=(x-1)^2$.",
+                ],
+                result: "$|m|\\ge 2$",
+                cleanSolution: ["$\\Delta=m^2-4\\ge 0$", "$|m|\\ge 2$"],
+              },
+            ],
+          }),
         ],
       },
     ],

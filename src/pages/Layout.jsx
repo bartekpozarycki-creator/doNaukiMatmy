@@ -422,7 +422,7 @@ export default function Layout({ children, currentPageName }) {
               ) : null}
             </AnimatePresence>
 
-            <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2">
+            <div className="fixed bottom-6 left-6 z-40 flex flex-col items-start gap-2">
               <AnimatePresence>
                 {fabOpen
                   ? fabQuickActions.map((item, index) => {
@@ -439,17 +439,8 @@ export default function Layout({ children, currentPageName }) {
                           animate={{ opacity: 1, y: 0, scale: 1 }}
                           exit={{ opacity: 0, y: 10, scale: 0.92 }}
                           transition={{ duration: 0.18, delay: index * 0.04 }}
-                          className="mr-1 flex items-center gap-2"
+                          className="ml-1 flex items-center gap-2"
                         >
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${
-                              isDark
-                                ? "bg-slate-800 text-slate-200"
-                                : "bg-white text-slate-700"
-                            }`}
-                          >
-                            {item.title}
-                          </span>
                           {item.url ? (
                             <Link
                               to={item.url}
@@ -469,30 +460,40 @@ export default function Layout({ children, currentPageName }) {
                               <item.icon className="h-4 w-4 shrink-0" />
                             </button>
                           )}
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium shadow-sm ${
+                              isDark
+                                ? "bg-slate-800 text-slate-200"
+                                : "bg-white text-slate-700"
+                            }`}
+                          >
+                            {item.title}
+                          </span>
                         </motion.div>
                       );
                     })
                   : null}
               </AnimatePresence>
 
-              <div className="flex items-center gap-2">
-                <AnswerKeyFab isDark={isDark} />
-                <button
-                  type="button"
-                  aria-label={fabOpen ? "Zamknij" : "Szybkie akcje"}
-                  aria-expanded={fabOpen}
-                  onClick={() => setFabOpen((open) => !open)}
-                  className={`grid h-11 w-11 place-items-center rounded-full p-0 shadow-lg transition-all hover:scale-105 active:scale-95 ${
-                    fabOpen ? "rotate-45" : "rotate-0"
-                  } ${
-                    isDark
-                      ? "bg-blue-600 text-white hover:bg-blue-500"
-                      : "bg-blue-600 text-white hover:bg-blue-700"
-                  }`}
-                >
-                  <Plus className="h-[22px] w-[22px] shrink-0 stroke-[2.5]" aria-hidden="true" />
-                </button>
-              </div>
+              <button
+                type="button"
+                aria-label={fabOpen ? "Zamknij" : "Szybkie akcje"}
+                aria-expanded={fabOpen}
+                onClick={() => setFabOpen((open) => !open)}
+                className={`grid h-11 w-11 place-items-center rounded-full p-0 shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                  fabOpen ? "rotate-45" : "rotate-0"
+                } ${
+                  isDark
+                    ? "bg-blue-600 text-white hover:bg-blue-500"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                }`}
+              >
+                <Plus className="h-[22px] w-[22px] shrink-0 stroke-[2.5]" aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="fixed bottom-6 right-6 z-40">
+              <AnswerKeyFab isDark={isDark} />
             </div>
           </>
         ) : null}

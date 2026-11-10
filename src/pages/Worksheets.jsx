@@ -333,8 +333,7 @@ function WorksheetCardSkeleton() {
   return (
     <Card className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-700 dark:bg-slate-900">
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
-        <Skeleton className={`h-10 w-full rounded-none ${skeletonClass}`} />
-        <Skeleton className={`h-20 w-full rounded-none ${skeletonClass}`} />
+        <Skeleton className={`h-28 w-full rounded-none ${skeletonClass}`} />
         <Skeleton className={`h-12 w-full rounded-none ${skeletonClass}`} />
         <div className="grid grid-cols-2 sm:grid-cols-4">
           {Array.from({ length: 4 }, (_, index) => (
@@ -460,25 +459,24 @@ function WorksheetCard({
   return (
     <Card className="group relative flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm transition-shadow duration-300 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900">
       <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-600">
-        <div className="flex min-w-0 flex-wrap">
-          <div className={`${theme.solid} flex shrink-0 items-stretch text-white`}>
-            <span className="flex items-center px-3 py-2.5 text-xs font-bold sm:px-3.5 sm:text-sm">
-              {theme.examKind}
-            </span>
-            <span className="flex items-center border-l border-white/35 px-3 py-2.5 text-xs italic sm:px-3.5 sm:text-sm">
-              Formuła {worksheet.formula || "—"}
+        <div className={`${theme.solid} text-white`}>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3.5 py-2.5 sm:px-5">
+            <div className="flex min-w-0 items-center">
+              <span className="truncate text-xs font-bold sm:text-sm">{theme.examKind}</span>
+              <span className="mx-3 h-4 w-px shrink-0 bg-white/40" />
+              <span className="shrink-0 text-xs italic text-white/90 sm:text-sm">
+                Formuła {worksheet.formula || "—"}
+              </span>
+            </div>
+            <span className="ml-auto rounded-md bg-white/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider sm:text-[11px]">
+              {theme.label}
             </span>
           </div>
-          <div
-            className={`${theme.soft} flex min-w-[7.5rem] flex-1 items-center justify-end px-3 text-[10px] font-bold uppercase tracking-wider sm:px-4 sm:text-[11px]`}
-          >
-            {theme.label}
+          <div className="px-3.5 pb-4 pt-1 sm:px-5 sm:pb-5">
+            <h2 className="text-2xl font-extrabold uppercase leading-none tracking-wide sm:text-3xl">
+              {sheetTitle}
+            </h2>
           </div>
-        </div>
-        <div className={`${theme.solid} px-4 py-4 sm:px-5 sm:py-5`}>
-          <h2 className="text-2xl font-extrabold uppercase leading-none tracking-wide text-white sm:text-3xl">
-            {sheetTitle}
-          </h2>
         </div>
         <div className="border-b border-slate-200 bg-white px-4 py-2.5 dark:border-slate-600 dark:bg-slate-900 sm:px-5">
           <p className={`text-base font-semibold sm:text-lg ${theme.text}`}>

@@ -49,6 +49,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import MathText from "@/components/MathText";
 import MathInsertToolbar from "@/components/MathInsertToolbar";
 import TaskQuestionBody from "@/components/TaskQuestionBody";
+import CkeSolutionText from "@/components/CkeSolutionText";
 import PreviousStemSubtasks from "@/components/PreviousStemSubtasks";
 import MaturaArkuszLink from "@/components/MaturaArkuszLink";
 import FavoriteTaskActions from "@/components/FavoriteTaskActions";
@@ -888,6 +889,23 @@ export default function TaskDetailsPage() {
                     : renderOpen()}
               </section>
             )}
+
+            {task.odpowiedzTekstowa ? (
+              <Accordion
+                type="single"
+                collapsible
+                className="w-full overflow-hidden rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/50"
+              >
+                <AccordionItem value="odpowiedz-tekstowa" className="border-0">
+                  <AccordionTrigger className="px-4 py-3 text-sm font-semibold text-slate-900 hover:no-underline dark:text-white">
+                    Zobacz rozwiązanie
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-4">
+                    <CkeSolutionText text={task.odpowiedzTekstowa} />
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            ) : null}
 
             {taskVideoUrl ? (
               <Accordion type="single" collapsible className="w-full">

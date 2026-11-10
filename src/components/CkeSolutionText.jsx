@@ -34,6 +34,14 @@ function flattenToItems(text) {
       return;
     }
     chunk.value.split("\n").forEach((line) => {
+      const trimmed = line.trim();
+      const whole =
+        trimmed.match(/^\$\$([\s\S]+)\$\$$/) ||
+        trimmed.match(/^\$([^$\n]+)\$\.?$/);
+      if (whole && /\\[a-zA-Z]/.test(whole[1])) {
+        items.push({ kind: "math", value: `$$${whole[1]}$$` });
+        return;
+      }
       items.push({ kind: "line", value: line });
     });
   });
@@ -201,7 +209,7 @@ function renderBodyBlocks(blocks, keyPrefix) {
           key={key}
           className="my-2 overflow-x-auto rounded-lg border border-slate-200/80 bg-white/80 px-3 py-2 dark:border-slate-700 dark:bg-slate-950/40"
         >
-          <MathText text={item.value} className="math-text-ui--flow" />
+          <MathText text={item.value} display />
         </div>,
       );
       return;
@@ -256,8 +264,10 @@ function renderBodyBlocks(blocks, keyPrefix) {
 function SectionAccordion({ sections, prefix }) {
   if (!sections.length) return null;
 
+  const openValues = sections.map((_, i) => `${prefix}-${i}`);
+
   return (
-    <Accordion type="multiple" className="space-y-3">
+    <Accordion type="multiple" defaultValue={openValues} className="space-y-3">
       {sections.map((section, i) => {
         const title = section.title || `Sekcja ${i + 1}`;
         const style = classifyHeader(title);
@@ -281,7 +291,11 @@ function SectionAccordion({ sections, prefix }) {
             </div>
             <AccordionContent className="border-t border-black/5 px-3 pb-3 pt-2 dark:border-white/10">
               {hasNamedSubs ? (
-                <Accordion type="multiple" className="space-y-2">
+                <Accordion
+                  type="multiple"
+                  defaultValue={subsections.map((_, j) => `${value}-sub-${j}`)}
+                  className="space-y-2"
+                >
                   {subsections.map((sub, j) => {
                     if (!sub.title) {
                       return (
@@ -334,6 +348,14 @@ export default function CkeSolutionText({ text, className = "" }) {
 
   const sections = groupIntoSections(flattenToItems(raw));
   if (!sections.length) return null;
+
+  if (sections.length === 1 && !sections[0].title) {
+    return (
+      <div className={`space-y-1.5 text-sm ${className}`}>
+        {renderBodyBlocks(sections[0].blocks, "cke-plain")}
+      </div>
+    );
+  }
 
   return (
     <div className={className}>

@@ -31,7 +31,20 @@ function normalizePlainPart(part) {
   return part.replace(/−/g, "-").replace(/\s+/g, " ");
 }
 
-export default function MathText({ text, className = "" }) {
+export default function MathText({ text, className = "", display = false }) {
+  if (display) {
+    const latex = String(text ?? "")
+      .trim()
+      .replace(/^\$\$/, "")
+      .replace(/\$\$$/, "")
+      .replace(/−/g, "-");
+    return (
+      <span className={cn("math-text-ui", className)}>
+        {renderLatexPart(latex, true, "display")}
+      </span>
+    );
+  }
+
   const parts = String(text ?? "").replace(/−/g, "-").split(MATH_PART_RE);
 
   return (

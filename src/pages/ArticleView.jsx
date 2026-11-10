@@ -14,17 +14,20 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   BookOpen,
   Brain,
   ChevronDown,
   Clock,
   Lightbulb,
+  List,
   Loader2,
   Play,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import MathText from "@/components/MathText";
 import TaskListCard from "@/components/TaskListCard";
+import TaskListPagination from "@/components/TaskListPagination";
 import { createPageUrl } from "@/utils";
 import {
   articleContentModeLabel,
@@ -506,10 +509,12 @@ function RectFigureDrawing({ figure, compact = false, showCaption = true }) {
 function ExampleStepContent({ step }) {
   const text = getStepText(step);
   const figure = getStepFigure(step);
+  const lineGraph = step && typeof step === "object" ? step.lineGraph : null;
   return (
     <div className="min-w-0 space-y-2">
       {text ? <ArticleRichText text={text} /> : null}
       {figure ? <RectFigureDrawing figure={figure} compact /> : null}
+      {lineGraph ? <LineGraphSvg graph={lineGraph} /> : null}
     </div>
   );
 }
@@ -896,6 +901,370 @@ function SequencePlotsBlock({ block }) {
   );
 }
 
+function LineGraphSvg({ graph }) {
+  const noteColors = useNoteColors();
+  const plotColor = graph.color || noteColors.accent.plot || "#2563eb";
+  const a = Number(graph.a);
+  const b = Number(graph.b) || 0;
+  const xMin = Number.isFinite(Number(graph.xMin)) ? Number(graph.xMin) : -4;
+  const xMax = Number.isFinite(Number(graph.xMax)) ? Number(graph.xMax) : 4;
+  const yMin = Number.isFinite(Number(graph.yMin)) ? Number(graph.yMin) : -3;
+  const yMax = Number.isFinite(Number(graph.yMax)) ? Number(graph.yMax) : 5;
+  const width = Number(graph.width) > 0 ? Number(graph.width) : 320;
+  const height = Number(graph.height) > 0 ? Number(graph.height) : 280;
+  const padL = 36;
+  const padR = 18;
+  const padT = 14;
+  const padB = 28;
+  const plotW = width - padL - padR;
+  const plotH = height - padT - padB;
+  const toX = (x) => padL + ((x - xMin) / (xMax - xMin)) * plotW;
+  const toY = (y) => padT + ((yMax - y) / (yMax - yMin)) * plotH;
+  const clipId = `line-clip-${useId().replace(/:/g, "")}`;
+
+  const xTicks = [];
+  for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x += 1) xTicks.push(x);
+  const yTicks = [];
+  for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y += 1) yTicks.push(y);
+
+  const isParabola = Boolean(graph.parabola);
+  const qa = Number(graph.a);
+  const qb = Number(graph.b) || 0;
+  const qc = Number(graph.c) || 0;
+  const lines = isParabola
+    ? []
+    : Array.isArray(graph.lines) && graph.lines.length > 0
+      ? graph.lines
+      : Number.isFinite(a)
+        ? [{ a, b, color: plotColor }]
+        : [];
+
+  const points = Array.isArray(graph.points) ? graph.points : [];
+  const vertexP = isParabola && qa !== 0 ? -qb / (2 * qa) : null;
+  const parabolaPoints = [];
+  if (isParabola && Number.isFinite(qa)) {
+    const steps = 96;
+    for (let i = 0; i <= steps; i += 1) {
+      const x = xMin + (i / steps) * (xMax - xMin);
+      parabolaPoints.push(`${toX(x)},${toY(qa * x * x + qb * x + qc)}`);
+    }
+  }
+
+  return (
+    <div className="flex justify-center overflow-x-auto px-2 py-2">
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} overflow="visible" aria-hidden="true">
+        <defs>
+          <clipPath id={clipId}>
+            <rect x={padL} y={padT} width={plotW} height={plotH} />
+          </clipPath>
+        </defs>
+        {xTicks.map((tick) => (
+          <line
+            key={`vg-${tick}`}
+            x1={toX(tick)}
+            y1={padT}
+            x2={toX(tick)}
+            y2={padT + plotH}
+            className="stroke-slate-200 dark:stroke-slate-700"
+            strokeWidth={tick === 0 ? 0 : 1}
+          />
+        ))}
+        {yTicks.map((tick) => (
+          <line
+            key={`hg-${tick}`}
+            x1={padL}
+            y1={toY(tick)}
+            x2={padL + plotW}
+            y2={toY(tick)}
+            className="stroke-slate-200 dark:stroke-slate-700"
+            strokeWidth={tick === 0 ? 0 : 1}
+          />
+        ))}
+        {xMin < 0 && xMax > 0 ? (
+          <line
+            x1={toX(0)}
+            y1={padT}
+            x2={toX(0)}
+            y2={padT + plotH}
+            className="stroke-slate-500 dark:stroke-slate-400"
+            strokeWidth="1.5"
+          />
+        ) : null}
+        {yMin < 0 && yMax > 0 ? (
+          <line
+            x1={padL}
+            y1={toY(0)}
+            x2={padL + plotW}
+            y2={toY(0)}
+            className="stroke-slate-500 dark:stroke-slate-400"
+            strokeWidth="1.5"
+          />
+        ) : null}
+        <text x={padL + plotW - 2} y={toY(0) - 6} className="fill-slate-500 text-[11px]" textAnchor="end">
+          x
+        </text>
+        <text x={toX(0) + 8} y={padT + 12} className="fill-slate-500 text-[11px]">
+          y
+        </text>
+        {xTicks.filter((tick) => tick !== 0).map((tick) => (
+          <text
+            key={`xt-${tick}`}
+            x={toX(tick)}
+            y={toY(0) + 14}
+            className="fill-slate-500 text-[10px]"
+            textAnchor="middle"
+          >
+            {tick}
+          </text>
+        ))}
+        {yTicks.filter((tick) => tick !== 0).map((tick) => (
+          <text
+            key={`yt-${tick}`}
+            x={toX(0) - 6}
+            y={toY(tick) + 3}
+            className="fill-slate-500 text-[10px]"
+            textAnchor="end"
+          >
+            {tick}
+          </text>
+        ))}
+        <g clipPath={`url(#${clipId})`}>
+          {graph.showAxis && Number.isFinite(vertexP) ? (
+            <line
+              x1={toX(vertexP)}
+              y1={padT}
+              x2={toX(vertexP)}
+              y2={padT + plotH}
+              stroke={plotColor}
+              strokeWidth="1.5"
+              strokeDasharray="6 4"
+            />
+          ) : null}
+          {isParabola && parabolaPoints.length > 1 ? (
+            <polyline
+              points={parabolaPoints.join(" ")}
+              fill="none"
+              stroke={plotColor}
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          ) : null}
+          {lines.map((line, index) => {
+            const la = Number(line.a);
+            const lb = Number(line.b) || 0;
+            if (!Number.isFinite(la)) return null;
+            return (
+              <line
+                key={`ln-${index}`}
+                x1={toX(xMin)}
+                y1={toY(la * xMin + lb)}
+                x2={toX(xMax)}
+                y2={toY(la * xMax + lb)}
+                stroke={line.color || plotColor}
+                strokeWidth="2.25"
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </g>
+        {graph.showAngle && Number.isFinite(a) && a !== 0 ? (() => {
+          const vx = b === 0 ? 0 : -b / a;
+          const unitX = plotW / (xMax - xMin);
+          const unitY = plotH / (yMax - yMin);
+          const rPx = 28;
+          const dirX = unitX;
+          const dirY = -unitY * a;
+          const dirLen = Math.hypot(dirX, dirY) || 1;
+          const x0 = toX(vx);
+          const y0 = toY(0);
+          const endX = x0 + (dirX / dirLen) * rPx;
+          const endY = y0 + (dirY / dirLen) * rPx;
+          const startX = x0 + rPx;
+          const startY = y0;
+          const sweep = a >= 0 ? 0 : 1;
+          const alpha = Math.atan(a);
+          const labelAng = a >= 0 ? alpha * 0.5 : Math.PI + alpha * 0.5;
+          const labelR = rPx * 0.58;
+          const labelX = x0 + labelR * Math.cos(labelAng);
+          const labelY = y0 - labelR * Math.sin(labelAng);
+          return (
+            <g>
+              <path
+                d={`M ${startX} ${startY} A ${rPx} ${rPx} 0 0 ${sweep} ${endX} ${endY}`}
+                fill="none"
+                stroke={plotColor}
+                strokeWidth="1.5"
+              />
+              <text
+                x={labelX}
+                y={labelY}
+                className="fill-current text-[11px] font-semibold"
+                style={{ fill: plotColor }}
+                textAnchor="middle"
+                dominantBaseline="middle"
+              >
+                α
+              </text>
+            </g>
+          );
+        })() : null}
+        {graph.showTriangle && Number.isFinite(a) ? (() => {
+          const tx = Number.isFinite(Number(graph.triangleX)) ? Number(graph.triangleX) : 0;
+          const run = Number(graph.triangleRun) > 0 ? Number(graph.triangleRun) : 1;
+          const x1 = tx;
+          const y1 = a * tx + b;
+          const x2 = tx + run;
+          const y2 = y1;
+          const x3 = x2;
+          const y3 = a * x2 + b;
+          return (
+            <g>
+              <polyline
+                points={`${toX(x1)},${toY(y1)} ${toX(x2)},${toY(y2)} ${toX(x3)},${toY(y3)}`}
+                fill="none"
+                stroke={plotColor}
+                strokeWidth="1.5"
+                strokeDasharray="5 4"
+              />
+              <text
+                x={(toX(x1) + toX(x2)) / 2}
+                y={toY(y1) + 14}
+                className="fill-slate-600 text-[11px] font-semibold dark:fill-slate-300"
+                textAnchor="middle"
+              >
+                {run}
+              </text>
+              <text
+                x={toX(x2) + 10}
+                y={(toY(y2) + toY(y3)) / 2 + 4}
+                className="fill-slate-600 text-[11px] font-semibold dark:fill-slate-300"
+              >
+                {String(a).replace(".", ",")}
+              </text>
+            </g>
+          );
+        })() : null}
+        {graph.showRightAngle && lines.length >= 2 ? (() => {
+          const a1 = Number(lines[0].a);
+          const b1 = Number(lines[0].b) || 0;
+          const a2 = Number(lines[1].a);
+          const b2 = Number(lines[1].b) || 0;
+          if (!Number.isFinite(a1) || !Number.isFinite(a2) || a1 === a2) return null;
+          const ix = (b2 - b1) / (a1 - a2);
+          const iy = a1 * ix + b1;
+          const x0 = toX(ix);
+          const y0 = toY(iy);
+          const unitX = plotW / (xMax - xMin);
+          const unitY = plotH / (yMax - yMin);
+          let d1x = unitX;
+          let d1y = -unitY * a1;
+          let d2x = unitX;
+          let d2y = -unitY * a2;
+          const len1 = Math.hypot(d1x, d1y) || 1;
+          const len2 = Math.hypot(d2x, d2y) || 1;
+          d1x /= len1;
+          d1y /= len1;
+          d2x /= len2;
+          d2y /= len2;
+          const rPx = 32;
+          const sweep = d1x * d2y - d1y * d2x > 0 ? 1 : 0;
+          let bx = d1x + d2x;
+          let by = d1y + d2y;
+          const bLen = Math.hypot(bx, by) || 1;
+          bx /= bLen;
+          by /= bLen;
+          return (
+            <g>
+              <path
+                d={`M ${x0 + d1x * rPx} ${y0 + d1y * rPx} A ${rPx} ${rPx} 0 0 ${sweep} ${x0 + d2x * rPx} ${y0 + d2y * rPx}`}
+                fill="none"
+                stroke="#0f172a"
+                strokeWidth="2"
+              />
+              <circle
+                cx={x0 + bx * rPx * 0.5}
+                cy={y0 + by * rPx * 0.5}
+                r="3.1"
+                fill="#0f172a"
+              />
+            </g>
+          );
+        })() : null}
+        {points.map((point, index) => {
+          const px = Number(point.x);
+          const py = Number.isFinite(Number(point.y))
+            ? Number(point.y)
+            : isParabola && Number.isFinite(qa)
+              ? qa * px * px + qb * px + qc
+              : Number.isFinite(a)
+                ? a * px + b
+                : 0;
+          if (!Number.isFinite(px) || !Number.isFinite(py)) return null;
+          const cx = toX(px);
+          const cy = toY(py);
+          return (
+            <g key={`pt-${index}`}>
+              <circle cx={cx} cy={cy} r="6.5" fill="white" />
+              <circle cx={cx} cy={cy} r="4.5" fill="#0f172a" />
+              {point.label ? (
+                <foreignObject
+                  x={cx + (point.dx || 8)}
+                  y={cy + (point.dy || -22)}
+                  width="110"
+                  height="30"
+                >
+                  <div className="inline-block rounded-md bg-white/95 px-1.5 py-0.5 text-[12px] font-semibold leading-none text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-600">
+                    <ArticleRichText text={point.label} />
+                  </div>
+                </foreignObject>
+              ) : null}
+            </g>
+          );
+        })}
+      </svg>
+    </div>
+  );
+}
+
+function LineGraphBlock({ block }) {
+  const noteColors = useNoteColors();
+  const items = Array.isArray(block.items) && block.items.length > 0 ? block.items : [block];
+  const cols =
+    items.length >= 3 ? "lg:grid-cols-3" : items.length === 2 ? "sm:grid-cols-2" : "";
+
+  return (
+    <div className={cn("grid gap-4", cols)}>
+      {items.map((item, index) => (
+        <motion.div
+          key={`${item.title || item.caption || "graph"}-${index}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.28, delay: index * 0.05, ease: "easeOut" }}
+          className={cn("overflow-hidden", noteColors.frame)}
+        >
+          {item.title ? (
+            <p className={cn("border-b border-slate-200 px-4 py-2.5 text-xs font-semibold uppercase tracking-wide dark:border-slate-700", noteColors.accent.text)}>
+              {item.title}
+            </p>
+          ) : null}
+          {item.formula ? (
+            <p className="px-4 pt-3 text-center text-sm font-semibold text-slate-900 dark:text-white">
+              <ArticleRichText text={item.formula} />
+            </p>
+          ) : null}
+          <LineGraphSvg graph={item} />
+          {item.caption ? (
+            <p className="border-t border-slate-200 px-4 py-2.5 text-sm leading-[1.55] text-slate-700 dark:border-slate-700 dark:text-slate-200">
+              <ArticleRichText text={item.caption} />
+            </p>
+          ) : null}
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
 function RectFigureBlock({ block }) {
   const noteColors = useNoteColors();
   const accent = getFormulaAccent(noteColors);
@@ -1004,6 +1373,10 @@ function RectFigureBlock({ block }) {
 function ArticleBlock({ block, articleId, relatedTasks }) {
   const noteColors = useNoteColors();
 
+  if (block.type === "subheading") {
+    return null;
+  }
+
   if (block.type === "text") {
     return (
       <p className="text-base leading-[1.6] text-slate-700 dark:text-slate-200 sm:text-[17px]">
@@ -1071,6 +1444,10 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
     return <SequencePlotsBlock block={block} />;
   }
 
+  if (block.type === "line-graph") {
+    return <LineGraphBlock block={block} />;
+  }
+
   if (block.type === "rect-figure") {
     return <RectFigureBlock block={block} />;
   }
@@ -1091,7 +1468,7 @@ function ArticleBlock({ block, articleId, relatedTasks }) {
     return (
       <RelatedMaturaTasks
         filter={relatedTasks}
-        articleId={articleId}
+        article={{ id: articleId, relatedTasks }}
       />
     );
   }
@@ -1188,6 +1565,11 @@ function GuidedExampleBlock({ block }) {
               <RectFigureDrawing figure={block.figure} compact />
             </div>
           ) : null}
+          {block.lineGraph ? (
+            <div className="pt-1">
+              <LineGraphSvg graph={block.lineGraph} />
+            </div>
+          ) : null}
           <p className={cn("text-[11px] font-semibold uppercase tracking-wide opacity-80", noteColors.accent.text)}>
             {open ? "Kliknij, aby zwinąć rozwiązanie" : "Kliknij, aby zobaczyć rozwiązanie"}
           </p>
@@ -1216,12 +1598,12 @@ function GuidedExampleBlock({ block }) {
                 {(block.steps || []).map((step, index) => (
                   <li
                     key={`${block.title}-${index}`}
-                    className="grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-x-3"
+                    className="flex items-center gap-x-3"
                   >
-                    <span className={cn("mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
+                    <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold", noteColors.accent.solid)}>
                       {index + 1}
                     </span>
-                    <div className="min-w-0 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
+                    <div className="min-w-0 flex-1 rounded-lg bg-slate-50 px-3.5 py-2.5 text-[15px] leading-7 text-slate-700 dark:bg-slate-900/45 dark:text-slate-200 sm:px-4 sm:py-3 sm:text-base [&_.math-text-ui__math-display]:my-3">
                       <ExampleStepContent step={step} />
                     </div>
                   </li>
@@ -1629,34 +2011,78 @@ function normalizeSearchText(value) {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
-function taskMatchesArticleFilter(task, filter) {
-  if (!filter) return false;
+function taskMatchesArticleFilter(task, filter, article) {
   const topic = normalizeSearchText(task.topic);
   const subtopic = normalizeSearchText(task.subtopic);
   const question = normalizeSearchText(task.question);
   const includesAny = (haystack, needles = []) =>
-    needles.some((needle) => haystack.includes(normalizeSearchText(needle)));
+    (needles || []).some((needle) => haystack.includes(normalizeSearchText(needle)));
 
-  const topicHit = includesAny(topic, filter.topicIncludes);
-  const subtopicHit = includesAny(subtopic, filter.subtopicIncludes);
-  const questionHit = includesAny(question, filter.questionIncludes);
-  return topicHit || subtopicHit || questionHit;
+  if (filter && (filter.topicIncludes || filter.subtopicIncludes || filter.questionIncludes)) {
+    const topicHit = includesAny(topic, filter.topicIncludes);
+    const subtopicHit = includesAny(subtopic, filter.subtopicIncludes);
+    const questionHit = includesAny(question, filter.questionIncludes);
+    return topicHit || subtopicHit || questionHit;
+  }
+
+  if (!article) return false;
+  const needles = [article.title, article.topic, article.subtopic].filter(Boolean);
+  return includesAny(topic, needles) || includesAny(subtopic, needles) || includesAny(question, needles);
 }
 
-function RelatedMaturaTasks({ filter, articleId }) {
+function isInjectedTasksSection(section) {
+  const heading = String(section?.heading || "").trim().toLowerCase();
+  return heading === "zadania maturalne" || heading === "zadania mieszane";
+}
+
+function MiniFilterChips({ label, value, options, onChange }) {
+  const noteColors = useNoteColors();
+
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5">
+      <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400 dark:text-slate-500">
+        {label}
+      </span>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-xs font-semibold transition",
+                active
+                  ? noteColors.accent.solid
+                  : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300 dark:hover:border-slate-500",
+              )}
+            >
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const MIXED_TASKS_PER_PAGE = 5;
+
+function RelatedMaturaTasks({ filter, article }) {
   const noteColors = useNoteColors();
   const navigate = useNavigate();
+  const listRef = useRef(null);
+  const skipScrollRef = useRef(true);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
-  const limit = filter?.limit ?? 6;
+  const [levelFilter, setLevelFilter] = useState("all");
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const articleId = article?.id;
 
   useEffect(() => {
-    if (!filter) {
-      setLoading(false);
-      return undefined;
-    }
-
     let cancelled = false;
 
     const loadTasks = async () => {
@@ -1683,8 +2109,7 @@ function RelatedMaturaTasks({ filter, articleId }) {
           (task) =>
             task && task.question && !isStemTask(task) && isMaturalneTask(task),
         )
-        .filter((task) => taskMatchesArticleFilter(task, filter))
-        .slice(0, limit);
+        .filter((task) => taskMatchesArticleFilter(task, filter, article));
 
       setTasks(matched);
       setLoading(false);
@@ -1694,12 +2119,91 @@ function RelatedMaturaTasks({ filter, articleId }) {
     return () => {
       cancelled = true;
     };
-  }, [filter, limit]);
+  }, [filter, article]);
 
-  if (!filter) return null;
+  const filteredTasks = useMemo(
+    () =>
+      tasks
+        .filter((task) => levelFilter === "all" || task.level === levelFilter)
+        .filter((task) => {
+          if (typeFilter === "all") return true;
+          if (typeFilter === "closed") return task.type === "closed";
+          return task.type === "open";
+        }),
+    [tasks, levelFilter, typeFilter],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredTasks.length / MIXED_TASKS_PER_PAGE));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedTasks = useMemo(() => {
+    const start = (safePage - 1) * MIXED_TASKS_PER_PAGE;
+    return filteredTasks.slice(start, start + MIXED_TASKS_PER_PAGE);
+  }, [filteredTasks, safePage]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+    skipScrollRef.current = true;
+  }, [levelFilter, typeFilter]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) setCurrentPage(totalPages);
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (loading) return;
+    if (skipScrollRef.current) {
+      skipScrollRef.current = false;
+      return;
+    }
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [safePage, loading]);
+
+  const tasksUrl = createPageUrl("TaskSets");
+  const tasksState = {
+    filterTopic: article?.topic || undefined,
+    filterSubtopic: article?.subtopic || undefined,
+  };
 
   return (
     <div className="space-y-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-wrap gap-4">
+          <MiniFilterChips
+            label="Poziom"
+            value={levelFilter}
+            onChange={setLevelFilter}
+            options={[
+              { value: "all", label: "Wszystkie" },
+              { value: "ósmoklasisty", label: "E8" },
+              { value: "podstawowy", label: "PP" },
+              { value: "rozszerzony", label: "PR" },
+            ]}
+          />
+          <MiniFilterChips
+            label="Typ"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            options={[
+              { value: "all", label: "Wszystkie" },
+              { value: "closed", label: "Zamknięte" },
+              { value: "open", label: "Otwarte" },
+            ]}
+          />
+        </div>
+        <Link
+          to={tasksUrl}
+          state={tasksState}
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold transition",
+            noteColors.accent.text,
+            noteColors.accent.hoverText,
+          )}
+        >
+          Więcej w zbiorach zadań
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
       {loading ? (
         <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -1709,18 +2213,18 @@ function RelatedMaturaTasks({ filter, articleId }) {
 
       {loadError ? (
         <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
-          Nie udało się wczytać zadań maturalnych.
+          Nie udało się wczytać zadań.
         </p>
       ) : null}
 
-      {!loading && !loadError && tasks.length === 0 ? (
+      {!loading && !loadError && filteredTasks.length === 0 ? (
         <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-800/60 dark:text-slate-300">
-          W bazie nie znaleziono zadań maturalnych pasujących do tego tematu.
+          Brak zadań pasujących do wybranych filtrów. Zmień filtr albo otwórz zbiory zadań.
         </p>
       ) : null}
 
-      <div className="space-y-4">
-        {tasks.map((task, index) => (
+      <div ref={listRef} className="space-y-4 scroll-mt-24">
+        {paginatedTasks.map((task, index) => (
           <motion.div
             key={task.id}
             role="link"
@@ -1757,34 +2261,353 @@ function RelatedMaturaTasks({ filter, articleId }) {
           </motion.div>
         ))}
       </div>
+
+      {!loading && filteredTasks.length > MIXED_TASKS_PER_PAGE ? (
+        <TaskListPagination
+          currentPage={safePage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          ariaLabel="Paginacja zadań mieszanych"
+        />
+      ) : null}
     </div>
   );
 }
 
-function ArticleSection({ section, index, articleId, relatedTasks }) {
-  const noteColors = useNoteColors();
-  const blocks = section.blocks || [];
+function MixedTasksSection({ article, sectionNumber, collapsed, onToggle }) {
+  const expanded = !collapsed;
 
   return (
-    <section className="scroll-mt-24">
-      <div className="mb-5 flex items-baseline gap-3 border-b border-slate-200 pb-3 dark:border-slate-700">
-        <span className={cn("font-mono text-sm font-semibold", noteColors.accent.text)}>
-          {section.number || String(index + 1).padStart(2, "0")}
+    <section
+      id={`sekcja-${sectionNumber}`}
+      className="mt-12 scroll-mt-24 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-700 dark:bg-slate-900/40 sm:p-8"
+    >
+      <SectionHeading
+        number={sectionNumber}
+        title="Zadania mieszane"
+        expanded={expanded}
+        onToggle={onToggle}
+      />
+      <AnimatePresence initial={false}>
+        {expanded ? (
+          <motion.div
+            key="mixed-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <p className="mb-5 text-base leading-[1.6] text-slate-700 dark:text-slate-200 sm:text-[17px]">
+              Zadania z arkuszy powiązane z tą notatką. Filtruj po poziomie i typie albo otwórz pełne zbiory.
+            </p>
+            <RelatedMaturaTasks filter={article?.relatedTasks} article={article} />
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </section>
+  );
+}
+
+function NotePager() {
+  return (
+    <nav
+      aria-label="Nawigacja między notatkami"
+      className="mt-14 grid grid-cols-2 gap-3 border-t border-slate-200 pt-8 dark:border-slate-700"
+    >
+      <div
+        aria-disabled="true"
+        className="flex min-w-0 cursor-not-allowed select-none items-center gap-3 rounded-xl border border-slate-200 bg-slate-100 px-3 py-3 text-slate-400 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-500"
+      >
+        <ArrowLeft className="h-5 w-5 shrink-0" />
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide">Poprzednia</p>
+          <p className="truncate text-sm font-semibold">Wkrótce</p>
+        </div>
+      </div>
+      <div
+        aria-disabled="true"
+        className="flex min-w-0 cursor-not-allowed select-none items-center justify-end gap-3 rounded-xl border border-slate-200 bg-slate-100 px-3 py-3 text-right text-slate-400 dark:border-slate-700 dark:bg-slate-800/70 dark:text-slate-500"
+      >
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-wide">Następna</p>
+          <p className="truncate text-sm font-semibold">Wkrótce</p>
+        </div>
+        <ArrowRight className="h-5 w-5 shrink-0" />
+      </div>
+    </nav>
+  );
+}
+
+function groupSectionBlocks(blocks) {
+  const groups = [];
+  let current = { title: null, blocks: [] };
+
+  (blocks || []).forEach((block) => {
+    if (block?.type === "subheading") {
+      if (current.title || current.blocks.length > 0) groups.push(current);
+      current = { title: block.title || block.content || "", blocks: [] };
+      return;
+    }
+    current.blocks.push(block);
+  });
+
+  if (current.title || current.blocks.length > 0) groups.push(current);
+  return groups;
+}
+
+function getSectionTocEntry(section, index) {
+  const sectionNumber = section.number || String(index + 1);
+  const groups = groupSectionBlocks(section.blocks);
+  const children = [];
+  let subIndex = 0;
+
+  groups.forEach((group) => {
+    if (!group.title) return;
+    subIndex += 1;
+    const subNumber = `${sectionNumber}.${subIndex}`;
+    children.push({
+      number: subNumber,
+      title: group.title,
+      id: `sekcja-${subNumber.replaceAll(".", "-")}`,
+    });
+  });
+
+  return {
+    number: sectionNumber,
+    title: section.heading,
+    id: `sekcja-${sectionNumber}`,
+    children,
+  };
+}
+
+function NoteTableOfContents({ entries, onNavigate }) {
+  const noteColors = useNoteColors();
+  const [expanded, setExpanded] = useState(false);
+
+  if (!entries?.length) return null;
+
+  return (
+    <nav
+      aria-label="Spis treści"
+      className="mb-12 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-700 dark:bg-slate-900/40 sm:p-8"
+    >
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={() => setExpanded((value) => !value)}
+        className={cn("flex w-full items-center gap-2.5 text-left", expanded ? "mb-5" : "mb-0")}
+      >
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
+            noteColors.accent.solid,
+          )}
+        >
+          <List className="h-5 w-5" />
         </span>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-2xl">
-          <ArticleRichText text={section.heading} />
+        <h2 className="min-w-0 flex-1 text-lg font-bold tracking-tight text-slate-900 dark:text-white sm:text-xl">
+          Spis treści
         </h2>
-      </div>
-      <div className="space-y-5">
-        {blocks.map((block, blockIndex) => (
-          <ArticleBlock
-            key={`${section.heading}-${blockIndex}`}
-            block={block}
-            articleId={articleId}
-            relatedTasks={relatedTasks}
-          />
-        ))}
-      </div>
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 transition-transform duration-200",
+            noteColors.accent.text,
+            expanded ? "rotate-0" : "-rotate-90",
+          )}
+        />
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded ? (
+          <motion.div
+            key="toc-body"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <ol className="space-y-1">
+              {entries.map((entry) => (
+                <li key={entry.id}>
+                  <button
+                    type="button"
+                    onClick={() => onNavigate(entry.id, entry.id)}
+                    className={cn(
+                      "flex w-full items-baseline gap-2.5 rounded-lg px-2 py-1.5 text-left transition",
+                      noteColors.accent.hoverBg,
+                    )}
+                  >
+                    <span className={cn("w-8 shrink-0 font-mono text-xs font-bold", noteColors.accent.text)}>
+                      {entry.number}
+                    </span>
+                    <span className="min-w-0 text-sm font-semibold text-slate-800 dark:text-slate-100 sm:text-[15px]">
+                      <ArticleRichText text={entry.title} />
+                    </span>
+                  </button>
+                  {entry.children?.length ? (
+                    <ol className={cn("ml-4 space-y-0.5 border-l-2 py-1 pl-4 sm:ml-6", noteColors.accent.divider)}>
+                      {entry.children.map((child) => (
+                        <li key={child.id}>
+                          <button
+                            type="button"
+                            onClick={() => onNavigate(child.id, entry.id)}
+                            className={cn(
+                              "flex w-full items-baseline gap-2 rounded-lg px-2 py-1 text-left transition",
+                              noteColors.accent.hoverBg,
+                            )}
+                          >
+                            <span className={cn("w-9 shrink-0 font-mono text-[11px] font-semibold", noteColors.accent.text)}>
+                              {child.number}
+                            </span>
+                            <span className="min-w-0 text-sm text-slate-600 dark:text-slate-300">
+                              <ArticleRichText text={child.title} />
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </nav>
+  );
+}
+
+function SectionHeading({ number, title, expanded = true, onToggle }) {
+  const noteColors = useNoteColors();
+
+  const inner = (
+    <>
+      {number ? (
+        <span
+          className={cn(
+            "flex h-11 min-w-11 shrink-0 items-center justify-center rounded-xl px-2.5 font-mono text-base font-bold shadow-sm",
+            noteColors.accent.solid,
+          )}
+        >
+          {number}
+        </span>
+      ) : null}
+      <h2
+        className={cn(
+          "min-w-0 flex-1 border-b-2 pb-2.5 text-left text-xl font-bold tracking-tight text-slate-900 dark:border-slate-600 dark:text-white sm:text-2xl",
+          noteColors.accent.divider,
+        )}
+      >
+        {typeof title === "string" ? <ArticleRichText text={title} /> : title}
+      </h2>
+      {onToggle ? (
+        <ChevronDown
+          className={cn(
+            "h-5 w-5 shrink-0 transition-transform duration-200",
+            noteColors.accent.text,
+            expanded ? "rotate-0" : "-rotate-90",
+          )}
+        />
+      ) : null}
+    </>
+  );
+
+  if (onToggle) {
+    return (
+      <button
+        type="button"
+        aria-expanded={expanded}
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-3.5 text-left",
+          expanded ? "mb-7" : "mb-0",
+        )}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return <div className="mb-7 flex items-center gap-3.5">{inner}</div>;
+}
+
+function ArticleSection({ section, index, articleId, relatedTasks, collapsed, onToggle }) {
+  const noteColors = useNoteColors();
+  const sectionNumber = section.number || String(index + 1);
+  const groups = groupSectionBlocks(section.blocks);
+  const expanded = !collapsed;
+  let subIndex = 0;
+
+  return (
+    <section
+      id={`sekcja-${sectionNumber}`}
+      className={cn(
+        "scroll-mt-24 rounded-2xl border border-slate-200 bg-slate-50/70 p-5 dark:border-slate-700 dark:bg-slate-900/40 sm:p-8",
+        index > 0 ? "mt-12" : "",
+      )}
+    >
+      <SectionHeading
+        number={sectionNumber}
+        title={section.heading}
+        expanded={expanded}
+        onToggle={onToggle}
+      />
+      <AnimatePresence initial={false}>
+        {expanded ? (
+          <motion.div
+            key={`${sectionNumber}-body`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.28, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="space-y-0">
+              {groups.map((group, groupIndex) => {
+                const numbered = Boolean(group.title);
+                if (numbered) subIndex += 1;
+                const subNumber = numbered ? `${sectionNumber}.${subIndex}` : null;
+                return (
+                  <div
+                    key={`${sectionNumber}-${groupIndex}`}
+                    className={cn("space-y-4", groupIndex > 0 ? "mt-8 border-t-2 border-slate-200 pt-8 dark:border-slate-700" : "")}
+                  >
+                    {numbered ? (
+                      <h3
+                        id={`sekcja-${String(subNumber).replaceAll(".", "-")}`}
+                        className="flex scroll-mt-24 items-center gap-2.5"
+                      >
+                        <span
+                          className={cn(
+                            "inline-flex h-7 min-w-[2.35rem] shrink-0 items-center justify-center rounded-lg px-1.5 font-mono text-xs font-bold",
+                            noteColors.accent.solid,
+                          )}
+                        >
+                          {subNumber}
+                        </span>
+                        <span className="text-base font-semibold tracking-tight text-slate-900 dark:text-white sm:text-lg">
+                          <ArticleRichText text={group.title} />
+                        </span>
+                      </h3>
+                    ) : null}
+                    <div className="space-y-5">
+                      {group.blocks.map((block, blockIndex) => (
+                        <ArticleBlock
+                          key={`${section.heading}-${groupIndex}-${blockIndex}`}
+                          block={block}
+                          articleId={articleId}
+                          relatedTasks={relatedTasks}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </section>
   );
 }
@@ -1823,6 +2646,51 @@ export default function ArticleView() {
     () => filterArticleByContentModes(rawArticle, contentModes),
     [rawArticle, contentModes],
   );
+  const contentSections = useMemo(
+    () => (article?.sections || []).filter((section) => !isInjectedTasksSection(section)),
+    [article],
+  );
+  const mixedSectionNumber = useMemo(() => {
+    const lastNumber = Number(contentSections[contentSections.length - 1]?.number);
+    if (Number.isFinite(lastNumber) && lastNumber > 0) return String(lastNumber + 1);
+    return String(contentSections.length + 1);
+  }, [contentSections]);
+  const tocEntries = useMemo(() => {
+    const entries = contentSections.map((section, index) => getSectionTocEntry(section, index));
+    entries.push({
+      number: mixedSectionNumber,
+      title: "Zadania mieszane",
+      id: `sekcja-${mixedSectionNumber}`,
+      children: [],
+    });
+    return entries;
+  }, [contentSections, mixedSectionNumber]);
+  const [collapsedIds, setCollapsedIds] = useState(() => new Set());
+
+  useEffect(() => {
+    setCollapsedIds(new Set());
+  }, [article?.id]);
+
+  const toggleSection = useCallback((sectionId) => {
+    setCollapsedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sectionId)) next.delete(sectionId);
+      else next.add(sectionId);
+      return next;
+    });
+  }, []);
+
+  const expandAndScroll = useCallback((targetId, sectionId) => {
+    setCollapsedIds((prev) => {
+      if (!prev.has(sectionId)) return prev;
+      const next = new Set(prev);
+      next.delete(sectionId);
+      return next;
+    });
+    window.setTimeout(() => {
+      document.getElementById(targetId)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 320);
+  }, []);
   const formulas = useMemo(() => collectArticleFormulas(rawArticle), [rawArticle]);
   const [previewLabel, setPreviewLabel] = useState(null);
   const [focusedLabel, setFocusedLabel] = useState(null);
@@ -1997,16 +2865,29 @@ export default function ArticleView() {
             ) : null}
           </header>
 
-          <div className="space-y-10">
-            {(article.sections || []).map((section, index) => (
-              <ArticleSection
-                key={`${article.id}-${section.heading}`}
-                section={section}
-                index={index}
-                articleId={article.id}
-                relatedTasks={article.relatedTasks}
-              />
-            ))}
+          <div className="space-y-0">
+            <NoteTableOfContents entries={tocEntries} onNavigate={expandAndScroll} />
+            {contentSections.map((section, index) => {
+              const sectionId = `sekcja-${section.number || String(index + 1)}`;
+              return (
+                <ArticleSection
+                  key={`${article.id}-${section.heading}`}
+                  section={section}
+                  index={index}
+                  articleId={article.id}
+                  relatedTasks={article.relatedTasks}
+                  collapsed={collapsedIds.has(sectionId)}
+                  onToggle={() => toggleSection(sectionId)}
+                />
+              );
+            })}
+            <MixedTasksSection
+              article={rawArticle}
+              sectionNumber={mixedSectionNumber}
+              collapsed={collapsedIds.has(`sekcja-${mixedSectionNumber}`)}
+              onToggle={() => toggleSection(`sekcja-${mixedSectionNumber}`)}
+            />
+            <NotePager />
           </div>
         </motion.article>
       </div>

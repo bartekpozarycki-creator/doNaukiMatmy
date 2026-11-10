@@ -42,9 +42,9 @@
   }
 
   .math-text-ui--flow .math-text-ui__math-display {
-    display: inline;
-    margin: 0;
-    vertical-align: baseline;
+    display: inline-block;
+    margin: 0.15em 0;
+    vertical-align: middle;
     max-width: 100%;
     overflow-x: auto;
   }
@@ -463,6 +463,15 @@ button:focus-visible {
 .math-text-ui .katex {
   font: normal 1em / inherit KaTeX_Main, "Times New Roman", serif;
   line-height: inherit;
+}
+
+.math-text-ui .katex-mathml {
+  position: absolute;
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .math-text-ui--flow .katex-display {
