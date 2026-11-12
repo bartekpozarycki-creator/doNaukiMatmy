@@ -1,4 +1,43 @@
-﻿function parameterSchemeBlocks({ intro, tasks }) {
+﻿function areaVertexGraph({
+  a = -1,
+  b,
+  c = 0,
+  xMax,
+  yMax,
+  yTickStep,
+  vertex,
+  variable = "x",
+}) {
+  return {
+    parabola: true,
+    a,
+    b,
+    c,
+    xMin: 0,
+    xMax,
+    yMin: 0,
+    yMax,
+    xTickStep: xMax >= 24 ? 5 : xMax >= 12 ? 2 : 1,
+    yTickStep,
+    width: 280,
+    height: 200,
+    padL: 44,
+    showAxis: true,
+    xLabel: variable,
+    yLabel: "P",
+    points: [
+      {
+        x: vertex[0],
+        y: vertex[1],
+        label: `$W=(${vertex[0]},${vertex[1]})$`,
+        dx: 10,
+        dy: -26,
+      },
+    ],
+  };
+}
+
+function parameterSchemeBlocks({ intro, tasks }) {
   return [
     {
       type: "subheading",
@@ -6311,12 +6350,12 @@ export const sampleArticles = [
     id: "artykul-funkcja-kwadratowa",
     title: "Funkcja kwadratowa",
     description:
-      "Postać ogólna, wyróżnik, miejsca zerowe, parabola, postać kanoniczna i iloczynowa.",
+      "Postać ogólna, wyróżnik, miejsca zerowe, parabola, postać kanoniczna i iloczynowa oraz optymalizacja.",
     topic: "Funkcje",
     subtopic: "Funkcja kwadratowa",
     contentModes: ["podstawa"],
     levels: ["podstawowy"],
-    readMinutes: 14,
+    readMinutes: 24,
     relatedTasks: {
       topicIncludes: ["funkcja kwadratowa", "kwadratow"],
       subtopicIncludes: ["funkcja kwadratowa", "własności funkcji kwadratowej", "kwadratow"],
@@ -6679,6 +6718,29 @@ export const sampleArticles = [
             ],
           },
           {
+            type: "line-graph",
+            contentLevel: "podstawa",
+            items: [
+              {
+                title: "Wierzchołek na wykresie",
+                formula: "$f(x)=x^2-4x+3$",
+                parabola: true,
+                a: 1,
+                b: -4,
+                c: 3,
+                xMin: -1,
+                xMax: 5,
+                yMin: -2,
+                yMax: 6,
+                showAxis: true,
+                points: [
+                  { x: 2, y: -1, label: "$W=(2,-1)$", dx: 14, dy: -24 },
+                ],
+                caption: "Wierzchołek $W=(p,q)$ to najniższy punkt tej paraboli, bo $a>0$.",
+              },
+            ],
+          },
+          {
             type: "subheading",
             contentLevel: "podstawa",
             title: "Ramiona, oś i przecięcie z $OY$",
@@ -6857,6 +6919,542 @@ export const sampleArticles = [
               },
             ],
           }),
+        ],
+      },
+      {
+        number: "6",
+        heading: "Optymalizacja funkcji kwadratowej",
+        contentLevel: "podstawa",
+        blocks: [
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie na start",
+            prompt:
+              "Prostokąt ma dwa sąsiednie boki o długościach $x$ oraz $10-x$, gdzie $0<x<10$. Wyznacz wartość $x$, dla której pole tego prostokąta jest największe. Oblicz to największe pole.",
+            figure: {
+              scale: 26,
+              parts: [{ x: 0, y: 0, w: 5.4, h: 2.9 }],
+              labels: [
+                { x: 2.7, y: -0.42, text: "$x$" },
+                { x: -0.85, y: 1.45, text: "$10-x$" },
+              ],
+              caption: "Suma tych dwóch boków wynosi $10$.",
+            },
+            steps: [
+              {
+                text: "Pole to długość razy szerokość, więc $$P(x)=x\\cdot(10-x)=10x-x^2.$$ Bok $x$ musi być między $0$ a $10$.",
+                figure: {
+                  scale: 24,
+                  parts: [{ x: 0, y: 0, w: 5.4, h: 2.9 }],
+                  labels: [
+                    { x: 2.7, y: -0.42, text: "$x$" },
+                    { x: -0.85, y: 1.45, text: "$10-x$" },
+                    { x: 2.7, y: 1.45, text: "$P$" },
+                  ],
+                },
+              },
+              {
+                text: "To funkcja kwadratowa $P(x)=10x-x^2$. Przy $x^2$ stoi $a=-1$, więc ramiona idą w dół. Wierzchołek ze wzoru (5): $$p=-\\dfrac{10}{2\\cdot(-1)}=5.$$ Na wykresie widać, że w wierzchołku pole jest **największe**.",
+                lineGraph: areaVertexGraph({
+                  b: 10,
+                  xMax: 10,
+                  yMax: 28,
+                  yTickStep: 5,
+                  vertex: [5, 25],
+                }),
+              },
+              {
+                text: "Gdy $x=5$, drugi bok też ma $10-5=5$. Dostajemy kwadrat. Pole: $5\\cdot 5=25$.",
+                figure: {
+                  scale: 24,
+                  parts: [{ x: 0, y: 0, w: 3.4, h: 3.4 }],
+                  labels: [
+                    { x: 1.7, y: -0.42, text: "$5$" },
+                    { x: -0.4, y: 1.7, text: "$5$" },
+                  ],
+                  caption: "Kwadrat ma największe pole.",
+                },
+              },
+            ],
+            result: "Największe pole jest dla $x=5$. Prostokąt jest wtedy kwadratem, a pole wynosi $25$.",
+            cleanSolution: [
+              "$P(x)=10x-x^2$",
+              "$p=5$",
+              "$P=25$",
+            ],
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "W takich zadaniach powtarza się ten sam pomysł. Najpierw zapisujesz pole (albo inną wielkość) wzorem z jedną literką. Dostajesz funkcję kwadratową. Największą albo najmniejszą wartość czytasz z wierzchołka, tak jak wyżej.",
+          },
+          {
+            type: "list",
+            contentLevel: "podstawa",
+            items: [
+              "Jeśli przy $x^2$ stoi minus ($a<0$), szukamy **największej** wartości.",
+              "Jeśli przy $x^2$ stoi plus ($a>0$), szukamy **najmniejszej** wartości.",
+              "Pierwszą współrzędną wierzchołka liczymy ze wzoru (5): $p=-\\dfrac{b}{2a}$.",
+              "Na koniec sprawdź, czy to $x$ ma sens. Pamiętaj, że ani pola, ani boki figur geometrcznych nie mogą być ujemne...",
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Pola różnych figur",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Poniżej zadania o prostokącie, trójkątach i rombie. Schemat jest ten sam: zapisz pole jedną literką i policz wierzchołek.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 1",
+            prompt:
+              "Suma długości dwóch sąsiednich boków prostokąta jest równa $16$. Wyznacz długości boków tego prostokąta, przy których jego pole jest największe. Oblicz to największe pole.",
+            figure: {
+              scale: 26,
+              parts: [{ x: 0, y: 0, w: 5.5, h: 2.8 }],
+              labels: [
+                { x: 2.75, y: -0.42, text: "$x$" },
+                { x: -0.85, y: 1.4, text: "$16-x$" },
+              ],
+              caption: "Boki: $x$ oraz $16-x$.",
+            },
+            steps: [
+              {
+                text: "Pole: $$P(x)=x\\cdot(16-x)=16x-x^2.$$",
+                figure: {
+                  scale: 22,
+                  parts: [{ x: 0, y: 0, w: 5.5, h: 2.8 }],
+                  labels: [
+                    { x: 2.75, y: -0.42, text: "$x$" },
+                    { x: -0.85, y: 1.4, text: "$16-x$" },
+                    { x: 2.75, y: 1.4, text: "$P$" },
+                  ],
+                },
+              },
+              {
+                text: "Przy $x^2$ stoi $a=-1<0$, więc w wierzchołku pole jest największe. Ze wzoru (5): $$p=-\\dfrac{16}{2\\cdot(-1)}=8.$$ Na wykresie $W=(8,64)$.",
+                lineGraph: areaVertexGraph({
+                  b: 16,
+                  xMax: 16,
+                  yMax: 72,
+                  yTickStep: 16,
+                  vertex: [8, 64],
+                }),
+              },
+              {
+                text: "Drugi bok: $16-8=8$. To kwadrat $8$ na $8$. Pole: $8\\cdot 8=64$.",
+                figure: {
+                  scale: 22,
+                  parts: [{ x: 0, y: 0, w: 3.4, h: 3.4 }],
+                  labels: [
+                    { x: 1.7, y: -0.42, text: "$8$" },
+                    { x: -0.4, y: 1.7, text: "$8$" },
+                  ],
+                },
+              },
+            ],
+            result: "Boki $8$ i $8$, pole $64$.",
+            cleanSolution: [
+              "$P(x)=16x-x^2$",
+              "$p=8$",
+              "$P=64$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 2",
+            prompt:
+              "Suma długości przyprostokątnych trójkąta prostokątnego jest równa $12$. Wyznacz długości tych przyprostokątnych, przy których pole trójkąta jest największe. Oblicz to największe pole.",
+            figure: {
+              scale: 26,
+              outline: [
+                { x: 0, y: 3.4 },
+                { x: 5.6, y: 3.4 },
+                { x: 0, y: 0 },
+              ],
+              rightAngles: [{ x: 0, y: 3.4, dir: "ne", size: 0.52 }],
+              labels: [
+                { x: 2.8, y: 3.85, text: "$x$" },
+                { x: -0.85, y: 1.7, text: "$12-x$" },
+              ],
+              caption: "Przyprostokątne: $x$ oraz $12-x$.",
+            },
+            steps: [
+              {
+                text: "Pole trójkąta prostokątnego to połowa iloczynu przyprostokątnych: $$P(x)=\\dfrac{1}{2}x\\cdot(12-x)=6x-\\dfrac{1}{2}x^2.$$",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 0, y: 3.4 },
+                    { x: 5.6, y: 3.4 },
+                    { x: 0, y: 0 },
+                  ],
+                  rightAngles: [{ x: 0, y: 3.4, dir: "ne", size: 0.52 }],
+                  labels: [
+                    { x: 2.8, y: 3.85, text: "$x$" },
+                    { x: -0.85, y: 1.7, text: "$12-x$" },
+                    { x: 1.7, y: 2.35, text: "$P$" },
+                  ],
+                },
+              },
+              {
+                text: "Przy $x^2$ stoi $a=-\\dfrac{1}{2}<0$, więc w wierzchołku pole jest największe. Ze wzoru (5): $$p=-\\dfrac{6}{2\\cdot\\left(-\\dfrac{1}{2}\\right)}=6.$$ Na wykresie $W=(6,18)$.",
+                lineGraph: areaVertexGraph({
+                  a: -0.5,
+                  b: 6,
+                  xMax: 12,
+                  yMax: 22,
+                  yTickStep: 6,
+                  vertex: [6, 18],
+                }),
+              },
+              {
+                text: "Druga przyprostokątna: $12-6=6$. Pole: $\\dfrac{1}{2}\\cdot 6\\cdot 6=18$.",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 0, y: 3.4 },
+                    { x: 3.4, y: 3.4 },
+                    { x: 0, y: 0 },
+                  ],
+                  rightAngles: [{ x: 0, y: 3.4, dir: "ne", size: 0.52 }],
+                  labels: [
+                    { x: 1.7, y: 3.85, text: "$6$" },
+                    { x: -0.4, y: 1.7, text: "$6$" },
+                  ],
+                },
+              },
+            ],
+            result: "Przyprostokątne $6$ i $6$, pole $18$.",
+            cleanSolution: [
+              "$P(x)=6x-\\dfrac{1}{2}x^2$",
+              "$p=6$",
+              "$P=18$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 3",
+            prompt:
+              "Trójkąt ma podstawę o długości $x$ oraz wysokość opuszczoną na tę podstawę o długości $16-x$, gdzie $0<x<16$. Wyznacz wartość $x$, dla której pole tego trójkąta jest największe. Oblicz to największe pole.",
+            figure: {
+              scale: 26,
+              outline: [
+                { x: 0, y: 3.6 },
+                { x: 6.4, y: 3.6 },
+                { x: 3.2, y: 0 },
+              ],
+              lines: [{ x1: 3.2, y1: 0, x2: 3.2, y2: 3.6, dashed: true }],
+              labels: [
+                { x: 3.2, y: 4.05, text: "$x$" },
+                { x: 3.85, y: 1.8, text: "$16-x$" },
+              ],
+              caption: "Podstawa $x$, wysokość $16-x$.",
+            },
+            steps: [
+              {
+                text: "Pole trójkąta: $$P(x)=\\dfrac{1}{2}x\\cdot(16-x)=8x-\\dfrac{1}{2}x^2.$$",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 0, y: 3.6 },
+                    { x: 6.4, y: 3.6 },
+                    { x: 3.2, y: 0 },
+                  ],
+                  lines: [{ x1: 3.2, y1: 0, x2: 3.2, y2: 3.6, dashed: true }],
+                  labels: [
+                    { x: 3.2, y: 4.05, text: "$x$" },
+                    { x: 3.85, y: 1.8, text: "$16-x$" },
+                    { x: 1.7, y: 2.5, text: "$P$" },
+                  ],
+                },
+              },
+              {
+                text: "Przy $x^2$ stoi $a=-\\dfrac{1}{2}<0$, więc w wierzchołku pole jest największe. Ze wzoru (5): $$p=-\\dfrac{8}{2\\cdot\\left(-\\dfrac{1}{2}\\right)}=8.$$ Na wykresie $W=(8,32)$.",
+                lineGraph: areaVertexGraph({
+                  a: -0.5,
+                  b: 8,
+                  xMax: 16,
+                  yMax: 36,
+                  yTickStep: 8,
+                  vertex: [8, 32],
+                }),
+              },
+              {
+                text: "Wysokość: $16-8=8$. Pole: $\\dfrac{1}{2}\\cdot 8\\cdot 8=32$.",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 0, y: 3.6 },
+                    { x: 6.4, y: 3.6 },
+                    { x: 3.2, y: 0 },
+                  ],
+                  lines: [{ x1: 3.2, y1: 0, x2: 3.2, y2: 3.6, dashed: true }],
+                  labels: [
+                    { x: 3.2, y: 4.05, text: "$8$" },
+                    { x: 3.7, y: 1.8, text: "$8$" },
+                  ],
+                },
+              },
+            ],
+            result: "Podstawa $8$, wysokość $8$, pole $32$.",
+            cleanSolution: [
+              "$P(x)=8x-\\dfrac{1}{2}x^2$",
+              "$p=8$",
+              "$P=32$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 4",
+            prompt:
+              "Suma długości przekątnych rombu jest równa $20$. Wyznacz długości tych przekątnych, przy których pole rombu jest największe. Oblicz to największe pole.",
+            figure: {
+              scale: 26,
+              outline: [
+                { x: 3.2, y: 0 },
+                { x: 6.4, y: 2.1 },
+                { x: 3.2, y: 4.2 },
+                { x: 0, y: 2.1 },
+              ],
+              lines: [
+                { x1: 0, y1: 2.1, x2: 6.4, y2: 2.1, dashed: true },
+                { x1: 3.2, y1: 0, x2: 3.2, y2: 4.2, dashed: true },
+              ],
+              labels: [
+                { x: 4.9, y: 1.65, text: "$x$" },
+                { x: 3.75, y: 0.7, text: "$20-x$" },
+              ],
+              caption: "Przekątne rombu: $x$ oraz $20-x$.",
+            },
+            steps: [
+              {
+                text: "Pole rombu to połowa iloczynu przekątnych. Niech jedna przekątna ma długość $x$, wtedy druga ma $20-x$. Stąd $$P(x)=\\dfrac{1}{2}x\\cdot(20-x)=10x-\\dfrac{1}{2}x^2.$$",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 3.2, y: 0 },
+                    { x: 6.4, y: 2.1 },
+                    { x: 3.2, y: 4.2 },
+                    { x: 0, y: 2.1 },
+                  ],
+                  lines: [
+                    { x1: 0, y1: 2.1, x2: 6.4, y2: 2.1, dashed: true },
+                    { x1: 3.2, y1: 0, x2: 3.2, y2: 4.2, dashed: true },
+                  ],
+                  labels: [
+                    { x: 4.9, y: 1.65, text: "$x$" },
+                    { x: 3.75, y: 0.7, text: "$20-x$" },
+                    { x: 4.7, y: 3.1, text: "$P$" },
+                  ],
+                },
+              },
+              {
+                text: "Przy $x^2$ stoi $a=-\\dfrac{1}{2}<0$, więc w wierzchołku pole jest największe. Ze wzoru (5): $$p=-\\dfrac{10}{2\\cdot\\left(-\\dfrac{1}{2}\\right)}=10.$$ Na wykresie $W=(10,50)$.",
+                lineGraph: areaVertexGraph({
+                  a: -0.5,
+                  b: 10,
+                  xMax: 20,
+                  yMax: 56,
+                  yTickStep: 10,
+                  vertex: [10, 50],
+                }),
+              },
+              {
+                text: "Druga przekątna: $20-10=10$. Pole: $\\dfrac{1}{2}\\cdot 10\\cdot 10=50$. Równe przekątne oznaczają, że romb jest kwadratem.",
+                figure: {
+                  scale: 22,
+                  outline: [
+                    { x: 2.4, y: 0 },
+                    { x: 4.8, y: 2.4 },
+                    { x: 2.4, y: 4.8 },
+                    { x: 0, y: 2.4 },
+                  ],
+                  lines: [
+                    { x1: 0, y1: 2.4, x2: 4.8, y2: 2.4, dashed: true },
+                    { x1: 2.4, y1: 0, x2: 2.4, y2: 4.8, dashed: true },
+                  ],
+                  labels: [
+                    { x: 3.7, y: 2.0, text: "$10$" },
+                    { x: 2.85, y: 0.85, text: "$10$" },
+                  ],
+                },
+              },
+            ],
+            result: "Przekątne $10$ i $10$, pole $50$. Romb jest wtedy kwadratem.",
+            cleanSolution: [
+              "$P(x)=10x-\\dfrac{1}{2}x^2$",
+              "$p=10$",
+              "$P=50$",
+            ],
+          },
+          {
+            type: "subheading",
+            contentLevel: "podstawa",
+            title: "Wybiegi ze wspólną ścianą",
+          },
+          {
+            type: "text",
+            contentLevel: "podstawa",
+            content:
+              "Czasem wybiegi stoją obok siebie i dzielą ścianę. Tę wspólną ścianę liczymy w siatce tylko raz. Reszta jest taka sama: zapisujesz pole i liczysz wierzchołek.",
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 1",
+            prompt:
+              "Na płaskiej powierzchni należy zbudować ogrodzenie z siatki wydzielające dwa identyczne wybiegi o wspólnej ścianie wewnętrznej. Podstawą każdego z tych dwóch wybiegów jest prostokąt o bokach $x$ oraz $y$ (jak pokazano na rysunku). Do wykonania tego ogrodzenia należy zużyć $24$ metry bieżące siatki. Oblicz wymiary $x$ oraz $y$ jednego wybiegu, przy których suma pól podstaw tych dwóch wybiegów będzie największa. W obliczeniach pomiń szerokość wejścia na każdy z wybiegów.",
+            figure: {
+              scale: 24,
+              parts: [{ x: 0, y: 0, w: 6.4, h: 3.5, dashed: true }],
+              lines: [{ x1: 3.2, y1: 0, x2: 3.2, y2: 3.5, dashed: true }],
+              labels: [
+                { x: 1.6, y: -0.45, text: "$y$" },
+                { x: 4.8, y: -0.45, text: "$y$" },
+                { x: -0.4, y: 1.75, text: "$x$" },
+                { x: 1.6, y: 1.75, text: "1" },
+                { x: 4.8, y: 1.75, text: "2" },
+              ],
+              caption: "Dwa jednakowe wybiegi. Środkowa ściana jest wspólna, więc liczymy ją raz.",
+            },
+            steps: [
+              {
+                text: "Liczymy siatkę. Pionowo są trzy odcinki o długości $x$ (dwa skrajne i jeden wspólny). Poziomo dwa odcinki o długości $2y$. Razem $$3x+4y=24.$$",
+                figure: {
+                  scale: 22,
+                  parts: [{ x: 0, y: 0, w: 6.4, h: 3.5, dashed: true }],
+                  lines: [{ x1: 3.2, y1: 0, x2: 3.2, y2: 3.5, dashed: true }],
+                  labels: [
+                    { x: 1.6, y: -0.45, text: "$y$" },
+                    { x: 4.8, y: -0.45, text: "$y$" },
+                    { x: -0.4, y: 1.75, text: "$x$" },
+                  ],
+                },
+              },
+              "Z $3x+4y=24$ mamy $y=\\dfrac{24-3x}{4}$. Suma pól: $$P=2xy=2x\\cdot\\dfrac{24-3x}{4}=\\dfrac{x(24-3x)}{2}=12x-\\dfrac{3}{2}x^2.$$",
+              {
+                text: "Przy $x^2$ stoi $a=-\\dfrac{3}{2}<0$, więc w wierzchołku jest maksimum. Ze wzoru (5): $$p=-\\dfrac{12}{2\\cdot\\left(-\\dfrac{3}{2}\\right)}=4.$$ Na wykresie $W=(4,24)$.",
+                lineGraph: areaVertexGraph({
+                  a: -1.5,
+                  b: 12,
+                  xMax: 8,
+                  yMax: 28,
+                  yTickStep: 4,
+                  vertex: [4, 24],
+                }),
+              },
+              {
+                text: "Gdy $x=4$, wtedy $y=\\dfrac{24-12}{4}=3$. Suma pól: $2\\cdot 4\\cdot 3=24$.",
+                figure: {
+                  scale: 22,
+                  parts: [{ x: 0, y: 0, w: 6.0, h: 4.0, dashed: true }],
+                  lines: [{ x1: 3.0, y1: 0, x2: 3.0, y2: 4.0, dashed: true }],
+                  labels: [
+                    { x: 1.5, y: -0.45, text: "$3$" },
+                    { x: 4.5, y: -0.45, text: "$3$" },
+                    { x: -0.4, y: 2.0, text: "$4$" },
+                  ],
+                },
+              },
+            ],
+            result: "Jeden wybieg ma boki $4$ i $3$. Suma pól wynosi $24$.",
+            cleanSolution: [
+              "$3x+4y=24$",
+              "$P(x)=12x-\\dfrac{3}{2}x^2$",
+              "$x=4$, $y=3$",
+            ],
+          },
+          {
+            type: "guided-example",
+            contentLevel: "podstawa",
+            title: "Zadanie 2",
+            prompt:
+              "Na płaskiej powierzchni należy zbudować ogrodzenie z siatki wydzielające trzy identyczne wybiegi o wspólnych ścianach wewnętrznych. Podstawą każdego z tych trzech wybiegów jest prostokąt o bokach $x$ oraz $y$ (jak pokazano na rysunku). Do wykonania tego ogrodzenia należy zużyć $24$ metry bieżące siatki. Oblicz wymiary $x$ oraz $y$ jednego wybiegu, przy których suma pól podstaw tych trzech wybiegów będzie największa. W obliczeniach pomiń szerokość wejścia na każdy z wybiegów.",
+            figure: {
+              scale: 22,
+              parts: [{ x: 0, y: 0, w: 9.6, h: 3.4, dashed: true }],
+              lines: [
+                { x1: 3.2, y1: 0, x2: 3.2, y2: 3.4, dashed: true },
+                { x1: 6.4, y1: 0, x2: 6.4, y2: 3.4, dashed: true },
+              ],
+              labels: [
+                { x: 1.6, y: -0.45, text: "$y$" },
+                { x: 4.8, y: -0.45, text: "$y$" },
+                { x: 8.0, y: -0.45, text: "$y$" },
+                { x: -0.4, y: 1.7, text: "$x$" },
+                { x: 1.6, y: 1.7, text: "1" },
+                { x: 4.8, y: 1.7, text: "2" },
+                { x: 8.0, y: 1.7, text: "3" },
+              ],
+              caption: "Trzy jednakowe wybiegi. Dwie ściany w środku są wspólne.",
+            },
+            steps: [
+              {
+                text: "Pionowo są cztery odcinki o długości $x$. Poziomo dwa odcinki o długości $3y$. Razem $$4x+6y=24.$$ Dzielimy przez $2$: $2x+3y=12$.",
+                figure: {
+                  scale: 20,
+                  parts: [{ x: 0, y: 0, w: 9.6, h: 3.4, dashed: true }],
+                  lines: [
+                    { x1: 3.2, y1: 0, x2: 3.2, y2: 3.4, dashed: true },
+                    { x1: 6.4, y1: 0, x2: 6.4, y2: 3.4, dashed: true },
+                  ],
+                  labels: [
+                    { x: 1.6, y: -0.45, text: "$y$" },
+                    { x: 4.8, y: -0.45, text: "$y$" },
+                    { x: 8.0, y: -0.45, text: "$y$" },
+                    { x: -0.4, y: 1.7, text: "$x$" },
+                  ],
+                },
+              },
+              "Z $2x+3y=12$ mamy $y=\\dfrac{12-2x}{3}$. Suma pól: $$P=3xy=3x\\cdot\\dfrac{12-2x}{3}=x(12-2x)=12x-2x^2.$$",
+              {
+                text: "Przy $x^2$ stoi $a=-2<0$. Ze wzoru (5): $$p=-\\dfrac{12}{2\\cdot(-2)}=3.$$ Na wykresie $W=(3,18)$.",
+                lineGraph: areaVertexGraph({
+                  a: -2,
+                  b: 12,
+                  xMax: 6,
+                  yMax: 22,
+                  yTickStep: 6,
+                  vertex: [3, 18],
+                }),
+              },
+              {
+                text: "Gdy $x=3$, wtedy $y=\\dfrac{12-6}{3}=2$. Suma pól: $3\\cdot 3\\cdot 2=18$.",
+                figure: {
+                  scale: 20,
+                  parts: [{ x: 0, y: 0, w: 7.2, h: 3.6, dashed: true }],
+                  lines: [
+                    { x1: 2.4, y1: 0, x2: 2.4, y2: 3.6, dashed: true },
+                    { x1: 4.8, y1: 0, x2: 4.8, y2: 3.6, dashed: true },
+                  ],
+                  labels: [
+                    { x: 1.2, y: -0.45, text: "$2$" },
+                    { x: 3.6, y: -0.45, text: "$2$" },
+                    { x: 6.0, y: -0.45, text: "$2$" },
+                    { x: -0.4, y: 1.8, text: "$3$" },
+                  ],
+                },
+              },
+            ],
+            result: "Jeden wybieg ma boki $3$ i $2$. Suma pól wynosi $18$.",
+            cleanSolution: [
+              "$4x+6y=24$",
+              "$P(x)=12x-2x^2$",
+              "$x=3$, $y=2$",
+            ],
+          },
         ],
       },
     ],

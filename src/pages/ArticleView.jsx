@@ -382,6 +382,9 @@ function RectFigureDrawing({ figure, compact = false, showCaption = true }) {
   const parts = Array.isArray(figure?.parts) ? figure.parts : [];
   const labels = Array.isArray(figure?.labels) ? figure.labels : [];
   const outline = Array.isArray(figure?.outline) ? figure.outline : [];
+  const figureLines = Array.isArray(figure?.lines) ? figure.lines : [];
+  const rivers = Array.isArray(figure?.rivers) ? figure.rivers : [];
+  const rightAngles = Array.isArray(figure?.rightAngles) ? figure.rightAngles : [];
   const cutParts = parts.filter((part) => part.cut);
   const drawParts = parts.filter((part) => !part.cut);
 
@@ -398,12 +401,18 @@ function RectFigureDrawing({ figure, compact = false, showCaption = true }) {
     if (Number(point.y) > maxY) maxY = Number(point.y);
   }
 
-  const extraLeft = labels.some((label) => Number(label.x) < 0) ? 56 : 0;
-  const extraRight = labels.some((label) => Number(label.x) > maxX) ? 28 : 0;
+  const extraLeft = labels.some((label) => Number(label.x) < 0) ? 72 : 0;
+  const extraRight = labels.some((label) => Number(label.x) > maxX) ? 36 : 0;
+  const extraTop =
+    (rivers.some((river) => (river.side || "top") === "top") ? 44 : 0) +
+    (labels.some((label) => Number(label.y) < 0) ? 18 : 0);
+  const extraBottom =
+    (rivers.some((river) => river.side === "bottom") ? 44 : 0) +
+    (labels.some((label) => Number(label.y) > maxY) ? 18 : 0);
   const vbW = maxX * scale + pad * 2 + extraLeft + extraRight;
-  const vbH = maxY * scale + pad * 2;
+  const vbH = maxY * scale + pad * 2 + extraTop + extraBottom;
   const toX = (value) => extraLeft + pad + Number(value) * scale;
-  const toY = (value) => pad + Number(value) * scale;
+  const toY = (value) => extraTop + pad + Number(value) * scale;
   const outlinePoints = outline
     .map((point) => `${toX(point.x)},${toY(point.y)}`)
     .join(" ");
@@ -474,6 +483,83 @@ function RectFigureDrawing({ figure, compact = false, showCaption = true }) {
                 />
               </g>
             ))}
+            {rivers.map((river, index) => {
+              const side = river.side || "top";
+              const x0 = toX(0);
+              const x1 = toX(maxX);
+              const y0 = toY(0);
+              const y1 = toY(maxY);
+              const amp = 4.2;
+              const band = 16;
+              const count = 36;
+              const wave = (baseY, phase) => {
+                const pts = [];
+                for (let i = 0; i <= count; i += 1) {
+                  const t = i / count;
+                  const x = x0 + t * (x1 - x0);
+                  const y = baseY + Math.sin(t * Math.PI * 8 + phase) * amp;
+                  pts.push(`${x},${y}`);
+                }
+                return pts.join(" ");
+              };
+              if (side === "bottom") {
+                return (
+                  <g key={`river-${index}`} className="stroke-current fill-current" opacity="0.55">
+                    <rect x={x0} y={y1} width={x1 - x0} height={band} fillOpacity="0.12" stroke="none" />
+                    <polyline points={wave(y1 + 5, 0)} fill="none" strokeWidth="1.6" strokeLinecap="round" />
+                    <polyline points={wave(y1 + 11, 1.1)} fill="none" strokeWidth="1.6" strokeLinecap="round" />
+                  </g>
+                );
+              }
+              if (side !== "top") return null;
+              return (
+                <g key={`river-${index}`} className="stroke-current fill-current" opacity="0.55">
+                  <rect x={x0} y={y0 - band} width={x1 - x0} height={band} fillOpacity="0.12" stroke="none" />
+                  <polyline points={wave(y0 - 12, 0)} fill="none" strokeWidth="1.6" strokeLinecap="round" />
+                  <polyline points={wave(y0 - 6, 1.1)} fill="none" strokeWidth="1.6" strokeLinecap="round" />
+                </g>
+              );
+            })}
+            {figureLines.map((line, index) => (
+              <line
+                key={`fig-line-${index}`}
+                x1={toX(line.x1)}
+                y1={toY(line.y1)}
+                x2={toX(line.x2)}
+                y2={toY(line.y2)}
+                className="stroke-current"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeDasharray={line.dashed ? "7 5" : undefined}
+              />
+            ))}
+            {rightAngles.map((mark, index) => {
+              const size = Number(mark.size) > 0 ? Number(mark.size) : 0.52;
+              const dir = String(mark.dir || "ne");
+              const sx = dir.includes("w") ? -1 : 1;
+              const sy = dir.includes("n") ? -1 : 1;
+              const r = size * scale;
+              const x0 = toX(mark.x);
+              const y0 = toY(mark.y);
+              const sweep = sx === sy ? 1 : 0;
+              const dotR = r * 0.48;
+              return (
+                <g key={`right-angle-${index}`} className="stroke-current fill-current">
+                  <path
+                    d={`M ${x0 + sx * r} ${y0} A ${r} ${r} 0 0 ${sweep} ${x0} ${y0 + sy * r}`}
+                    fill="none"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <circle
+                    cx={x0 + (sx * dotR) / Math.SQRT2}
+                    cy={y0 + (sy * dotR) / Math.SQRT2}
+                    r={Math.max(2.2, scale * 0.08)}
+                    stroke="none"
+                  />
+                </g>
+              );
+            })}
           </svg>
           {labels.map((label, index) => {
             const labelX = Number(label.x);
@@ -912,7 +998,7 @@ function LineGraphSvg({ graph }) {
   const yMax = Number.isFinite(Number(graph.yMax)) ? Number(graph.yMax) : 5;
   const width = Number(graph.width) > 0 ? Number(graph.width) : 320;
   const height = Number(graph.height) > 0 ? Number(graph.height) : 280;
-  const padL = 36;
+  const padL = Number(graph.padL) > 0 ? Number(graph.padL) : 36;
   const padR = 18;
   const padT = 14;
   const padB = 28;
@@ -921,11 +1007,23 @@ function LineGraphSvg({ graph }) {
   const toX = (x) => padL + ((x - xMin) / (xMax - xMin)) * plotW;
   const toY = (y) => padT + ((yMax - y) / (yMax - yMin)) * plotH;
   const clipId = `line-clip-${useId().replace(/:/g, "")}`;
-
-  const xTicks = [];
-  for (let x = Math.ceil(xMin); x <= Math.floor(xMax); x += 1) xTicks.push(x);
-  const yTicks = [];
-  for (let y = Math.ceil(yMin); y <= Math.floor(yMax); y += 1) yTicks.push(y);
+  const xTickStep = Number(graph.xTickStep) > 0 ? Number(graph.xTickStep) : 1;
+  const yTickStep = Number(graph.yTickStep) > 0 ? Number(graph.yTickStep) : 1;
+  const rangeTicks = (min, max, step) => {
+    const ticks = [];
+    const start = Math.ceil(min / step - 1e-9);
+    const end = Math.floor(max / step + 1e-9);
+    for (let i = start; i <= end; i += 1) {
+      ticks.push(Number((i * step).toFixed(8)));
+    }
+    return ticks;
+  };
+  const xTicks = rangeTicks(xMin, xMax, xTickStep);
+  const yTicks = rangeTicks(yMin, yMax, yTickStep);
+  const xAxisY = yMin <= 0 && yMax >= 0 ? toY(0) : padT + plotH;
+  const yAxisX = xMin <= 0 && xMax >= 0 ? toX(0) : padL;
+  const xAxisLabel = graph.xLabel || "x";
+  const yAxisLabel = graph.yLabel || "y";
 
   const isParabola = Boolean(graph.parabola);
   const qa = Number(graph.a);
@@ -980,7 +1078,7 @@ function LineGraphSvg({ graph }) {
             strokeWidth={tick === 0 ? 0 : 1}
           />
         ))}
-        {xMin < 0 && xMax > 0 ? (
+        {xMin <= 0 && xMax >= 0 ? (
           <line
             x1={toX(0)}
             y1={padT}
@@ -990,7 +1088,7 @@ function LineGraphSvg({ graph }) {
             strokeWidth="1.5"
           />
         ) : null}
-        {yMin < 0 && yMax > 0 ? (
+        {yMin <= 0 && yMax >= 0 ? (
           <line
             x1={padL}
             y1={toY(0)}
@@ -1000,17 +1098,17 @@ function LineGraphSvg({ graph }) {
             strokeWidth="1.5"
           />
         ) : null}
-        <text x={padL + plotW - 2} y={toY(0) - 6} className="fill-slate-500 text-[11px]" textAnchor="end">
-          x
+        <text x={padL + plotW - 2} y={xAxisY - 6} className="fill-slate-500 text-[11px]" textAnchor="end">
+          {xAxisLabel}
         </text>
-        <text x={toX(0) + 8} y={padT + 12} className="fill-slate-500 text-[11px]">
-          y
+        <text x={yAxisX + 8} y={padT + 12} className="fill-slate-500 text-[11px]">
+          {yAxisLabel}
         </text>
         {xTicks.filter((tick) => tick !== 0).map((tick) => (
           <text
             key={`xt-${tick}`}
             x={toX(tick)}
-            y={toY(0) + 14}
+            y={xAxisY + 14}
             className="fill-slate-500 text-[10px]"
             textAnchor="middle"
           >
@@ -1020,7 +1118,7 @@ function LineGraphSvg({ graph }) {
         {yTicks.filter((tick) => tick !== 0).map((tick) => (
           <text
             key={`yt-${tick}`}
-            x={toX(0) - 6}
+            x={yAxisX - 6}
             y={toY(tick) + 3}
             className="fill-slate-500 text-[10px]"
             textAnchor="end"
@@ -1211,7 +1309,7 @@ function LineGraphSvg({ graph }) {
                 <foreignObject
                   x={cx + (point.dx || 8)}
                   y={cy + (point.dy || -22)}
-                  width="110"
+                  width="150"
                   height="30"
                 >
                   <div className="inline-block rounded-md bg-white/95 px-1.5 py-0.5 text-[12px] font-semibold leading-none text-slate-900 shadow-sm ring-1 ring-slate-200 dark:bg-slate-900/90 dark:text-slate-100 dark:ring-slate-600">
@@ -2073,7 +2171,6 @@ function RelatedMaturaTasks({ filter, article }) {
   const noteColors = useNoteColors();
   const navigate = useNavigate();
   const listRef = useRef(null);
-  const skipScrollRef = useRef(true);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -2142,21 +2239,18 @@ function RelatedMaturaTasks({ filter, article }) {
 
   useEffect(() => {
     setCurrentPage(1);
-    skipScrollRef.current = true;
   }, [levelFilter, typeFilter]);
 
   useEffect(() => {
     if (currentPage > totalPages) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
 
-  useEffect(() => {
-    if (loading) return;
-    if (skipScrollRef.current) {
-      skipScrollRef.current = false;
-      return;
-    }
-    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [safePage, loading]);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.requestAnimationFrame(() => {
+      listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const tasksUrl = createPageUrl("TaskSets");
   const tasksState = {
@@ -2266,7 +2360,7 @@ function RelatedMaturaTasks({ filter, article }) {
         <TaskListPagination
           currentPage={safePage}
           totalPages={totalPages}
-          onPageChange={setCurrentPage}
+          onPageChange={handlePageChange}
           ariaLabel="Paginacja zadań mieszanych"
         />
       ) : null}
@@ -2634,6 +2728,11 @@ export default function ArticleView() {
       cancelled = true;
     };
   }, [idParam]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [idParam]);
+
   const contentModes = useMemo(() => {
     const available = getArticleContentModes(rawArticle);
     if (Array.isArray(state?.contentModes) && state.contentModes.length > 0) {
